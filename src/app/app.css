@@ -1,0 +1,18 @@
+/* Color de fondo sutil para resaltar las tarjetas blancas */
+body {
+    background-color: #f8f9fa; 
+}
+
+/* Efecto de elevación al pasar el mouse sobre la sede */
+.sede-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+    border: 1px solid #198754 !important; /* Borde verde institucional */
+}
+
+/* Transición suave para el icono */
+.sede-card:hover .icon-circle {
+    background-color: #198754 !important;
+    color: white !important;
+    transition: all 0.3s ease;
+}

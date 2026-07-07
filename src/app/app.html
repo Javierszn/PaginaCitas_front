@@ -1,0 +1,122 @@
+<header class="bg-white border-bottom py-3 shadow-sm sticky-top">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <img src="https://slp.gob.mx/secult/Imagenes/Logotipo%20Gobierno%20del%20Estado%202021-2027.png" alt="Logo SLP" height="60" class="me-3">
+      <div>
+        <h5 class="mb-0 text-success fw-bold">DIRECCIÓN DEL REGISTRO CIVIL</h5>
+        <small class="text-secondary">Gobierno del Estado de San Luis Potosí</small>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container my-5">
+
+  @if (pasoActual === 1) {
+    <div class="text-center mb-5">
+      <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 1 de 4</span>
+      <h2 class="fw-bold text-dark mt-2">Agende su Cita en Línea</h2>
+      <p class="text-muted fs-5">Seleccione la oficina para realizar su trámite</p>
+    </div>
+
+    <div class="row justify-content-center mt-4">
+      @for (sede of sedes; track sede.idSede) {
+        <div class="col-md-5 col-lg-4 m-3">
+          <div class="card h-100 shadow-sm border-0 rounded-4 sede-card" (click)="seleccionarSede(sede)" style="cursor: pointer; transition: all 0.3s ease;">
+            <div class="card-body text-center p-4">
+              <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem;">
+                <i class="fa-solid fa-building-flag"></i>
+              </div>
+              <h4 class="card-title fw-bold text-dark mb-1">{{ sede.municipio }}</h4>
+              <p class="text-muted small mb-0">{{ sede.nombre }}</p>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center pb-4">
+              <span class="text-success fw-bold small">Seleccionar <i class="fa-solid fa-arrow-right ms-1"></i></span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (pasoActual === 2) {
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
+        <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Oficina
+      </button>
+    </div>
+
+    <div class="text-center mb-5">
+      <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 2 de 4</span>
+      <h2 class="fw-bold text-dark mt-2">Seleccione su Trámite</h2>
+      <p class="text-muted fs-5">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.municipio }}</strong></p>
+    </div>
+
+    <div class="row justify-content-center mt-4">
+      <div class="col-lg-8">
+        @for (tramite of tramites; track tramite.idTramite) {
+          <div class="card shadow-sm border-0 rounded-4 mb-4 sede-card" style="transition: all 0.3s ease;">
+            <div class="card-body p-4 d-flex justify-content-between align-items-center">
+              <div>
+                <h5 class="fw-bold text-dark mb-2">{{ tramite.nombreTramite }}</h5>
+                <div class="d-flex gap-3">
+                  <span class="badge bg-light text-dark border"><i class="fa-solid fa-clock me-1"></i> {{ tramite.duracionMinutos }} mins</span>
+                  <span class="badge bg-light text-success border"><i class="fa-solid fa-coins me-1"></i> ${{ tramite.costo }}</span>
+                </div>
+              </div>
+              <button class="btn btn-success rounded-pill px-4" (click)="seleccionarTramite(tramite)">Elegir</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (pasoActual === 3) {
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso2()">
+        <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Trámite
+      </button>
+    </div>
+
+    <div class="text-center mb-5">
+      <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 3 de 4</span>
+      <h2 class="fw-bold text-dark mt-2">Datos del Solicitante</h2>
+      <p class="text-muted fs-5">Trámite: <strong class="text-success">{{ tramiteSeleccionado?.nombreTramite }}</strong></p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow border-0 rounded-4 p-4">
+          <div class="alert alert-warning d-flex align-items-center mb-4">
+            <i class="fa-solid fa-circle-exclamation me-3 fs-4"></i>
+            <div class="small">Su <strong>CURP</strong> será validado. Solo se permite una cita activa por ciudadano.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-secondary">NOMBRE COMPLETO</label>
+            <input type="text" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.nombre">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-secondary">CURP (18 CARACTERES)</label>
+            <input type="text" class="form-control form-control-lg rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold small text-secondary">CORREO</label>
+              <input type="email" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.correo">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold small text-secondary">TELÉFONO</label>
+              <input type="tel" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.telefono">
+            </div>
+          </div>
+          <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm">
+            CONTINUAR A FECHA Y HORA <i class="fa-solid fa-calendar-days ms-2"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</main>
