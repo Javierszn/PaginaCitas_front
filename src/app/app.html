@@ -2,11 +2,14 @@
   <div class="container d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center">
       <img src="https://slp.gob.mx/secult/Imagenes/Logotipo%20Gobierno%20del%20Estado%202021-2027.png" alt="Logo SLP" height="60" class="me-3">
-      <div>
+      <div class="d-none d-md-block">
         <h5 class="mb-0 text-success fw-bold">DIRECCIÓN DEL REGISTRO CIVIL</h5>
         <small class="text-secondary">Gobierno del Estado de San Luis Potosí</small>
       </div>
     </div>
+    <button class="btn btn-outline-success rounded-pill fw-bold shadow-sm" (click)="irABuscarCita()">
+      <i class="fa-solid fa-magnifying-glass me-2"></i> Consultar Cita
+    </button>
   </div>
 </header>
 
@@ -258,6 +261,148 @@
         <button class="btn btn-dark rounded-pill px-5 py-3 fw-bold" (click)="regresarPaso1()">
           FINALIZAR
         </button>
+      </div>
+    </div>
+  }
+
+  @if (pasoActual === 6) {
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
+        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Inicio
+      </button>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0">
+        <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-3">Consultar Cita</h3>
+        <p class="text-muted mb-4">Ingrese su número de folio (8 caracteres) para ver o cancelar su cita programada.</p>
+        
+        <input type="text" class="form-control form-control-lg rounded-3 mb-4 text-center text-uppercase fw-bold" placeholder="Ej: 3A4F9B2C" [(ngModel)]="folioBusqueda" maxlength="8">
+        
+        <button class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" (click)="buscarCitaPorFolio()" [disabled]="!folioBusqueda || folioBusqueda.length < 8 || cargandoConsulta">
+          @if (cargandoConsulta) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Buscando...
+          } @else {
+            BUSCAR CITA <i class="fa-solid fa-arrow-right ms-2"></i>
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (pasoActual === 7) {
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="irABuscarCita()">
+        <i class="fa-solid fa-arrow-left me-2"></i> Buscar otro folio
+      </button>
+    </div>
+    
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card shadow border-0 rounded-4 p-0 overflow-hidden">
+          
+          <div class="bg-light p-4 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+              <p class="text-secondary small fw-bold mb-1">FOLIO DE CITA</p>
+              <h3 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h3>
+              <span class="badge mt-2 fs-6 px-3 py-2" 
+                    [class.bg-success]="citaConsultada?.estatus === 'AGENDADA'" 
+                    [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
+                    [class.bg-secondary]="citaConsultada?.estatus !== 'AGENDADA' && citaConsultada?.estatus !== 'CANCELADA'">
+                <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'AGENDADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'"></i> 
+                ESTATUS: {{ citaConsultada?.estatus }}
+              </span>
+            </div>
+            <div class="text-end">
+              <h2 class="fw-bold text-success mb-0">${{ citaConsultada?.costo }}</h2>
+              <small class="text-muted fw-bold">COSTO DEL TRÁMITE</small>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="row mb-4">
+              <div class="col-md-6 mb-3">
+                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-user me-2"></i> CIUDADANO</p>
+                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.ciudadano }}</p>
+                @if (citaConsultada?.curp && !citaConsultada?.curp.includes('ENM')) {
+                  <small class="text-muted">CURP: {{ citaConsultada?.curp }}</small>
+                }
+              </div>
+              <div class="col-md-6 mb-3">
+                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-file-lines me-2"></i> TRÁMITE</p>
+                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.tramite }}</p>
+                <small class="text-muted">Duración aprox: {{ citaConsultada?.duracion }} mins</small>
+              </div>
+            </div>
+            
+            <div class="row mb-4">
+              <div class="col-md-6 mb-3">
+                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-calendar-day me-2"></i> FECHA Y HORA</p>
+                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.fecha | date:'longDate' }}</p>
+                <p class="mb-0 text-success fw-bold fs-4">{{ citaConsultada?.hora }} hrs</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-building me-2"></i> SEDE</p>
+                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.sede }}</p>
+                <small class="text-muted">{{ citaConsultada?.direccion }}</small>
+              </div>
+            </div>
+            
+            @if (citaConsultada?.estatus === 'AGENDADA') {
+              <hr>
+              <div class="alert alert-danger mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm">
+                <div class="mb-3 mb-md-0">
+                  <h6 class="fw-bold mb-1 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Desea cancelar su cita?</h6>
+                  <small class="text-dark">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
+                </div>
+                <button class="btn btn-danger rounded-pill fw-bold px-4 py-2 text-nowrap shadow-sm" (click)="cancelarCita()">
+                  <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
+                </button>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL DE ALERTAS BONITAS (Se superpone a todo) -->
+  @if (mostrarAlerta) {
+    <!-- Fondo oscuro -->
+    <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
+    
+    <!-- Contenedor del Modal -->
+    <div class="modal d-block text-center" tabindex="-1" style="z-index: 1055; margin-top: 15vh;">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
+          <div class="modal-body p-5">
+            <div class="mb-4">
+              @if (alertaIcono === 'success') {
+                <i class="fa-solid fa-circle-check text-success" style="font-size: 4.5rem;"></i>
+              } @else if (alertaIcono === 'error') {
+                <i class="fa-solid fa-circle-xmark text-danger" style="font-size: 4.5rem;"></i>
+              } @else if (alertaIcono === 'warning') {
+                <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 4.5rem;"></i>
+              } @else {
+                <i class="fa-solid fa-circle-info text-info" style="font-size: 4.5rem;"></i>
+              }
+            </div>
+            <h3 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h3>
+            <p class="text-muted fs-5 mb-4">{{ alertaMensaje }}</p>
+
+            @if (alertaTipo === 'confirmacion') {
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Regresar</button>
+                <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Cancelar</button>
+              </div>
+            } @else {
+              <button class="btn btn-dark rounded-pill px-5 py-2 fw-bold w-100" (click)="cerrarAlerta()">Aceptar</button>
+            }
+          </div>
+        </div>
       </div>
     </div>
   }

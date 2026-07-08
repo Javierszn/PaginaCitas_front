@@ -29,6 +29,18 @@ export class App implements OnInit {
   cargandoHorarios: boolean = false; 
   folioExito: string = '';
 
+  folioBusqueda: string = '';
+  citaConsultada: any = null;
+  cargandoConsulta: boolean = false;
+
+  // --- VARIABLES PARA ALERTAS BONITAS ---
+  mostrarAlerta: boolean = false;
+  alertaTitulo: string = '';
+  alertaMensaje: string = '';
+  alertaIcono: string = 'info'; // 'success', 'error', 'warning', 'info'
+  alertaTipo: 'alerta' | 'confirmacion' = 'alerta';
+  accionConfirmacion: () => void = () => {};
+
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 
@@ -72,6 +84,45 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // --- MÉTODOS DE ALERTAS BONITAS ---
+  abrirAlerta(titulo: string, mensaje: string, icono: string = 'info') {
+    this.alertaTitulo = titulo;
+    this.alertaMensaje = mensaje;
+    this.alertaIcono = icono;
+    this.alertaTipo = 'alerta';
+    this.mostrarAlerta = true;
+    this.cdr.detectChanges();
+  }
+
+  abrirConfirmacion(titulo: string, mensaje: string, accion: () => void) {
+    this.alertaTitulo = titulo;
+    this.alertaMensaje = mensaje;
+    this.alertaIcono = 'warning';
+    this.alertaTipo = 'confirmacion';
+    this.accionConfirmacion = accion;
+    this.mostrarAlerta = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarAlerta() {
+    this.mostrarAlerta = false;
+  }
+
+  ejecutarConfirmacion() {
+    this.mostrarAlerta = false;
+    this.accionConfirmacion();
+  }
+
+  // --- SOLUCIÓN AL BUG DEL CALENDARIO ---
+  limpiarFormulario() {
+    this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
+    this.fechaSeleccionada = '';
+    this.horaSeleccionada = '';
+    this.horariosDisponibles = [];
+    this.diasMes.forEach(d => d.seleccionado = false);
+    this.folioBusqueda = '';
+  }
+
   cargarSedes() {
     this.http.get('http://localhost:5076/api/Sedes').subscribe({
       next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); },
@@ -93,7 +144,6 @@ export class App implements OnInit {
     this.ciudadano.estadoRegistro = '';
     this.ciudadano.municipioRegistro = '';
     
-    // Lógica estricta de municipios
     if (nombreSede.includes('centro') || nombreSede.includes('potos')) {
       this.municipiosRegistro = ['Ahualulco', 'Armadillo de los Infante', 'Cerro de San Pedro', 'Mexquitic de Carmona', 'San Luis Potosí', 'Santa María del Río', 'Soledad de Graciano Sánchez', 'Tierra Nueva', 'Villa de Arriaga', 'Villa de Reyes', 'Villa de Zaragoza', 'Villa de Pozos (Municipio 59)'].sort();
     } else if (nombreSede.includes('altiplano') || nombreSede.includes('matehuala')) {
@@ -103,7 +153,7 @@ export class App implements OnInit {
     } else if (nombreSede.includes('media') || nombreSede.includes('rioverde')) {
       this.municipiosRegistro = ['Alaquines', 'Cárdenas', 'Cerritos', 'Ciudad del Maíz', 'Ciudad Fernández', 'Lagunillas', 'Rayón', 'Rioverde', 'San Ciro de Acosta', 'San Nicolás Tolentino', 'Santa Catarina', 'Villa Juárez'].sort();
     } else if (this.esOtrosEstados) {
-      this.municipiosRegistro = [...this.todosLosMunicipiosSLP]; // Despliega los 59 completos
+      this.municipiosRegistro = [...this.todosLosMunicipiosSLP]; 
     } else {
       this.municipiosRegistro = [];
     }
@@ -194,7 +244,7 @@ export class App implements OnInit {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.error(err);
+          this.abrirAlerta('Error', 'No se pudieron cargar los horarios.', 'error');
           this.cargandoHorarios = false;
           this.cdr.detectChanges();
         }
@@ -219,15 +269,73 @@ export class App implements OnInit {
         this.folioExito = res.folio;
         this.pasoActual = 5;
         history.pushState({ paso: 5 }, '', '');
+        
+        // Limpiamos los datos para evitar el bug de caché al volver a agendar
+        this.limpiarFormulario();
+        
         this.cdr.detectChanges();
       },
       error: (err) => {
-        alert(err.error.mensaje || "Error al registrar la cita");
+        this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning');
       }
     });
   }
 
-  regresarPaso1() { this.pasoActual = 1; this.sedeSeleccionada = null; this.tramites = []; history.pushState({ paso: 1 }, '', ''); this.cdr.detectChanges(); }
+  irABuscarCita() {
+    this.pasoActual = 6;
+    this.limpiarFormulario();
+    this.citaConsultada = null;
+    history.pushState({ paso: 6 }, '', '');
+    this.cdr.detectChanges();
+  }
+
+  buscarCitaPorFolio() {
+    if (!this.folioBusqueda || this.folioBusqueda.length < 8) return;
+    this.cargandoConsulta = true;
+    
+    this.http.get(`http://localhost:5076/api/Citas/${this.folioBusqueda.toUpperCase()}`).subscribe({
+      next: (res: any) => {
+        this.citaConsultada = res;
+        this.pasoActual = 7;
+        this.cargandoConsulta = false;
+        history.pushState({ paso: 7 }, '', '');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.abrirAlerta('Folio no encontrado', err.error.mensaje || "Verifique el folio e intente de nuevo.", 'warning');
+        this.cargandoConsulta = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cancelarCita() {
+    this.abrirConfirmacion(
+      '¿Cancelar Cita?',
+      'Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo. Esta acción no se puede deshacer.',
+      () => {
+        this.http.put(`http://localhost:5076/api/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
+          next: (res: any) => {
+            this.abrirAlerta('Cita Cancelada', res.mensaje, 'success');
+            this.citaConsultada.estatus = 'CANCELADA';
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.abrirAlerta('Error', err.error.mensaje || "Error al cancelar la cita", 'error');
+          }
+        });
+      }
+    );
+  }
+
+  regresarPaso1() { 
+    this.pasoActual = 1; 
+    this.sedeSeleccionada = null; 
+    this.tramites = []; 
+    this.limpiarFormulario();
+    history.pushState({ paso: 1 }, '', ''); 
+    this.cdr.detectChanges(); 
+  }
   regresarPaso2() { this.pasoActual = 2; this.tramiteSeleccionado = null; history.pushState({ paso: 2 }, '', ''); this.cdr.detectChanges(); }
   regresarPaso3() { this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
 }

@@ -60,3 +60,7 @@ body {
     font-weight: 700;
     box-shadow: 0 4px 10px rgba(25, 135, 84, 0.4);
 }
+@keyframes dropIn {
+  0% { opacity: 0; transform: translateY(-30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
