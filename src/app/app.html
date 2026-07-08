@@ -25,10 +25,15 @@
           <div class="card h-100 shadow-sm border-0 rounded-4 sede-card" (click)="seleccionarSede(sede)" style="cursor: pointer; transition: all 0.3s ease;">
             <div class="card-body text-center p-4">
               <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem;">
-                <i class="fa-solid fa-building-flag"></i>
+                <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building-flag]="!sede.nombre.includes('Otros')"></i>
               </div>
-              <h4 class="card-title fw-bold text-dark mb-1">{{ sede.municipio }}</h4>
-              <p class="text-muted small mb-0">{{ sede.nombre }}</p>
+              <h4 class="card-title fw-bold text-dark mb-1">{{ sede.nombre }}</h4>
+              
+              @if (sede.direccion) {
+                <div class="text-secondary text-start bg-light p-3 rounded-3 mt-3" style="font-size: 0.85rem; line-height: 1.4;">
+                  <i class="fa-solid fa-location-dot me-1 text-success"></i> {{ sede.direccion }}
+                </div>
+              }
             </div>
             <div class="card-footer bg-transparent border-0 text-center pb-4">
               <span class="text-success fw-bold small">Seleccionar <i class="fa-solid fa-arrow-right ms-1"></i></span>
@@ -49,7 +54,7 @@
     <div class="text-center mb-5">
       <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 2 de 4</span>
       <h2 class="fw-bold text-dark mt-2">Seleccione su Trámite</h2>
-      <p class="text-muted fs-5">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.municipio }}</strong></p>
+      <p class="text-muted fs-5">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
     </div>
 
     <div class="row justify-content-center mt-4">
@@ -88,33 +93,171 @@
     <div class="row justify-content-center">
       <div class="col-md-8 col-lg-6">
         <div class="card shadow border-0 rounded-4 p-4">
-          <div class="alert alert-warning d-flex align-items-center mb-4">
-            <i class="fa-solid fa-circle-exclamation me-3 fs-4"></i>
-            <div class="small">Su <strong>CURP</strong> será validado. Solo se permite una cita activa por ciudadano.</div>
+          <p class="text-danger small mb-4">* Campos obligatorios</p>
+
+          <div class="row">
+            @if (esOtrosEstados) {
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold small text-secondary">ESTADO DONDE RADICA *</label>
+                <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.estadoRegistro">
+                  <option value="" disabled selected>Seleccione estado...</option>
+                  @for (estado of estadosRepublica; track estado) {
+                    <option [value]="estado">{{ estado }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
+                <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
+                  <option value="" disabled selected>Seleccione municipio...</option>
+                  @for (mun of municipiosRegistro; track mun) {
+                    <option [value]="mun">{{ mun }}</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div class="col-12 mb-3">
+                <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
+                <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
+                  <option value="" disabled selected>Seleccione municipio...</option>
+                  @for (mun of municipiosRegistro; track mun) {
+                    <option [value]="mun">{{ mun }}</option>
+                  }
+                </select>
+              </div>
+            }
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-bold small text-secondary">NOMBRE COMPLETO</label>
+            <label class="form-label fw-bold small text-secondary">NOMBRE COMPLETO *</label>
             <input type="text" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.nombre">
           </div>
+          
           <div class="mb-3">
             <label class="form-label fw-bold small text-secondary">CURP (18 CARACTERES)</label>
             <input type="text" class="form-control form-control-lg rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18">
           </div>
+          
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold small text-secondary">CORREO</label>
+              <label class="form-label fw-bold small text-secondary">CORREO ELECTRÓNICO *</label>
               <input type="email" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.correo">
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold small text-secondary">TELÉFONO</label>
+              <label class="form-label fw-bold small text-secondary">TELÉFONO *</label>
               <input type="tel" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.telefono">
             </div>
           </div>
-          <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm">
+          
+          <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm" 
+                  (click)="irAPaso4()" 
+                  [disabled]="!ciudadano.nombre || !ciudadano.correo || !ciudadano.telefono || !ciudadano.municipioRegistro || (esOtrosEstados && !ciudadano.estadoRegistro)">
             CONTINUAR A FECHA Y HORA <i class="fa-solid fa-calendar-days ms-2"></i>
           </button>
         </div>
+      </div>
+    </div>
+  }
+
+  @if (pasoActual === 4) {
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso3()">
+        <i class="fa-solid fa-arrow-left me-2"></i> Atrás
+      </button>
+    </div>
+    
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-lg-8">
+        <h3 class="text-center fw-bold text-dark mb-4">Seleccione Fecha y Hora</h3>
+        
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <button class="btn btn-light rounded-circle" (click)="cambiarMes(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                <h5 class="fw-bold mb-0 text-capitalize text-success">{{ mesActual | date:'MMMM yyyy' }}</h5>
+                <button class="btn btn-light rounded-circle" (click)="cambiarMes(1)"><i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+              
+              <div class="calendar-grid">
+                @for (dia of diasSemana; track dia) {
+                  <div class="calendar-day-header">{{ dia }}</div>
+                }
+                
+                @for (dia of diasMes; track $index) {
+                  <div class="calendar-day" 
+                       [class.empty]="dia.vacio" 
+                       [class.disabled]="!dia.vacio && !dia.activo" 
+                       [class.selected]="dia.seleccionado" 
+                       (click)="seleccionarFecha(dia)">
+                    {{ dia.dia }}
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+              <label class="form-label fw-bold text-secondary mb-3"><i class="fa-regular fa-clock me-2"></i>HORARIOS DISPONIBLES</label>
+              
+              @if (cargandoHorarios) {
+                <div class="text-center mt-5 text-success">
+                  <div class="spinner-border" role="status"></div>
+                  <p class="mt-2 fw-bold">Consultando disponibilidad...</p>
+                </div>
+              } @else if (!fechaSeleccionada) {
+                <div class="text-center text-muted mt-5">
+                  <i class="fa-regular fa-calendar-check fs-1 mb-2"></i>
+                  <p>Seleccione un día en el calendario para ver los horarios.</p>
+                </div>
+              } @else if (horariosDisponibles.length === 0) {
+                <div class="alert alert-danger text-center mt-3">
+                  <i class="fa-solid fa-triangle-exclamation mb-2 fs-4"></i><br>
+                  No hay citas disponibles para esta fecha.
+                </div>
+              } @else {
+                <div class="d-flex flex-wrap gap-2 justify-content-start">
+                  @for (hora of horariosDisponibles; track hora) {
+                    <button class="btn rounded-pill px-3 py-2 fw-bold" 
+                            [class.btn-success]="horaSeleccionada === hora" 
+                            [class.btn-outline-secondary]="horaSeleccionada !== hora" 
+                            (click)="horaSeleccionada = hora">
+                      {{ hora }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" 
+                (click)="confirmarCita()" 
+                [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios">
+          CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (pasoActual === 5) {
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6 text-center p-5 card shadow-sm rounded-4 border-0">
+        <div class="icon-circle bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px; font-size: 2.5rem;">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <h2 class="text-success fw-bold">¡Cita Agendada!</h2>
+        <p class="text-muted mb-4">Su cita ha sido registrada correctamente en el sistema.</p>
+        
+        <div class="bg-light p-4 rounded-3 mb-4">
+          <p class="text-secondary small fw-bold mb-1">SU NÚMERO DE FOLIO ES</p>
+          <h1 class="display-5 fw-bold text-dark mb-0">{{ folioExito }}</h1>
+        </div>
+        
+        <button class="btn btn-dark rounded-pill px-5 py-3 fw-bold" (click)="regresarPaso1()">
+          FINALIZAR
+        </button>
       </div>
     </div>
   }

@@ -16,3 +16,47 @@ body {
     color: white !important;
     transition: all 0.3s ease;
 }
+/* --- ESTILOS DEL CALENDARIO PERSONALIZADO --- */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    text-align: center;
+}
+
+.calendar-day-header {
+    font-weight: 700;
+    color: #6c757d;
+    font-size: 0.9rem;
+    padding-bottom: 10px;
+}
+
+.calendar-day {
+    padding: 10px 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: #212529;
+}
+
+.calendar-day:not(.empty):not(.disabled):hover {
+    background-color: #e9ecef;
+}
+
+.calendar-day.disabled {
+    color: #dee2e6;
+    cursor: not-allowed;
+    background-color: transparent;
+}
+
+.calendar-day.selected {
+    background-color: #198754;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(25, 135, 84, 0.4);
+}
