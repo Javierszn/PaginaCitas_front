@@ -45,6 +45,10 @@ export class App implements OnInit {
   alertaTipo: 'alerta' | 'confirmacion' = 'alerta';
   accionConfirmacion: () => void = () => {};
 
+  // --- VARIABLES PARA EL AVISO GLOBAL ---
+  avisoGlobal: any = null;
+  mostrarAvisoGlobal: boolean = false;
+
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 
@@ -65,6 +69,7 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.cargarSedes();
+    this.cargarAvisoGlobal();
     history.replaceState({ paso: 1 }, '', '');
   }
 
@@ -81,7 +86,26 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // --- NUEVA FUNCIÓN: ÍCONOS INTELIGENTES ---
+  // --- FUNCIÓN PARA CARGAR EL AVISO GLOBAL ---
+  cargarAvisoGlobal() {
+    this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
+      next: (res: any) => {
+        if (res && res.titulo) {
+          this.avisoGlobal = res;
+          this.mostrarAvisoGlobal = true;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => console.log('No hay avisos activos o hubo un error al cargar.')
+    });
+  }
+
+  cerrarAvisoGlobal() {
+    this.mostrarAvisoGlobal = false;
+    this.cdr.detectChanges();
+  }
+
+  // --- FUNCIÓN: ÍCONOS INTELIGENTES ---
   obtenerIconoCategoria(nombre: string): string {
     const n = nombre.toLowerCase();
     if (n.includes('acta')) return 'fa-file-signature';
@@ -126,7 +150,7 @@ export class App implements OnInit {
     this.categoriaExpandida = null;
   }
 
-  // MÉTODO SEGURO DE SEDES (Corrige el bug)
+  // MÉTODO SEGURO DE SEDES
   cargarSedes() {
     this.http.get('http://localhost:5076/api/Sedes').subscribe({
       next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); },
