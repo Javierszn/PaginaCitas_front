@@ -13,7 +13,11 @@ import { FormsModule } from '@angular/forms';
 export class App implements OnInit {
   pasoActual: number = 1;
   sedes: any[] = [];
-  tramites: any[] = [];
+  
+  // --- VARIABLES DE JERARQUÍA ---
+  categorias: any[] = [];
+  categoriaExpandida: number | null = null;
+  // ------------------------------
   
   sedeSeleccionada: any = null;
   tramiteSeleccionado: any = null;
@@ -37,7 +41,7 @@ export class App implements OnInit {
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
   alertaMensaje: string = '';
-  alertaIcono: string = 'info'; // 'success', 'error', 'warning', 'info'
+  alertaIcono: string = 'info'; 
   alertaTipo: 'alerta' | 'confirmacion' = 'alerta';
   accionConfirmacion: () => void = () => {};
 
@@ -54,14 +58,7 @@ export class App implements OnInit {
     'Ahualulco', 'Alaquines', 'Aquismón', 'Armadillo de los Infante', 'Axtla de Terrazas', 'Cárdenas', 'Catorce', 'Cedral', 'Cerritos', 'Cerro de San Pedro', 'Charcas', 'Ciudad del Maíz', 'Ciudad Fernández', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Guadalcázar', 'Huehuetlán', 'Lagunillas', 'Matehuala', 'Matlapa', 'Mexquitic de Carmona', 'Moctezuma', 'Rayón', 'Rioverde', 'Salinas', 'San Antonio', 'San Ciro de Acosta', 'San Luis Potosí', 'San Martín Chalchicuautla', 'San Nicolás Tolentino', 'San Vicente Tancuayalab', 'Santa Catarina', 'Santa María del Río', 'Santo Domingo', 'Soledad de Graciano Sánchez', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Tierra Nueva', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Arriaga', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa de Reyes', 'Villa Hidalgo', 'Villa Juárez', 'Xilitla', 'Zaragoza', 'Villa de Pozos (Municipio 59)'
   ].sort();
 
-  ciudadano = {
-    nombre: '',
-    curp: '',
-    correo: '',
-    telefono: '',
-    municipioRegistro: '',
-    estadoRegistro: '' 
-  };
+  ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
 
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
@@ -79,12 +76,23 @@ export class App implements OnInit {
       this.pasoActual = 1;
     }
     
-    if (this.pasoActual === 2 && this.tramites.length === 0) this.cargarTramites();
+    if (this.pasoActual === 2 && this.categorias.length === 0) this.cargarTramites();
     if (this.pasoActual === 4) this.generarCalendario();
     this.cdr.detectChanges();
   }
 
-  // --- MÉTODOS DE ALERTAS BONITAS ---
+  // --- NUEVA FUNCIÓN: ÍCONOS INTELIGENTES ---
+  obtenerIconoCategoria(nombre: string): string {
+    const n = nombre.toLowerCase();
+    if (n.includes('acta')) return 'fa-file-signature';
+    if (n.includes('curp')) return 'fa-id-card';
+    if (n.includes('anotaciones')) return 'fa-pen-clip';
+    if (n.includes('constancia')) return 'fa-file-circle-check';
+    if (n.includes('enmienda')) return 'fa-file-pen';
+    return 'fa-file-lines'; // Ícono por defecto
+  }
+
+  // --- MÉTODOS DE ALERTAS ---
   abrirAlerta(titulo: string, mensaje: string, icono: string = 'info') {
     this.alertaTitulo = titulo;
     this.alertaMensaje = mensaje;
@@ -104,16 +112,10 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  cerrarAlerta() {
-    this.mostrarAlerta = false;
-  }
+  cerrarAlerta() { this.mostrarAlerta = false; }
+  ejecutarConfirmacion() { this.mostrarAlerta = false; this.accionConfirmacion(); }
 
-  ejecutarConfirmacion() {
-    this.mostrarAlerta = false;
-    this.accionConfirmacion();
-  }
-
-  // --- SOLUCIÓN AL BUG DEL CALENDARIO ---
+  // --- LIMPIEZA DE MEMORIA ---
   limpiarFormulario() {
     this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
     this.fechaSeleccionada = '';
@@ -121,8 +123,10 @@ export class App implements OnInit {
     this.horariosDisponibles = [];
     this.diasMes.forEach(d => d.seleccionado = false);
     this.folioBusqueda = '';
+    this.categoriaExpandida = null;
   }
 
+  // MÉTODO SEGURO DE SEDES (Corrige el bug)
   cargarSedes() {
     this.http.get('http://localhost:5076/api/Sedes').subscribe({
       next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); },
@@ -132,9 +136,17 @@ export class App implements OnInit {
 
   cargarTramites() {
     this.http.get('http://localhost:5076/api/Tramites').subscribe({
-      next: (datos: any) => { this.tramites = datos; this.cdr.detectChanges(); },
+      next: (datos: any) => { 
+        this.categorias = datos; 
+        this.cdr.detectChanges(); 
+      },
       error: (err) => console.error(err)
     });
+  }
+
+  toggleCategoria(idCategoria: number) {
+    this.categoriaExpandida = (this.categoriaExpandida === idCategoria) ? null : idCategoria;
+    this.cdr.detectChanges();
   }
 
   seleccionarSede(sede: any) {
@@ -189,10 +201,7 @@ export class App implements OnInit {
     const ultimoDia = new Date(year, month + 1, 0);
 
     this.diasMes = [];
-    
-    for (let i = 0; i < primerDia.getDay(); i++) {
-      this.diasMes.push({ vacio: true });
-    }
+    for (let i = 0; i < primerDia.getDay(); i++) { this.diasMes.push({ vacio: true }); }
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -208,19 +217,12 @@ export class App implements OnInit {
         if (fs.getTime() === fecha.getTime()) seleccionado = true;
       }
 
-      this.diasMes.push({
-        vacio: false,
-        fecha: fecha,
-        dia: i,
-        activo: !esFinde && !yaPaso,
-        seleccionado: seleccionado
-      });
+      this.diasMes.push({ vacio: false, fecha: fecha, dia: i, activo: !esFinde && !yaPaso, seleccionado: seleccionado });
     }
   }
 
   seleccionarFecha(dia: any) {
     if (!dia.activo || dia.vacio) return;
-    
     this.diasMes.forEach(d => d.seleccionado = false);
     dia.seleccionado = true;
 
@@ -269,10 +271,7 @@ export class App implements OnInit {
         this.folioExito = res.folio;
         this.pasoActual = 5;
         history.pushState({ paso: 5 }, '', '');
-        
-        // Limpiamos los datos para evitar el bug de caché al volver a agendar
         this.limpiarFormulario();
-        
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -331,7 +330,7 @@ export class App implements OnInit {
   regresarPaso1() { 
     this.pasoActual = 1; 
     this.sedeSeleccionada = null; 
-    this.tramites = []; 
+    this.categorias = []; 
     this.limpiarFormulario();
     history.pushState({ paso: 1 }, '', ''); 
     this.cdr.detectChanges(); 
