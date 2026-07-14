@@ -1,507 +1,606 @@
-<header class="bg-white border-bottom py-3 shadow-sm sticky-top">
-  <div class="container d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center">
-      <img src="https://slp.gob.mx/secult/Imagenes/Logotipo%20Gobierno%20del%20Estado%202021-2027.png" alt="Logo SLP" height="60" class="me-3">
-      <div class="d-none d-md-block">
-        <h5 class="mb-0 text-success fw-bold">DIRECCIÓN DEL REGISTRO CIVIL</h5>
-        <small class="text-secondary">Gobierno del Estado de San Luis Potosí</small>
+<!-- ENVOLTURA PRINCIPAL PARA MANTENER EL FOOTER ABAJO -->
+<div class="d-flex flex-column min-vh-100">
+
+  <header class="bg-white border-bottom py-3 shadow-sm sticky-top">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <img src="https://slp.gob.mx/secult/Imagenes/Logotipo%20Gobierno%20del%20Estado%202021-2027.png" alt="Logo SLP" height="60" class="me-3">
+        <div class="d-none d-md-block">
+          <h5 class="mb-0 text-success fw-bold">DIRECCIÓN DEL REGISTRO CIVIL</h5>
+          <small class="text-secondary">Gobierno del Estado de San Luis Potosí</small>
+        </div>
       </div>
+      <button class="btn btn-outline-success rounded-pill fw-bold shadow-sm" (click)="irABuscarCita()">
+        <i class="fa-solid fa-magnifying-glass me-2"></i> Consultar Cita
+      </button>
     </div>
-    <button class="btn btn-outline-success rounded-pill fw-bold shadow-sm" (click)="irABuscarCita()">
-      <i class="fa-solid fa-magnifying-glass me-2"></i> Consultar Cita
-    </button>
-  </div>
-</header>
+  </header>
 
-<main class="container my-5">
+  <main class="container my-5 flex-grow-1">
 
-  @if (pasoActual === 1) {
-    <div class="text-center mb-5">
-      <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 1 de 4</span>
-      <h2 class="fw-bold text-dark mt-2">Agende su Cita en Línea</h2>
-      <p class="text-muted fs-5">Seleccione la oficina para realizar su trámite</p>
-    </div>
+    @if (pasoActual === 1) {
+      <div class="text-center mb-5">
+        <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 1 de 4</span>
+        <h2 class="fw-bold text-dark mt-2">Agende su Cita en Línea</h2>
+        <p class="text-muted fs-5">Seleccione la oficina para realizar su trámite</p>
+      </div>
 
-    <div class="row justify-content-center mt-4">
-      @for (sede of sedes; track sede.idSede) {
-        <div class="col-md-5 col-lg-4 m-3">
-          <div class="card h-100 shadow-sm border-0 rounded-4 sede-card" (click)="seleccionarSede(sede)" style="cursor: pointer; transition: all 0.3s ease;">
-            <div class="card-body text-center p-4">
-              <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem;">
-                <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building-flag]="!sede.nombre.includes('Otros')"></i>
+      <div class="row justify-content-center mt-4">
+        @for (sede of sedes; track sede.idSede) {
+          <div class="col-md-5 col-lg-4 m-3">
+            <div class="card h-100 shadow-sm border-0 rounded-4 sede-card" (click)="seleccionarSede(sede)" style="cursor: pointer; transition: all 0.3s ease;">
+              <div class="card-body text-center p-4">
+                <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem;">
+                  <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building-flag]="!sede.nombre.includes('Otros')"></i>
+                </div>
+                <h4 class="card-title fw-bold text-dark mb-1">{{ sede.nombre }}</h4>
+                
+                @if (sede.direccion) {
+                  <div class="text-secondary text-start bg-light p-3 rounded-3 mt-3" style="font-size: 0.85rem; line-height: 1.4;">
+                    <i class="fa-solid fa-location-dot me-1 text-success"></i> {{ sede.direccion }}
+                  </div>
+                }
               </div>
-              <h4 class="card-title fw-bold text-dark mb-1">{{ sede.nombre }}</h4>
+              <div class="card-footer bg-transparent border-0 text-center pb-4">
+                <span class="text-success fw-bold small">Seleccionar <i class="fa-solid fa-arrow-right ms-1"></i></span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (pasoActual === 2) {
+      <div class="mb-4">
+        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
+          <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Oficina
+        </button>
+      </div>
+
+      <div class="alert text-white text-center fw-bold rounded-0 py-3 mb-5" style="background-color: #fa8072;">
+        SOLO SERÁ VÁLIDA SU CITA SI EL TRÁMITE ES PERSONAL
+      </div>
+
+      <div class="text-center mb-5">
+        <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 2 de 4</span>
+        <h2 class="fw-bold text-dark mt-2">Seleccione su Trámite</h2>
+        <p class="text-muted fs-5">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
+      </div>
+
+      <div class="row justify-content-center mt-4">
+        <div class="col-lg-10">
+          
+          @for (cat of categorias; track cat.idCategoria) {
+            <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden" style="transition: all 0.3s ease;">
               
-              @if (sede.direccion) {
-                <div class="text-secondary text-start bg-light p-3 rounded-3 mt-3" style="font-size: 0.85rem; line-height: 1.4;">
-                  <i class="fa-solid fa-location-dot me-1 text-success"></i> {{ sede.direccion }}
+              <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center" 
+                   style="cursor: pointer; border-left: 6px solid #198754;"
+                   (click)="toggleCategoria(cat.idCategoria)">
+                
+                <div class="d-flex align-items-center">
+                  <div class="bg-success-subtle text-success rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 55px; height: 55px; font-size: 1.6rem;">
+                    <i class="fa-solid {{ obtenerIconoCategoria(cat.nombreCategoria) }}"></i>
+                  </div>
+                  <div>
+                    <h4 class="fw-bold text-dark mb-1 m-0">{{ cat.nombreCategoria }}</h4>
+                    <p class="text-muted small mb-0">{{ cat.descripcion }}</p>
+                  </div>
+                </div>
+                
+                <div class="text-success fs-4 transition-transform" [style.transform]="categoriaExpandida === cat.idCategoria ? 'rotate(180deg)' : 'rotate(0)'" style="transition: transform 0.3s;">
+                  <i class="fa-solid fa-chevron-down"></i>
+                </div>
+              </div>
+
+              @if (categoriaExpandida === cat.idCategoria) {
+                <div class="card-body p-4 bg-light border-top">
+                  @for (tramite of cat.tramites; track tramite.idTramite) {
+                    
+                    <div class="card border-0 shadow-sm rounded-4 mb-3">
+                      <div class="card-body p-4">
+                         <div class="row align-items-center">
+                            
+                            <div class="col-md-8 mb-3 mb-md-0">
+                              <h5 class="fw-bold text-dark mb-2">{{ tramite.nombreTramite }}</h5>
+                              <p class="text-muted small mb-3">{{ tramite.descripcion }}</p>
+                              
+                              <div class="bg-light p-3 rounded-3 border-start border-warning border-3 shadow-sm">
+                                <span class="d-block fw-bold text-dark small mb-2"><i class="fa-solid fa-circle-info text-warning me-2"></i>REQUISITOS:</span>
+                                <small class="text-secondary" style="white-space: pre-line;">{{ tramite.requisitos }}</small>
+                              </div>
+                            </div>
+                            
+                            <div class="col-md-4 text-md-end text-center d-flex flex-column justify-content-between h-100">
+                              <div class="mb-3 mt-2">
+                                <span class="badge bg-success text-white px-3 py-2 fs-5 rounded-pill mb-2 shadow-sm">${{ tramite.costo }}</span>
+                                <span class="d-block text-muted small fw-bold"><i class="fa-regular fa-clock me-1"></i> Aprox. {{ tramite.duracionMinutos }} mins</span>
+                              </div>
+                              
+                              <button class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm" (click)="seleccionarTramite(tramite)">
+                                Agendar Servicio <i class="fa-solid fa-arrow-right ms-2"></i>
+                              </button>
+                            </div>
+                            
+                         </div>
+                      </div>
+                    </div>
+                    
+                  }
                 </div>
               }
             </div>
-            <div class="card-footer bg-transparent border-0 text-center pb-4">
-              <span class="text-success fw-bold small">Seleccionar <i class="fa-solid fa-arrow-right ms-1"></i></span>
+          }
+          
+        </div>
+      </div>
+    }
+
+    @if (pasoActual === 3) {
+      <div class="mb-4">
+        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso2()">
+          <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Trámite
+        </button>
+      </div>
+
+      <div class="text-center mb-5">
+        <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 3 de 4</span>
+        <h2 class="fw-bold text-dark mt-2">Datos del Solicitante</h2>
+        <p class="text-muted fs-5">Servicio: <strong class="text-success">{{ tramiteSeleccionado?.nombreTramite }}</strong></p>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+          <div class="card shadow border-0 rounded-4 p-4">
+            <p class="text-danger small mb-4">* Campos obligatorios</p>
+
+            <div class="row">
+              @if (esOtrosEstados) {
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold small text-secondary">ESTADO DONDE RADICA *</label>
+                  <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.estadoRegistro">
+                    <option value="" disabled selected>Seleccione estado...</option>
+                    @for (estado of estadosRepublica; track estado) {
+                      <option [value]="estado">{{ estado }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
+                  <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
+                    <option value="" disabled selected>Seleccione municipio...</option>
+                    @for (mun of municipiosRegistro; track mun) {
+                      <option [value]="mun">{{ mun }}</option>
+                    }
+                  </select>
+                </div>
+              } @else {
+                <div class="col-12 mb-3">
+                  <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
+                  <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
+                    <option value="" disabled selected>Seleccione municipio...</option>
+                    @for (mun of municipiosRegistro; track mun) {
+                      <option [value]="mun">{{ mun }}</option>
+                    }
+                  </select>
+                </div>
+              }
             </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold small text-secondary">NOMBRE COMPLETO *</label>
+              <input type="text" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.nombre">
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label fw-bold small text-secondary">CURP (18 CARACTERES)</label>
+              <input type="text" class="form-control form-control-lg rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18">
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold small text-secondary">CORREO ELECTRÓNICO *</label>
+                <input type="email" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.correo">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold small text-secondary">TELÉFONO *</label>
+                <input type="tel" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.telefono">
+              </div>
+            </div>
+            
+            <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm" 
+                    (click)="irAPaso4()" 
+                    [disabled]="!ciudadano.nombre || !ciudadano.correo || !ciudadano.telefono || !ciudadano.municipioRegistro || (esOtrosEstados && !ciudadano.estadoRegistro)">
+              CONTINUAR A FECHA Y HORA <i class="fa-solid fa-calendar-days ms-2"></i>
+            </button>
           </div>
         </div>
-      }
-    </div>
-  }
+      </div>
+    }
 
-  @if (pasoActual === 2) {
-    <div class="mb-4">
-      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
-        <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Oficina
-      </button>
-    </div>
-
-    <div class="alert text-white text-center fw-bold rounded-0 py-3 mb-5" style="background-color: #fa8072;">
-      SOLO SERÁ VÁLIDA SU CITA SI EL TRÁMITE ES PERSONAL
-    </div>
-
-    <div class="text-center mb-5">
-      <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 2 de 4</span>
-      <h2 class="fw-bold text-dark mt-2">Seleccione su Trámite</h2>
-      <p class="text-muted fs-5">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
-    </div>
-
-    <div class="row justify-content-center mt-4">
-      <div class="col-lg-10">
-        
-        @for (cat of categorias; track cat.idCategoria) {
-          <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden" style="transition: all 0.3s ease;">
-            
-            <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center" 
-                 style="cursor: pointer; border-left: 6px solid #198754;"
-                 (click)="toggleCategoria(cat.idCategoria)">
-              
-              <div class="d-flex align-items-center">
-                <div class="bg-success-subtle text-success rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 55px; height: 55px; font-size: 1.6rem;">
-                  <i class="fa-solid {{ obtenerIconoCategoria(cat.nombreCategoria) }}"></i>
+    @if (pasoActual === 4) {
+      <div class="mb-4">
+        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso3()">
+          <i class="fa-solid fa-arrow-left me-2"></i> Atrás
+        </button>
+      </div>
+      
+      <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+          <h3 class="text-center fw-bold text-dark mb-4">Seleccione Fecha y Hora</h3>
+          
+          <div class="row">
+            <div class="col-md-6 mb-4">
+              <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <button class="btn btn-light rounded-circle" (click)="cambiarMes(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                  <h5 class="fw-bold mb-0 text-capitalize text-success">{{ mesActual | date:'MMMM yyyy' }}</h5>
+                  <button class="btn btn-light rounded-circle" (click)="cambiarMes(1)"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
-                <div>
-                  <h4 class="fw-bold text-dark mb-1 m-0">{{ cat.nombreCategoria }}</h4>
-                  <p class="text-muted small mb-0">{{ cat.descripcion }}</p>
+                
+                <div class="calendar-grid">
+                  @for (dia of diasSemana; track dia) {
+                    <div class="calendar-day-header">{{ dia }}</div>
+                  }
+                  
+                  @for (dia of diasMes; track $index) {
+                    <div class="calendar-day" 
+                         [class.empty]="dia.vacio" 
+                         [class.disabled]="!dia.vacio && !dia.activo" 
+                         [class.selected]="dia.seleccionado" 
+                         (click)="seleccionarFecha(dia)">
+                      {{ dia.dia }}
+                    </div>
+                  }
                 </div>
-              </div>
-              
-              <div class="text-success fs-4 transition-transform" [style.transform]="categoriaExpandida === cat.idCategoria ? 'rotate(180deg)' : 'rotate(0)'" style="transition: transform 0.3s;">
-                <i class="fa-solid fa-chevron-down"></i>
               </div>
             </div>
 
-            @if (categoriaExpandida === cat.idCategoria) {
-              <div class="card-body p-4 bg-light border-top">
-                @for (tramite of cat.tramites; track tramite.idTramite) {
-                  
-                  <div class="card border-0 shadow-sm rounded-4 mb-3">
-                    <div class="card-body p-4">
-                       <div class="row align-items-center">
-                          
-                          <div class="col-md-8 mb-3 mb-md-0">
-                            <h5 class="fw-bold text-dark mb-2">{{ tramite.nombreTramite }}</h5>
-                            <p class="text-muted small mb-3">{{ tramite.descripcion }}</p>
-                            
-                            <div class="bg-light p-3 rounded-3 border-start border-warning border-3 shadow-sm">
-                              <span class="d-block fw-bold text-dark small mb-2"><i class="fa-solid fa-circle-info text-warning me-2"></i>REQUISITOS:</span>
-                              <small class="text-secondary" style="white-space: pre-line;">{{ tramite.requisitos }}</small>
-                            </div>
-                          </div>
-                          
-                          <div class="col-md-4 text-md-end text-center d-flex flex-column justify-content-between h-100">
-                            <div class="mb-3 mt-2">
-                              <span class="badge bg-success text-white px-3 py-2 fs-5 rounded-pill mb-2 shadow-sm">${{ tramite.costo }}</span>
-                              <span class="d-block text-muted small fw-bold"><i class="fa-regular fa-clock me-1"></i> Aprox. {{ tramite.duracionMinutos }} mins</span>
-                            </div>
-                            
-                            <button class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm" (click)="seleccionarTramite(tramite)">
-                              Agendar Servicio <i class="fa-solid fa-arrow-right ms-2"></i>
-                            </button>
-                          </div>
-                          
-                       </div>
-                    </div>
+            <div class="col-md-6 mb-4">
+              <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+                <label class="form-label fw-bold text-secondary mb-3"><i class="fa-regular fa-clock me-2"></i>HORARIOS DISPONIBLES</label>
+                
+                @if (cargandoHorarios) {
+                  <div class="text-center mt-5 text-success">
+                    <div class="spinner-border" role="status"></div>
+                    <p class="mt-2 fw-bold">Consultando disponibilidad...</p>
                   </div>
-                  
+                } @else if (!fechaSeleccionada) {
+                  <div class="text-center text-muted mt-5">
+                    <i class="fa-regular fa-calendar-check fs-1 mb-2"></i>
+                    <p>Seleccione un día en el calendario para ver los horarios.</p>
+                  </div>
+                } @else if (horariosDisponibles.length === 0) {
+                  <div class="alert alert-danger text-center mt-3">
+                    <i class="fa-solid fa-triangle-exclamation mb-2 fs-4"></i><br>
+                    No hay citas disponibles para esta fecha.
+                  </div>
+                } @else {
+                  <div class="d-flex flex-wrap gap-2 justify-content-start">
+                    @for (hora of horariosDisponibles; track hora) {
+                      <button class="btn rounded-pill px-3 py-2 fw-bold" 
+                              [class.btn-success]="horaSeleccionada === hora" 
+                              [class.btn-outline-secondary]="horaSeleccionada !== hora" 
+                              (click)="horaSeleccionada = hora">
+                        {{ hora }}
+                      </button>
+                    }
+                  </div>
                 }
               </div>
-            }
-          </div>
-        }
-        
-      </div>
-    </div>
-  }
-
-  @if (pasoActual === 3) {
-    <div class="mb-4">
-      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso2()">
-        <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Trámite
-      </button>
-    </div>
-
-    <div class="text-center mb-5">
-      <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 3 de 4</span>
-      <h2 class="fw-bold text-dark mt-2">Datos del Solicitante</h2>
-      <p class="text-muted fs-5">Servicio: <strong class="text-success">{{ tramiteSeleccionado?.nombreTramite }}</strong></p>
-    </div>
-
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6">
-        <div class="card shadow border-0 rounded-4 p-4">
-          <p class="text-danger small mb-4">* Campos obligatorios</p>
-
-          <div class="row">
-            @if (esOtrosEstados) {
-              <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold small text-secondary">ESTADO DONDE RADICA *</label>
-                <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.estadoRegistro">
-                  <option value="" disabled selected>Seleccione estado...</option>
-                  @for (estado of estadosRepublica; track estado) {
-                    <option [value]="estado">{{ estado }}</option>
-                  }
-                </select>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
-                <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
-                  <option value="" disabled selected>Seleccione municipio...</option>
-                  @for (mun of municipiosRegistro; track mun) {
-                    <option [value]="mun">{{ mun }}</option>
-                  }
-                </select>
-              </div>
-            } @else {
-              <div class="col-12 mb-3">
-                <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
-                <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
-                  <option value="" disabled selected>Seleccione municipio...</option>
-                  @for (mun of municipiosRegistro; track mun) {
-                    <option [value]="mun">{{ mun }}</option>
-                  }
-                </select>
-              </div>
-            }
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-bold small text-secondary">NOMBRE COMPLETO *</label>
-            <input type="text" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.nombre">
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label fw-bold small text-secondary">CURP (18 CARACTERES)</label>
-            <input type="text" class="form-control form-control-lg rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18">
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold small text-secondary">CORREO ELECTRÓNICO *</label>
-              <input type="email" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.correo">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold small text-secondary">TELÉFONO *</label>
-              <input type="tel" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.telefono">
             </div>
           </div>
           
-          <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm" 
-                  (click)="irAPaso4()" 
-                  [disabled]="!ciudadano.nombre || !ciudadano.correo || !ciudadano.telefono || !ciudadano.municipioRegistro || (esOtrosEstados && !ciudadano.estadoRegistro)">
-            CONTINUAR A FECHA Y HORA <i class="fa-solid fa-calendar-days ms-2"></i>
+          <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" 
+                  (click)="confirmarCita()" 
+                  [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios">
+            CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
           </button>
         </div>
       </div>
-    </div>
-  }
+    }
 
-  @if (pasoActual === 4) {
-    <div class="mb-4">
-      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso3()">
-        <i class="fa-solid fa-arrow-left me-2"></i> Atrás
-      </button>
-    </div>
-    
-    <div class="row justify-content-center">
-      <div class="col-md-10 col-lg-8">
-        <h3 class="text-center fw-bold text-dark mb-4">Seleccione Fecha y Hora</h3>
-        
-        <div class="row">
-          <div class="col-md-6 mb-4">
-            <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
-              <div class="d-flex justify-content-between align-items-center mb-4">
-                <button class="btn btn-light rounded-circle" (click)="cambiarMes(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                <h5 class="fw-bold mb-0 text-capitalize text-success">{{ mesActual | date:'MMMM yyyy' }}</h5>
-                <button class="btn btn-light rounded-circle" (click)="cambiarMes(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    @if (pasoActual === 5) {
+      <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6 text-center p-5 card shadow-sm rounded-4 border-0">
+          <div class="icon-circle bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px; font-size: 2.5rem;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h2 class="text-success fw-bold">¡Cita Agendada!</h2>
+          <p class="text-muted mb-4">Su cita ha sido registrada correctamente en el sistema.</p>
+          
+          <div class="bg-light p-4 rounded-3 mb-4">
+            <p class="text-secondary small fw-bold mb-1">SU NÚMERO DE FOLIO ES</p>
+            <h1 class="display-5 fw-bold text-dark mb-0">{{ folioExito }}</h1>
+          </div>
+          
+          <button class="btn btn-dark rounded-pill px-5 py-3 fw-bold" (click)="regresarPaso1()">
+            FINALIZAR
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (pasoActual === 6) {
+      <div class="mb-4">
+        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
+          <i class="fa-solid fa-arrow-left me-2"></i> Volver al Inicio
+        </button>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0">
+          <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <h3 class="fw-bold text-dark mb-3">Consultar Cita</h3>
+          <p class="text-muted mb-4">Ingrese su número de folio (8 caracteres) para ver o cancelar su cita programada.</p>
+          
+          <input type="text" class="form-control form-control-lg rounded-3 mb-4 text-center text-uppercase fw-bold" placeholder="Ej: 3A4F9B2C" [(ngModel)]="folioBusqueda" maxlength="8">
+          
+          <button class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" (click)="buscarCitaPorFolio()" [disabled]="!folioBusqueda || folioBusqueda.length < 8 || cargandoConsulta">
+            @if (cargandoConsulta) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Buscando...
+            } @else {
+              BUSCAR CITA <i class="fa-solid fa-arrow-right ms-2"></i>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (pasoActual === 7) {
+      <div class="mb-4">
+        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="irABuscarCita()">
+          <i class="fa-solid fa-arrow-left me-2"></i> Buscar otro folio
+        </button>
+      </div>
+      
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card shadow border-0 rounded-4 p-0 overflow-hidden">
+            
+            <div class="bg-light p-4 border-bottom d-flex justify-content-between align-items-center">
+              <div>
+                <p class="text-secondary small fw-bold mb-1">FOLIO DE CITA</p>
+                <h3 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h3>
+                <span class="badge mt-2 fs-6 px-3 py-2" 
+                      [class.bg-success]="citaConsultada?.estatus === 'AGENDADA'" 
+                      [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
+                      [class.bg-secondary]="citaConsultada?.estatus !== 'AGENDADA' && citaConsultada?.estatus !== 'CANCELADA'">
+                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'AGENDADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'"></i> 
+                  ESTATUS: {{ citaConsultada?.estatus }}
+                </span>
               </div>
-              
-              <div class="calendar-grid">
-                @for (dia of diasSemana; track dia) {
-                  <div class="calendar-day-header">{{ dia }}</div>
-                }
-                
-                @for (dia of diasMes; track $index) {
-                  <div class="calendar-day" 
-                       [class.empty]="dia.vacio" 
-                       [class.disabled]="!dia.vacio && !dia.activo" 
-                       [class.selected]="dia.seleccionado" 
-                       (click)="seleccionarFecha(dia)">
-                    {{ dia.dia }}
-                  </div>
-                }
+              <div class="text-end">
+                <h2 class="fw-bold text-success mb-0">${{ citaConsultada?.costo }}</h2>
+                <small class="text-muted fw-bold">COSTO DEL TRÁMITE</small>
               </div>
             </div>
-          </div>
 
-          <div class="col-md-6 mb-4">
-            <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
-              <label class="form-label fw-bold text-secondary mb-3"><i class="fa-regular fa-clock me-2"></i>HORARIOS DISPONIBLES</label>
-              
-              @if (cargandoHorarios) {
-                <div class="text-center mt-5 text-success">
-                  <div class="spinner-border" role="status"></div>
-                  <p class="mt-2 fw-bold">Consultando disponibilidad...</p>
-                </div>
-              } @else if (!fechaSeleccionada) {
-                <div class="text-center text-muted mt-5">
-                  <i class="fa-regular fa-calendar-check fs-1 mb-2"></i>
-                  <p>Seleccione un día en el calendario para ver los horarios.</p>
-                </div>
-              } @else if (horariosDisponibles.length === 0) {
-                <div class="alert alert-danger text-center mt-3">
-                  <i class="fa-solid fa-triangle-exclamation mb-2 fs-4"></i><br>
-                  No hay citas disponibles para esta fecha.
-                </div>
-              } @else {
-                <div class="d-flex flex-wrap gap-2 justify-content-start">
-                  @for (hora of horariosDisponibles; track hora) {
-                    <button class="btn rounded-pill px-3 py-2 fw-bold" 
-                            [class.btn-success]="horaSeleccionada === hora" 
-                            [class.btn-outline-secondary]="horaSeleccionada !== hora" 
-                            (click)="horaSeleccionada = hora">
-                      {{ hora }}
-                    </button>
+            <div class="p-4">
+              <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-user me-2"></i> CIUDADANO</p>
+                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.ciudadano }}</p>
+                  @if (citaConsultada?.curp && !citaConsultada?.curp.includes('ENM')) {
+                    <small class="text-muted">CURP: {{ citaConsultada?.curp }}</small>
                   }
                 </div>
+                <div class="col-md-6 mb-3">
+                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-file-lines me-2"></i> TRÁMITE</p>
+                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.tramite }}</p>
+                  <small class="text-muted">Duración aprox: {{ citaConsultada?.duracion }} mins</small>
+                </div>
+              </div>
+              
+              <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-calendar-day me-2"></i> FECHA Y HORA</p>
+                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.fecha | date:'longDate' }}</p>
+                  <p class="mb-0 text-success fw-bold fs-4">{{ citaConsultada?.hora }} hrs</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-building me-2"></i> SEDE</p>
+                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.sede }}</p>
+                  <small class="text-muted">{{ citaConsultada?.direccion }}</small>
+                </div>
+              </div>
+              
+              @if (citaConsultada?.estatus === 'AGENDADA') {
+                <hr>
+                <div class="alert alert-danger mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm">
+                  <div class="mb-3 mb-md-0">
+                    <h6 class="fw-bold mb-1 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Desea cancelar su cita?</h6>
+                    <small class="text-dark">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
+                  </div>
+                  <button class="btn btn-danger rounded-pill fw-bold px-4 py-2 text-nowrap shadow-sm" (click)="cancelarCita()">
+                    <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
+                  </button>
+                </div>
+              }
+            </div>
+
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- PANTALLA 8: LOGIN PARA EMPLEADOS -->
+    @if (pasoActual === 8) {
+      <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+          <div class="card shadow-lg border-0 rounded-4 p-5 mt-4">
+            <div class="text-center mb-4">
+              <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 70px; height: 70px; font-size: 1.8rem;">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <h3 class="fw-bold text-dark">Acceso Autorizado</h3>
+              <p class="text-muted small">Portal exclusivo para personal administrativo y de ventanilla.</p>
+            </div>
+            
+            <form (ngSubmit)="iniciarSesion()">
+              <div class="mb-3">
+                <label class="form-label fw-bold small text-secondary">USUARIO</label>
+                <div class="input-group input-group-lg">
+                  <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
+                  <input type="text" class="form-control border-start-0 bg-light" [(ngModel)]="credenciales.username" name="username" placeholder="Ingrese su usuario" required>
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label fw-bold small text-secondary">CONTRASEÑA</label>
+                <div class="input-group input-group-lg">
+                  <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
+                  <input type="password" class="form-control border-start-0 bg-light" [(ngModel)]="credenciales.password" name="password" placeholder="••••••••" required>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold shadow-sm" [disabled]="cargandoLogin || !credenciales.username || !credenciales.password">
+                @if (cargandoLogin) {
+                  <span class="spinner-border spinner-border-sm me-2"></span> Verificando...
+                } @else {
+                  INICIAR SESIÓN <i class="fa-solid fa-right-to-bracket ms-2"></i>
+                }
+              </button>
+            </form>
+
+            <div class="text-center mt-4">
+              <button class="btn btn-link text-secondary text-decoration-none small" (click)="regresarPaso1()">
+                <i class="fa-solid fa-arrow-left me-1"></i> Regresar al Portal Ciudadano
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL DE ALERTAS -->
+    @if (mostrarAlerta) {
+      <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
+      
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1055; margin-top: 15vh;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
+            <div class="modal-body p-5">
+              <div class="mb-4">
+                @if (alertaIcono === 'success') {
+                  <i class="fa-solid fa-circle-check text-success" style="font-size: 4.5rem;"></i>
+                } @else if (alertaIcono === 'error') {
+                  <i class="fa-solid fa-circle-xmark text-danger" style="font-size: 4.5rem;"></i>
+                } @else if (alertaIcono === 'warning') {
+                  <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 4.5rem;"></i>
+                } @else {
+                  <i class="fa-solid fa-circle-info text-info" style="font-size: 4.5rem;"></i>
+                }
+              </div>
+              <h3 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h3>
+              <p class="text-muted fs-5 mb-4">{{ alertaMensaje }}</p>
+
+              @if (alertaTipo === 'confirmacion') {
+                <div class="d-flex justify-content-center gap-2">
+                  <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Regresar</button>
+                  <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Cancelar</button>
+                </div>
+              } @else {
+                <button class="btn btn-dark rounded-pill px-5 py-2 fw-bold w-100" (click)="cerrarAlerta()">Aceptar</button>
               }
             </div>
           </div>
         </div>
-        
-        <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" 
-                (click)="confirmarCita()" 
-                [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios">
-          CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
-        </button>
       </div>
-    </div>
-  }
+    }
 
-  @if (pasoActual === 5) {
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6 text-center p-5 card shadow-sm rounded-4 border-0">
-        <div class="icon-circle bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px; font-size: 2.5rem;">
-          <i class="fa-solid fa-check"></i>
-        </div>
-        <h2 class="text-success fw-bold">¡Cita Agendada!</h2>
-        <p class="text-muted mb-4">Su cita ha sido registrada correctamente en el sistema.</p>
-        
-        <div class="bg-light p-4 rounded-3 mb-4">
-          <p class="text-secondary small fw-bold mb-1">SU NÚMERO DE FOLIO ES</p>
-          <h1 class="display-5 fw-bold text-dark mb-0">{{ folioExito }}</h1>
-        </div>
-        
-        <button class="btn btn-dark rounded-pill px-5 py-3 fw-bold" (click)="regresarPaso1()">
-          FINALIZAR
-        </button>
-      </div>
-    </div>
-  }
-
-  @if (pasoActual === 6) {
-    <div class="mb-4">
-      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
-        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Inicio
-      </button>
-    </div>
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0">
-        <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem;">
-          <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
-        <h3 class="fw-bold text-dark mb-3">Consultar Cita</h3>
-        <p class="text-muted mb-4">Ingrese su número de folio (8 caracteres) para ver o cancelar su cita programada.</p>
-        
-        <input type="text" class="form-control form-control-lg rounded-3 mb-4 text-center text-uppercase fw-bold" placeholder="Ej: 3A4F9B2C" [(ngModel)]="folioBusqueda" maxlength="8">
-        
-        <button class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" (click)="buscarCitaPorFolio()" [disabled]="!folioBusqueda || folioBusqueda.length < 8 || cargandoConsulta">
-          @if (cargandoConsulta) {
-            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Buscando...
-          } @else {
-            BUSCAR CITA <i class="fa-solid fa-arrow-right ms-2"></i>
-          }
-        </button>
-      </div>
-    </div>
-  }
-
-  @if (pasoActual === 7) {
-    <div class="mb-4">
-      <button class="btn btn-outline-secondary rounded-pill px-4" (click)="irABuscarCita()">
-        <i class="fa-solid fa-arrow-left me-2"></i> Buscar otro folio
-      </button>
-    </div>
-    
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <div class="card shadow border-0 rounded-4 p-0 overflow-hidden">
-          
-          <div class="bg-light p-4 border-bottom d-flex justify-content-between align-items-center">
-            <div>
-              <p class="text-secondary small fw-bold mb-1">FOLIO DE CITA</p>
-              <h3 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h3>
-              <span class="badge mt-2 fs-6 px-3 py-2" 
-                    [class.bg-success]="citaConsultada?.estatus === 'AGENDADA'" 
-                    [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
-                    [class.bg-secondary]="citaConsultada?.estatus !== 'AGENDADA' && citaConsultada?.estatus !== 'CANCELADA'">
-                <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'AGENDADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'"></i> 
-                ESTATUS: {{ citaConsultada?.estatus }}
-              </span>
-            </div>
-            <div class="text-end">
-              <h2 class="fw-bold text-success mb-0">${{ citaConsultada?.costo }}</h2>
-              <small class="text-muted fw-bold">COSTO DEL TRÁMITE</small>
-            </div>
-          </div>
-
-          <div class="p-4">
-            <div class="row mb-4">
-              <div class="col-md-6 mb-3">
-                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-user me-2"></i> CIUDADANO</p>
-                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.ciudadano }}</p>
-                @if (citaConsultada?.curp && !citaConsultada?.curp.includes('ENM')) {
-                  <small class="text-muted">CURP: {{ citaConsultada?.curp }}</small>
-                }
-              </div>
-              <div class="col-md-6 mb-3">
-                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-file-lines me-2"></i> TRÁMITE</p>
-                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.tramite }}</p>
-                <small class="text-muted">Duración aprox: {{ citaConsultada?.duracion }} mins</small>
-              </div>
-            </div>
+    <!-- MODAL DE AVISO GLOBAL -->
+    @if (mostrarAvisoGlobal && avisoGlobal) {
+      <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
+      
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1065; margin-top: 5vh;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.4s ease; overflow: hidden;">
             
-            <div class="row mb-4">
-              <div class="col-md-6 mb-3">
-                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-calendar-day me-2"></i> FECHA Y HORA</p>
-                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.fecha | date:'longDate' }}</p>
-                <p class="mb-0 text-success fw-bold fs-4">{{ citaConsultada?.hora }} hrs</p>
-              </div>
-              <div class="col-md-6 mb-3">
-                <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-building me-2"></i> SEDE</p>
-                <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.sede }}</p>
-                <small class="text-muted">{{ citaConsultada?.direccion }}</small>
-              </div>
-            </div>
-            
-            @if (citaConsultada?.estatus === 'AGENDADA') {
-              <hr>
-              <div class="alert alert-danger mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm">
-                <div class="mb-3 mb-md-0">
-                  <h6 class="fw-bold mb-1 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Desea cancelar su cita?</h6>
-                  <small class="text-dark">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
+            @if (avisoGlobal.imagenUrl) {
+              <div class="modal-body p-0 position-relative">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3 bg-white" style="z-index: 1070; opacity: 0.8;" aria-label="Cerrar" (click)="cerrarAvisoGlobal()"></button>
+                <img [src]="avisoGlobal.imagenUrl" alt="Aviso Importante" class="img-fluid w-100">
+                <div class="p-4 bg-white">
+                    <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm w-100" style="max-width: 400px;" (click)="cerrarAvisoGlobal()">
+                      He leído y entendido <i class="fa-solid fa-check ms-2"></i>
+                    </button>
                 </div>
-                <button class="btn btn-danger rounded-pill fw-bold px-4 py-2 text-nowrap shadow-sm" (click)="cancelarCita()">
-                  <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
+              </div>
+            } @else {
+              <div class="modal-header border-0 bg-light justify-content-center pt-5 pb-3">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem;">
+                  <i class="fa-solid fa-bullhorn"></i>
+                </div>
+              </div>
+              <div class="modal-body px-5 pb-5 pt-2">
+                <h2 class="fw-bold text-dark mb-4">{{ avisoGlobal.titulo }}</h2>
+                <p class="text-secondary fs-5 mb-5" style="white-space: pre-line; line-height: 1.6;">
+                  {{ avisoGlobal.mensaje }}
+                </p>
+                <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm w-100" style="max-width: 400px;" (click)="cerrarAvisoGlobal()">
+                  He leído y entendido <i class="fa-solid fa-check ms-2"></i>
                 </button>
               </div>
             }
-          </div>
 
-        </div>
-      </div>
-    </div>
-  }
-
-  @if (mostrarAlerta) {
-    <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
-    
-    <div class="modal d-block text-center" tabindex="-1" style="z-index: 1055; margin-top: 15vh;">
-      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
-          <div class="modal-body p-5">
-            <div class="mb-4">
-              @if (alertaIcono === 'success') {
-                <i class="fa-solid fa-circle-check text-success" style="font-size: 4.5rem;"></i>
-              } @else if (alertaIcono === 'error') {
-                <i class="fa-solid fa-circle-xmark text-danger" style="font-size: 4.5rem;"></i>
-              } @else if (alertaIcono === 'warning') {
-                <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 4.5rem;"></i>
-              } @else {
-                <i class="fa-solid fa-circle-info text-info" style="font-size: 4.5rem;"></i>
-              }
-            </div>
-            <h3 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h3>
-            <p class="text-muted fs-5 mb-4">{{ alertaMensaje }}</p>
-
-            @if (alertaTipo === 'confirmacion') {
-              <div class="d-flex justify-content-center gap-2">
-                <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Regresar</button>
-                <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Cancelar</button>
-              </div>
-            } @else {
-              <button class="btn btn-dark rounded-pill px-5 py-2 fw-bold w-100" (click)="cerrarAlerta()">Aceptar</button>
-            }
           </div>
         </div>
       </div>
-    </div>
-  }
+    }
 
-  <!-- MODAL DE AVISO GLOBAL A LA CIUDADANÍA -->
-  @if (mostrarAvisoGlobal && avisoGlobal) {
-    <!-- Fondo oscuro con efecto de desenfoque (Blur) -->
-    <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
-    
-    <!-- Contenedor centrado -->
-    <div class="modal d-block text-center" tabindex="-1" style="z-index: 1065; margin-top: 5vh;">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.4s ease; overflow: hidden;">
-          
-          @if (avisoGlobal.imagenUrl) {
-            <!-- Diseño SI hay foto (Muestra la imagen completa estilo Flyer) -->
-            <div class="modal-body p-0 position-relative">
-              <button type="button" class="btn-close position-absolute top-0 end-0 m-3 bg-white" style="z-index: 1070; opacity: 0.8;" aria-label="Cerrar" (click)="cerrarAvisoGlobal()"></button>
+  </main>
+
+  <!-- NUEVO FOOTER CENTRADO -->
+  <footer class="bg-dark text-light pt-5 pb-3 mt-auto w-100">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          <div class="row mb-4">
+            
+            <div class="col-md-4 mb-4 mb-md-0">
+              <h6 class="text-uppercase fw-bold text-success mb-2">San Luis Potosí, S.L.P.</h6>
+              <p class="small text-light text-opacity-75 mb-4"><i class="fa-solid fa-location-dot me-2 text-success"></i> Bolívar #965, Zona Centro Histórico, 78000</p>
               
-              <img [src]="avisoGlobal.imagenUrl" alt="Aviso Importante" class="img-fluid w-100">
-              
-              <div class="p-4 bg-white">
-                  <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm w-100" style="max-width: 400px;" (click)="cerrarAvisoGlobal()">
-                    He leído y entendido <i class="fa-solid fa-check ms-2"></i>
-                  </button>
-              </div>
+              <h6 class="text-uppercase fw-bold text-success mb-2">Zona Huasteca</h6>
+              <p class="small text-light text-opacity-75 mb-0"><i class="fa-solid fa-location-dot me-2 text-success"></i> Ciudad Valles, S.L.P.</p>
             </div>
-          } @else {
-            <!-- Diseño SI NO hay foto (Muestra tu cuadro elegante de texto) -->
-            <div class="modal-header border-0 bg-light justify-content-center pt-5 pb-3">
-              <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem;">
-                <i class="fa-solid fa-bullhorn"></i>
+
+            <div class="col-md-4 mb-4 mb-md-0">
+              <h6 class="text-uppercase fw-bold text-success mb-2">Zona Altiplano</h6>
+              <p class="small text-light text-opacity-75 mb-4"><i class="fa-solid fa-location-dot me-2 text-success"></i> Matehuala, S.L.P.</p>
+              
+              <h6 class="text-uppercase fw-bold text-success mb-2">Zona Media</h6>
+              <p class="small text-light text-opacity-75 mb-0"><i class="fa-solid fa-location-dot me-2 text-success"></i> Rioverde, S.L.P.</p>
+            </div>
+
+            <div class="col-md-4 text-md-end text-start">
+              <div class="mb-3 d-flex justify-content-md-end align-items-center gap-3">
+                <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                  <i class="fa-brands fa-facebook-f fs-5 text-white"></i>
+                </span>
+                <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                  <i class="fa-brands fa-twitter fs-5 text-info"></i>
+                </span>
               </div>
+              <p class="small text-light text-opacity-75 mb-1">Registro Civil SLP | 01 444 812-80-50</p>
+              <p class="small text-light text-opacity-75 mb-0">direccionrcslp&#64;gmail.com</p>
             </div>
             
-            <div class="modal-body px-5 pb-5 pt-2">
-              <h2 class="fw-bold text-dark mb-4">{{ avisoGlobal.titulo }}</h2>
-              <p class="text-secondary fs-5 mb-5" style="white-space: pre-line; line-height: 1.6;">
-                {{ avisoGlobal.mensaje }}
-              </p>
-              
-              <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm w-100" style="max-width: 400px;" (click)="cerrarAvisoGlobal()">
-                He leído y entendido <i class="fa-solid fa-check ms-2"></i>
-              </button>
-            </div>
-          }
-
+          </div>
         </div>
       </div>
+      
+      <hr class="border-secondary opacity-50">
+      
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-light text-opacity-50">&copy; 2026 Registro Civil del Estado de San Luis Potosí.</small>
+        
+        <button class="btn btn-link text-light text-opacity-50 p-0 text-decoration-none small text-end" (click)="irALogin()" style="font-size: 0.8rem;">
+          Acceso Citas <i class="fa-solid fa-chevron-right ms-1"></i>
+        </button>
+      </div>
     </div>
-  }
+  </footer>
 
-</main>
+</div>

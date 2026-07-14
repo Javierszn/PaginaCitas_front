@@ -49,6 +49,11 @@ export class App implements OnInit {
   avisoGlobal: any = null;
   mostrarAvisoGlobal: boolean = false;
 
+  // --- VARIABLES PARA EL LOGIN (EMPLEADOS) ---
+  credenciales = { username: '', password: '' };
+  cargandoLogin: boolean = false;
+  usuarioSesion: any = null; // Guardará los datos del empleado logueado
+
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 
@@ -350,6 +355,40 @@ export class App implements OnInit {
       }
     );
   }
+
+  // --- MÉTODOS DEL LOGIN PARA EMPLEADOS ---
+  irALogin() {
+    this.pasoActual = 8;
+    this.credenciales = { username: '', password: '' };
+    history.pushState({ paso: 8 }, '', '');
+    this.cdr.detectChanges();
+  }
+
+  iniciarSesion() {
+    if (!this.credenciales.username || !this.credenciales.password) {
+      this.abrirAlerta('Atención', 'Por favor, ingrese su usuario y contraseña.', 'warning');
+      return;
+    }
+    
+    this.cargandoLogin = true;
+    
+    // Conexión real al backend C#
+    this.http.post('http://localhost:5076/api/Auth/login', this.credenciales).subscribe({
+      next: (res: any) => {
+        this.cargandoLogin = false;
+        this.usuarioSesion = res; // Guardamos los datos del empleado (Nombre, Rol, Sede)
+        this.pasoActual = 9; // Lo mandamos al Dashboard de empleados
+        history.pushState({ paso: 9 }, '', '');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.cargandoLogin = false;
+        this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Ocurrió un error al conectar con el servidor', 'error');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+  // ----------------------------------------
 
   regresarPaso1() { 
     this.pasoActual = 1; 
