@@ -13,10 +13,8 @@ import { FormsModule } from '@angular/forms';
 export class App implements OnInit {
   pasoActual: number = 1;
   sedes: any[] = [];
-  
   categorias: any[] = [];
   categoriaExpandida: number | null = null;
-  
   sedeSeleccionada: any = null;
   tramiteSeleccionado: any = null;
   esOtrosEstados: boolean = false;
@@ -30,7 +28,6 @@ export class App implements OnInit {
   horariosDisponibles: string[] = [];
   cargandoHorarios: boolean = false; 
   folioExito: string = '';
-
   folioBusqueda: string = '';
   citaConsultada: any = null;
   cargandoConsulta: boolean = false;
@@ -45,13 +42,17 @@ export class App implements OnInit {
   avisoGlobal: any = null;
   mostrarAvisoGlobal: boolean = false;
 
-  // --- VARIABLES PARA EL LOGIN Y DASHBOARD (EMPLEADOS) ---
+  // --- VARIABLES PARA EL LOGIN, DASHBOARD Y BITÁCORA ---
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
   usuarioSesion: any = null;
   citasDia: any[] = [];
-  fechaDashboard: string = new Date().toISOString().split('T')[0]; // Por defecto: Hoy
+  fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
+  
+  // Variables para la Bitácora
+  bitacoraLogs: any[] = [];
+  cargandoBitacora: boolean = false;
 
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
@@ -346,7 +347,7 @@ export class App implements OnInit {
     );
   }
 
-  // --- MÉTODOS DEL PANEL DE EMPLEADOS ---
+  // --- MÉTODOS DEL EMPLEADO / ADMIN ---
   irALogin() {
     this.pasoActual = 8;
     this.credenciales = { username: '', password: '' };
@@ -366,7 +367,7 @@ export class App implements OnInit {
         this.cargandoLogin = false;
         this.usuarioSesion = res;
         this.pasoActual = 9; 
-        this.cargarCitasDashboard(); // Carga inmediata
+        this.cargarCitasDashboard(); 
         history.pushState({ paso: 9 }, '', '');
         this.cdr.detectChanges();
       },
@@ -410,10 +411,59 @@ export class App implements OnInit {
     }).subscribe({
         next: (res: any) => {
             this.abrirAlerta('Éxito', res.mensaje, 'success');
-            this.cargarCitasDashboard(); // Refresca la tabla al instante
+            this.cargarCitasDashboard(); 
         },
         error: (err) => this.abrirAlerta('Error', 'No se pudo actualizar la cita.', 'error')
     });
+  }
+
+  // --- MÉTODOS EXCLUSIVOS DE AUDITORÍA (ADMIN) ---
+  irABitacora() {
+    this.pasoActual = 10;
+    this.cargarBitacora();
+    history.pushState({ paso: 10 }, '', '');
+    this.cdr.detectChanges();
+  }
+
+  regresarADashboard() {
+    this.pasoActual = 9;
+    history.pushState({ paso: 9 }, '', '');
+    this.cargarCitasDashboard();
+    this.cdr.detectChanges();
+  }
+
+  cargarBitacora() {
+    this.cargandoBitacora = true;
+    this.http.get('http://localhost:5076/api/Bitacora').subscribe({
+      next: (res: any) => {
+        this.bitacoraLogs = res;
+        this.cargandoBitacora = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.abrirAlerta('Error', 'No se pudo cargar la bitácora.', 'error');
+        this.cargandoBitacora = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  deshacerAccion(idBitacora: number) {
+    this.abrirConfirmacion(
+      '¿Deshacer este movimiento?', 
+      '¿Está completamente seguro de revertir este cambio a su estado anterior?', 
+      () => {
+        this.http.post(`http://localhost:5076/api/Bitacora/Deshacer/${idBitacora}`, this.usuarioSesion.idUsuario).subscribe({
+          next: (res: any) => {
+            this.abrirAlerta('Restaurado', res.mensaje, 'success');
+            this.cargarBitacora(); // Refrescar la tabla
+          },
+          error: (err) => {
+            this.abrirAlerta('Error', err.error.mensaje || 'No se pudo deshacer la acción.', 'error');
+          }
+        });
+      }
+    );
   }
 
   regresarPaso1() { 

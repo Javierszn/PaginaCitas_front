@@ -473,19 +473,24 @@
       </div>
     }
 
-    <!-- NUEVO PASO 9: DASHBOARD DE EMPLEADOS -->
+    <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
     @if (pasoActual === 9) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h3 class="fw-bold text-dark">Panel de Control: {{ usuarioSesion?.sede }}</h3>
-          <button class="btn btn-outline-danger" (click)="cerrarSesion()">Cerrar Sesión</button>
+          <div>
+            <!-- EL BOTÓN DE BITÁCORA SOLO LO VE EL ADMIN -->
+            @if (usuarioSesion?.rol === 'Administrador') {
+              <button class="btn btn-primary me-3" (click)="irABitacora()"><i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría</button>
+            }
+            <button class="btn btn-outline-danger" (click)="cerrarSesion()">Cerrar Sesión</button>
+          </div>
         </div>
 
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-body p-4">
             <h5 class="fw-bold mb-4">Gestión de Citas</h5>
             
-            <!-- FILTROS (Fecha y Búsqueda) -->
             <div class="row mb-4">
               <div class="col-md-4 mb-3 mb-md-0">
                 <label class="form-label fw-bold small text-secondary">Filtrar por Fecha</label>
@@ -527,13 +532,11 @@
                       </td>
                       <td>
                         @if (cita.estatus === 'AGENDADA') {
-                          <!-- Botón de Completar con confirmación -->
                           <button class="btn btn-sm btn-success me-2" 
                                   (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como COMPLETADA?', () => actualizarEstatusCita(cita.folio, 'COMPLETADA'))">
                             Completar <i class="fa-solid fa-check ms-1"></i>
                           </button>
                           
-                          <!-- Botón de No Asistió con confirmación -->
                           <button class="btn btn-sm btn-warning text-dark" 
                                   (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
                             No asistió <i class="fa-solid fa-xmark ms-1"></i>
@@ -555,6 +558,80 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- NUEVA PANTALLA 10: BITÁCORA DE AUDITORÍA -->
+    @if (pasoActual === 10) {
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="fw-bold text-dark">Bitácora de Movimientos</h3>
+          <button class="btn btn-outline-secondary" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-body p-4">
+            
+            @if (cargandoBitacora) {
+              <div class="text-center my-5 text-success">
+                <div class="spinner-border" role="status"></div>
+                <p class="mt-2 fw-bold">Cargando registros...</p>
+              </div>
+            } @else {
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" style="font-size: 0.9rem;">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Fecha / Hora</th>
+                      <th>Empleado</th>
+                      <th>Acción</th>
+                      <th>Folio / ID</th>
+                      <th>Valor Anterior</th>
+                      <th>Valor Nuevo</th>
+                      <th>Restaurar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (log of bitacoraLogs; track log.idBitacora) {
+                      <tr>
+                        <td class="text-nowrap">{{ log.fecha | date:'short' }}</td>
+                        <td class="fw-bold">{{ log.empleado }}</td>
+                        <td>
+                          <span class="badge" 
+                                [class.bg-info]="log.accion === 'UPDATE'"
+                                [class.bg-success]="log.accion === 'INSERT'"
+                                [class.bg-danger]="log.accion.includes('DESHACER')">
+                            {{ log.accion }}
+                          </span>
+                        </td>
+                        <td><span class="font-monospace text-primary">{{ log.registroId }}</span></td>
+                        <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
+                        <td class="text-success fw-bold">{{ log.valorNuevo || 'N/A' }}</td>
+                        <td class="text-center">
+                          <!-- Mostrar el botón Deshacer SOLO si fue un UPDATE que no sea ya un rollback -->
+                          @if (log.accion === 'UPDATE' && log.tabla === 'Citas') {
+                            <button class="btn btn-sm btn-danger" 
+                                    (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
+                              <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                          } @else {
+                            <i class="fa-solid fa-minus text-muted"></i>
+                          }
+                        </td>
+                      </tr>
+                    }
+                    @if (bitacoraLogs.length === 0) {
+                      <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No hay movimientos registrados.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
           </div>
         </div>
       </div>
@@ -584,7 +661,7 @@
 
               @if (alertaTipo === 'confirmacion') {
                 <div class="d-flex justify-content-center gap-2">
-                  <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Regresar</button>
+                  <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Cancelar</button>
                   <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
                 </div>
               } @else {
