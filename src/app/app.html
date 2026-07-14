@@ -1,4 +1,4 @@
-<!-- ENVOLTURA PRINCIPAL PARA MANTENER EL FOOTER ABAJO -->
+
 <div class="d-flex flex-column min-vh-100">
 
   <header class="bg-white border-bottom py-3 shadow-sm sticky-top">
@@ -424,7 +424,7 @@
       </div>
     }
 
-    <!-- PANTALLA 8: LOGIN PARA EMPLEADOS -->
+    
     @if (pasoActual === 8) {
       <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
@@ -472,8 +472,51 @@
         </div>
       </div>
     }
+    @if (pasoActual === 9) {
+    <div class="container mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-dark">Panel de Control: {{ usuarioSesion.sede }}</h3>
+        <button class="btn btn-outline-danger" (click)="regresarPaso1()">Cerrar Sesión</button>
+      </div>
 
-    <!-- MODAL DE ALERTAS -->
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-4">Citas para hoy</h5>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Ciudadano</th>
+                  <th>Trámite</th>
+                  <th>Estatus</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cita of citasDia; track cita.folio) {
+                  <tr>
+                    <td>{{ cita.hora }}</td>
+                    <td>{{ cita.ciudadano }}</td>
+                    <td>{{ cita.tramite }}</td>
+                    <td><span class="badge bg-primary">{{ cita.estatus }}</span></td>
+                    <td>
+                      @if (cita.estatus === 'AGENDADA') {
+                        <button class="btn btn-sm btn-success me-2" (click)="actualizarEstatusCita(cita.folio, 'COMPLETADA')">Completar</button>
+                        <button class="btn btn-sm btn-warning" (click)="actualizarEstatusCita(cita.folio, 'NO_ASISTIO')">No asistió</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+    
     @if (mostrarAlerta) {
       <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
       
@@ -509,7 +552,7 @@
       </div>
     }
 
-    <!-- MODAL DE AVISO GLOBAL -->
+    
     @if (mostrarAvisoGlobal && avisoGlobal) {
       <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
       
@@ -551,7 +594,7 @@
 
   </main>
 
-  <!-- NUEVO FOOTER CENTRADO -->
+  <!-- FOOTER -->
   <footer class="bg-dark text-light pt-5 pb-3 mt-auto w-100">
     <div class="container">
       <div class="row justify-content-center">
@@ -580,7 +623,7 @@
                   <i class="fa-brands fa-facebook-f fs-5 text-white"></i>
                 </span>
                 <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                  <i class="fa-brands fa-twitter fs-5 text-info"></i>
+                  <i class="fa-brands fa-x fs-5 text-info"></i>
                 </span>
               </div>
               <p class="small text-light text-opacity-75 mb-1">Registro Civil SLP | 01 444 812-80-50</p>

@@ -14,10 +14,10 @@ export class App implements OnInit {
   pasoActual: number = 1;
   sedes: any[] = [];
   
-  // --- VARIABLES DE JERARQUÍA ---
+ 
   categorias: any[] = [];
   categoriaExpandida: number | null = null;
-  // ------------------------------
+ 
   
   sedeSeleccionada: any = null;
   tramiteSeleccionado: any = null;
@@ -37,7 +37,7 @@ export class App implements OnInit {
   citaConsultada: any = null;
   cargandoConsulta: boolean = false;
 
-  // --- VARIABLES PARA ALERTAS BONITAS ---
+  
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
   alertaMensaje: string = '';
@@ -45,14 +45,14 @@ export class App implements OnInit {
   alertaTipo: 'alerta' | 'confirmacion' = 'alerta';
   accionConfirmacion: () => void = () => {};
 
-  // --- VARIABLES PARA EL AVISO GLOBAL ---
+  
   avisoGlobal: any = null;
   mostrarAvisoGlobal: boolean = false;
 
-  // --- VARIABLES PARA EL LOGIN (EMPLEADOS) ---
+ 
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
-  usuarioSesion: any = null; // Guardará los datos del empleado logueado
+  usuarioSesion: any = null; 
 
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
@@ -91,7 +91,7 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // --- FUNCIÓN PARA CARGAR EL AVISO GLOBAL ---
+  
   cargarAvisoGlobal() {
     this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
       next: (res: any) => {
@@ -110,7 +110,7 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // --- FUNCIÓN: ÍCONOS INTELIGENTES ---
+  
   obtenerIconoCategoria(nombre: string): string {
     const n = nombre.toLowerCase();
     if (n.includes('acta')) return 'fa-file-signature';
@@ -121,7 +121,7 @@ export class App implements OnInit {
     return 'fa-file-lines'; // Ícono por defecto
   }
 
-  // --- MÉTODOS DE ALERTAS ---
+  
   abrirAlerta(titulo: string, mensaje: string, icono: string = 'info') {
     this.alertaTitulo = titulo;
     this.alertaMensaje = mensaje;
@@ -144,7 +144,7 @@ export class App implements OnInit {
   cerrarAlerta() { this.mostrarAlerta = false; }
   ejecutarConfirmacion() { this.mostrarAlerta = false; this.accionConfirmacion(); }
 
-  // --- LIMPIEZA DE MEMORIA ---
+  
   limpiarFormulario() {
     this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
     this.fechaSeleccionada = '';
@@ -155,7 +155,7 @@ export class App implements OnInit {
     this.categoriaExpandida = null;
   }
 
-  // MÉTODO SEGURO DE SEDES
+  
   cargarSedes() {
     this.http.get('http://localhost:5076/api/Sedes').subscribe({
       next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); },
@@ -364,32 +364,56 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  iniciarSesion() {
+ iniciarSesion() {
     if (!this.credenciales.username || !this.credenciales.password) {
-      this.abrirAlerta('Atención', 'Por favor, ingrese su usuario y contraseña.', 'warning');
-      return;
+        this.abrirAlerta('Atención', 'Por favor, ingrese su usuario y contraseña.', 'warning');
+        return;
     }
     
     this.cargandoLogin = true;
     
-    // Conexión real al backend C#
     this.http.post('http://localhost:5076/api/Auth/login', this.credenciales).subscribe({
-      next: (res: any) => {
-        this.cargandoLogin = false;
-        this.usuarioSesion = res; // Guardamos los datos del empleado (Nombre, Rol, Sede)
-        this.pasoActual = 9; // Lo mandamos al Dashboard de empleados
-        history.pushState({ paso: 9 }, '', '');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.cargandoLogin = false;
-        this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Ocurrió un error al conectar con el servidor', 'error');
-        this.cdr.detectChanges();
-      }
+        next: (res: any) => {
+            this.cargandoLogin = false;
+            this.usuarioSesion = res;
+            this.pasoActual = 9; 
+            
+           
+            this.cargarCitasHoy(); 
+            
+            history.pushState({ paso: 9 }, '', '');
+            this.cdr.detectChanges();
+        },
+        error: (err) => {
+            this.cargandoLogin = false;
+            this.abrirAlerta('Acceso Denegado', 'Usuario o contraseña incorrectos.', 'error');
+            this.cdr.detectChanges();
+        }
     });
-  }
-  // ----------------------------------------
+}
+  
+citasDia: any[] = [];
 
+
+cargarCitasHoy() {
+    this.http.get(`http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}`).subscribe({
+      next: (res: any) => { this.citasDia = res; this.cdr.detectChanges(); },
+      error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error')
+    });
+}
+
+actualizarEstatusCita(folio: string, nuevoEstatus: string) {
+    this.http.put(`http://localhost:5076/api/Citas/${folio}/actualizarEstatus`, {
+        nuevoEstatus: nuevoEstatus,
+        idUsuarioInterno: this.usuarioSesion.idUsuario
+    }).subscribe({
+        next: () => {
+            this.abrirAlerta('Éxito', 'Estatus actualizado.', 'success');
+            this.cargarCitasHoy();
+        },
+        error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error')
+    });
+}
   regresarPaso1() { 
     this.pasoActual = 1; 
     this.sedeSeleccionada = null; 
