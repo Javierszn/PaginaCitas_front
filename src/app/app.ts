@@ -50,7 +50,6 @@ export class App implements OnInit {
   fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
   
-  // Variables para la Bitácora
   bitacoraLogs: any[] = [];
   cargandoBitacora: boolean = false;
 
@@ -75,13 +74,28 @@ export class App implements OnInit {
   ngOnInit() {
     this.cargarSedes();
     this.cargarAvisoGlobal();
-    history.replaceState({ paso: 1 }, '', '');
+    
+    // RECUPERACIÓN DE SESIÓN (Soluciona el problema de recargar la página con F5)
+    const sessionUser = sessionStorage.getItem('usuarioRC');
+    const sessionPaso = sessionStorage.getItem('pasoRC');
+    
+    if (sessionUser && sessionPaso) {
+      this.usuarioSesion = JSON.parse(sessionUser);
+      this.pasoActual = parseInt(sessionPaso, 10);
+      if (this.pasoActual === 9) this.cargarCitasDashboard();
+      if (this.pasoActual === 10) this.cargarBitacora();
+    } else {
+      history.replaceState({ paso: 1 }, '', '');
+    }
   }
 
   @HostListener('window:popstate', ['$event'])
   onPopState(event: any) {
     if (event.state && event.state.paso) {
       this.pasoActual = event.state.paso;
+      if (this.pasoActual === 9 || this.pasoActual === 10) {
+        sessionStorage.setItem('pasoRC', this.pasoActual.toString());
+      }
     } else {
       this.pasoActual = 1;
     }
@@ -366,6 +380,11 @@ export class App implements OnInit {
       next: (res: any) => {
         this.cargandoLogin = false;
         this.usuarioSesion = res;
+        
+        // Guardar Sesión en el navegador
+        sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion));
+        sessionStorage.setItem('pasoRC', '9');
+
         this.pasoActual = 9; 
         this.cargarCitasDashboard(); 
         history.pushState({ paso: 9 }, '', '');
@@ -381,11 +400,22 @@ export class App implements OnInit {
 
   cerrarSesion() {
     this.usuarioSesion = null;
+    sessionStorage.removeItem('usuarioRC');
+    sessionStorage.removeItem('pasoRC');
     this.regresarPaso1();
   }
 
+  // Se modificó para buscar globalmente si hay texto, ignorando la fecha
   cargarCitasDashboard() {
-    this.http.get(`http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}?fecha=${this.fechaDashboard}`).subscribe({
+    let url = `http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}`;
+    
+    if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) {
+      url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`;
+    } else {
+      url += `?fecha=${this.fechaDashboard}`;
+    }
+
+    this.http.get(url).subscribe({
       next: (res: any) => { 
         this.citasDia = res; 
         this.cdr.detectChanges(); 
@@ -394,14 +424,9 @@ export class App implements OnInit {
     });
   }
 
-  get citasFiltradas() {
-    if (!this.textoBusquedaDashboard) return this.citasDia;
-    const busqueda = this.textoBusquedaDashboard.toLowerCase();
-    return this.citasDia.filter(c => 
-      c.ciudadano.toLowerCase().includes(busqueda) || 
-      c.folio.toLowerCase().includes(busqueda) ||
-      (c.curp && c.curp.toLowerCase().includes(busqueda))
-    );
+  limpiarBusqueda() {
+    this.textoBusquedaDashboard = '';
+    this.cargarCitasDashboard();
   }
 
   actualizarEstatusCita(folio: string, nuevoEstatus: string) {
@@ -420,6 +445,7 @@ export class App implements OnInit {
   // --- MÉTODOS EXCLUSIVOS DE AUDITORÍA (ADMIN) ---
   irABitacora() {
     this.pasoActual = 10;
+    sessionStorage.setItem('pasoRC', '10');
     this.cargarBitacora();
     history.pushState({ paso: 10 }, '', '');
     this.cdr.detectChanges();
@@ -427,6 +453,7 @@ export class App implements OnInit {
 
   regresarADashboard() {
     this.pasoActual = 9;
+    sessionStorage.setItem('pasoRC', '9');
     history.pushState({ paso: 9 }, '', '');
     this.cargarCitasDashboard();
     this.cdr.detectChanges();
@@ -456,7 +483,7 @@ export class App implements OnInit {
         this.http.post(`http://localhost:5076/api/Bitacora/Deshacer/${idBitacora}`, this.usuarioSesion.idUsuario).subscribe({
           next: (res: any) => {
             this.abrirAlerta('Restaurado', res.mensaje, 'success');
-            this.cargarBitacora(); // Refrescar la tabla
+            this.cargarBitacora(); 
           },
           error: (err) => {
             this.abrirAlerta('Error', err.error.mensaje || 'No se pudo deshacer la acción.', 'error');
@@ -471,6 +498,7 @@ export class App implements OnInit {
     this.sedeSeleccionada = null; 
     this.categorias = []; 
     this.limpiarFormulario();
+    sessionStorage.removeItem('pasoRC'); // Limpiamos rastro
     history.pushState({ paso: 1 }, '', ''); 
     this.cdr.detectChanges(); 
   }

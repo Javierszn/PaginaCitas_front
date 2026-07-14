@@ -473,13 +473,12 @@
       </div>
     }
 
-    <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
+   <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
     @if (pasoActual === 9) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h3 class="fw-bold text-dark">Panel de Control: {{ usuarioSesion?.sede }}</h3>
           <div>
-            <!-- EL BOTÓN DE BITÁCORA SOLO LO VE EL ADMIN -->
             @if (usuarioSesion?.rol === 'Administrador') {
               <button class="btn btn-primary me-3" (click)="irABitacora()"><i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría</button>
             }
@@ -491,14 +490,22 @@
           <div class="card-body p-4">
             <h5 class="fw-bold mb-4">Gestión de Citas</h5>
             
-            <div class="row mb-4">
-              <div class="col-md-4 mb-3 mb-md-0">
-                <label class="form-label fw-bold small text-secondary">Filtrar por Fecha</label>
-                <input type="date" class="form-control form-control-lg" [(ngModel)]="fechaDashboard" (change)="cargarCitasDashboard()">
+            <!-- FILTROS (Fecha y Búsqueda Global) -->
+            <div class="row mb-4 bg-light p-3 rounded-3">
+              <div class="col-md-3 mb-3 mb-md-0">
+                <label class="form-label fw-bold small text-secondary">Filtrar por Día</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaDashboard" (change)="limpiarBusqueda()">
               </div>
-              <div class="col-md-8">
-                <label class="form-label fw-bold small text-secondary">Búsqueda Rápida</label>
-                <input type="text" class="form-control form-control-lg" placeholder="Escriba nombre, folio o CURP..." [(ngModel)]="textoBusquedaDashboard">
+              <div class="col-md-9">
+                <label class="form-label fw-bold small text-secondary">Búsqueda Global (Folio, Nombre o CURP)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
+                  <button class="btn btn-success" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  @if(textoBusquedaDashboard) {
+                    <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
+                  }
+                </div>
+                <small class="text-muted" style="font-size: 0.75rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
               </div>
             </div>
 
@@ -506,7 +513,7 @@
               <table class="table table-hover align-middle">
                 <thead class="table-light">
                   <tr>
-                    <th>Hora</th>
+                    <th>Fecha / Hora</th>
                     <th>Folio</th>
                     <th>Ciudadano</th>
                     <th>Trámite</th>
@@ -515,9 +522,13 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (cita of citasFiltradas; track cita.folio) {
+                  <!-- AHORA USAMOS citasDia DIRECTAMENTE, EL BACKEND HACE EL FILTRO -->
+                  @for (cita of citasDia; track cita.folio) {
                     <tr>
-                      <td class="fw-bold">{{ cita.hora }}</td>
+                      <td>
+                        <span class="d-block fw-bold">{{ cita.hora }}</span>
+                        <small class="text-muted">{{ cita.fechaStr }}</small>
+                      </td>
                       <td><span class="text-secondary small">{{ cita.folio }}</span></td>
                       <td>{{ cita.ciudadano }}</td>
                       <td>{{ cita.tramite }}</td>
@@ -532,14 +543,14 @@
                       </td>
                       <td>
                         @if (cita.estatus === 'AGENDADA') {
-                          <button class="btn btn-sm btn-success me-2" 
+                          <button class="btn btn-sm btn-success me-2" title="Marcar Completada"
                                   (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como COMPLETADA?', () => actualizarEstatusCita(cita.folio, 'COMPLETADA'))">
-                            Completar <i class="fa-solid fa-check ms-1"></i>
+                            <i class="fa-solid fa-check"></i>
                           </button>
                           
-                          <button class="btn btn-sm btn-warning text-dark" 
+                          <button class="btn btn-sm btn-warning text-dark" title="Marcar Inasistencia"
                                   (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
-                            No asistió <i class="fa-solid fa-xmark ms-1"></i>
+                            <i class="fa-solid fa-xmark"></i>
                           </button>
                         } @else {
                           <span class="text-muted small">Sin acciones</span>
@@ -547,7 +558,7 @@
                       </td>
                     </tr>
                   }
-                  @if (citasFiltradas.length === 0) {
+                  @if (citasDia.length === 0) {
                     <tr>
                       <td colspan="6" class="text-center py-4 text-muted">
                         <i class="fa-solid fa-folder-open fs-2 mb-2"></i><br>
