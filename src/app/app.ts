@@ -14,10 +14,8 @@ export class App implements OnInit {
   pasoActual: number = 1;
   sedes: any[] = [];
   
- 
   categorias: any[] = [];
   categoriaExpandida: number | null = null;
- 
   
   sedeSeleccionada: any = null;
   tramiteSeleccionado: any = null;
@@ -37,7 +35,6 @@ export class App implements OnInit {
   citaConsultada: any = null;
   cargandoConsulta: boolean = false;
 
-  
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
   alertaMensaje: string = '';
@@ -45,14 +42,16 @@ export class App implements OnInit {
   alertaTipo: 'alerta' | 'confirmacion' = 'alerta';
   accionConfirmacion: () => void = () => {};
 
-  
   avisoGlobal: any = null;
   mostrarAvisoGlobal: boolean = false;
 
- 
+  // --- VARIABLES PARA EL LOGIN Y DASHBOARD (EMPLEADOS) ---
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
-  usuarioSesion: any = null; 
+  usuarioSesion: any = null;
+  citasDia: any[] = [];
+  fechaDashboard: string = new Date().toISOString().split('T')[0]; // Por defecto: Hoy
+  textoBusquedaDashboard: string = '';
 
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
@@ -85,13 +84,11 @@ export class App implements OnInit {
     } else {
       this.pasoActual = 1;
     }
-    
     if (this.pasoActual === 2 && this.categorias.length === 0) this.cargarTramites();
     if (this.pasoActual === 4) this.generarCalendario();
     this.cdr.detectChanges();
   }
 
-  
   cargarAvisoGlobal() {
     this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
       next: (res: any) => {
@@ -101,7 +98,7 @@ export class App implements OnInit {
           this.cdr.detectChanges();
         }
       },
-      error: () => console.log('No hay avisos activos o hubo un error al cargar.')
+      error: () => console.log('No hay avisos activos.')
     });
   }
 
@@ -110,7 +107,6 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  
   obtenerIconoCategoria(nombre: string): string {
     const n = nombre.toLowerCase();
     if (n.includes('acta')) return 'fa-file-signature';
@@ -118,10 +114,9 @@ export class App implements OnInit {
     if (n.includes('anotaciones')) return 'fa-pen-clip';
     if (n.includes('constancia')) return 'fa-file-circle-check';
     if (n.includes('enmienda')) return 'fa-file-pen';
-    return 'fa-file-lines'; // Ícono por defecto
+    return 'fa-file-lines'; 
   }
 
-  
   abrirAlerta(titulo: string, mensaje: string, icono: string = 'info') {
     this.alertaTitulo = titulo;
     this.alertaMensaje = mensaje;
@@ -144,7 +139,6 @@ export class App implements OnInit {
   cerrarAlerta() { this.mostrarAlerta = false; }
   ejecutarConfirmacion() { this.mostrarAlerta = false; this.accionConfirmacion(); }
 
-  
   limpiarFormulario() {
     this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
     this.fechaSeleccionada = '';
@@ -155,7 +149,6 @@ export class App implements OnInit {
     this.categoriaExpandida = null;
   }
 
-  
   cargarSedes() {
     this.http.get('http://localhost:5076/api/Sedes').subscribe({
       next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); },
@@ -165,10 +158,7 @@ export class App implements OnInit {
 
   cargarTramites() {
     this.http.get('http://localhost:5076/api/Tramites').subscribe({
-      next: (datos: any) => { 
-        this.categorias = datos; 
-        this.cdr.detectChanges(); 
-      },
+      next: (datos: any) => { this.categorias = datos; this.cdr.detectChanges(); },
       error: (err) => console.error(err)
     });
   }
@@ -340,7 +330,7 @@ export class App implements OnInit {
   cancelarCita() {
     this.abrirConfirmacion(
       '¿Cancelar Cita?',
-      'Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo. Esta acción no se puede deshacer.',
+      'Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo.',
       () => {
         this.http.put(`http://localhost:5076/api/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
           next: (res: any) => {
@@ -356,7 +346,7 @@ export class App implements OnInit {
     );
   }
 
-  // --- MÉTODOS DEL LOGIN PARA EMPLEADOS ---
+  // --- MÉTODOS DEL PANEL DE EMPLEADOS ---
   irALogin() {
     this.pasoActual = 8;
     this.credenciales = { username: '', password: '' };
@@ -364,56 +354,68 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
- iniciarSesion() {
+  iniciarSesion() {
     if (!this.credenciales.username || !this.credenciales.password) {
-        this.abrirAlerta('Atención', 'Por favor, ingrese su usuario y contraseña.', 'warning');
-        return;
+      this.abrirAlerta('Atención', 'Por favor, ingrese su usuario y contraseña.', 'warning');
+      return;
     }
     
     this.cargandoLogin = true;
-    
     this.http.post('http://localhost:5076/api/Auth/login', this.credenciales).subscribe({
-        next: (res: any) => {
-            this.cargandoLogin = false;
-            this.usuarioSesion = res;
-            this.pasoActual = 9; 
-            
-           
-            this.cargarCitasHoy(); 
-            
-            history.pushState({ paso: 9 }, '', '');
-            this.cdr.detectChanges();
-        },
-        error: (err) => {
-            this.cargandoLogin = false;
-            this.abrirAlerta('Acceso Denegado', 'Usuario o contraseña incorrectos.', 'error');
-            this.cdr.detectChanges();
-        }
+      next: (res: any) => {
+        this.cargandoLogin = false;
+        this.usuarioSesion = res;
+        this.pasoActual = 9; 
+        this.cargarCitasDashboard(); // Carga inmediata
+        history.pushState({ paso: 9 }, '', '');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.cargandoLogin = false;
+        this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Usuario o contraseña incorrectos.', 'error');
+        this.cdr.detectChanges();
+      }
     });
-}
-  
-citasDia: any[] = [];
+  }
 
+  cerrarSesion() {
+    this.usuarioSesion = null;
+    this.regresarPaso1();
+  }
 
-cargarCitasHoy() {
-    this.http.get(`http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}`).subscribe({
-      next: (res: any) => { this.citasDia = res; this.cdr.detectChanges(); },
+  cargarCitasDashboard() {
+    this.http.get(`http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}?fecha=${this.fechaDashboard}`).subscribe({
+      next: (res: any) => { 
+        this.citasDia = res; 
+        this.cdr.detectChanges(); 
+      },
       error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error')
     });
-}
+  }
 
-actualizarEstatusCita(folio: string, nuevoEstatus: string) {
+  get citasFiltradas() {
+    if (!this.textoBusquedaDashboard) return this.citasDia;
+    const busqueda = this.textoBusquedaDashboard.toLowerCase();
+    return this.citasDia.filter(c => 
+      c.ciudadano.toLowerCase().includes(busqueda) || 
+      c.folio.toLowerCase().includes(busqueda) ||
+      (c.curp && c.curp.toLowerCase().includes(busqueda))
+    );
+  }
+
+  actualizarEstatusCita(folio: string, nuevoEstatus: string) {
     this.http.put(`http://localhost:5076/api/Citas/${folio}/actualizarEstatus`, {
         nuevoEstatus: nuevoEstatus,
         idUsuarioInterno: this.usuarioSesion.idUsuario
     }).subscribe({
-        next: () => {
-            this.abrirAlerta('Éxito', 'Estatus actualizado.', 'success');
-            this.cargarCitasHoy();
+        next: (res: any) => {
+            this.abrirAlerta('Éxito', res.mensaje, 'success');
+            this.cargarCitasDashboard(); // Refresca la tabla al instante
         },
-        error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error')
+        error: (err) => this.abrirAlerta('Error', 'No se pudo actualizar la cita.', 'error')
     });
-}
+  }
+
   regresarPaso1() { 
     this.pasoActual = 1; 
     this.sedeSeleccionada = null; 

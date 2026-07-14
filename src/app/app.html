@@ -1,4 +1,4 @@
-
+<!-- ENVOLTURA PRINCIPAL PARA MANTENER EL FOOTER ABAJO -->
 <div class="d-flex flex-column min-vh-100">
 
   <header class="bg-white border-bottom py-3 shadow-sm sticky-top">
@@ -424,7 +424,7 @@
       </div>
     }
 
-    
+    <!-- PANTALLA 8: LOGIN PARA EMPLEADOS -->
     @if (pasoActual === 8) {
       <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
@@ -472,51 +472,95 @@
         </div>
       </div>
     }
-    @if (pasoActual === 9) {
-    <div class="container mt-4">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold text-dark">Panel de Control: {{ usuarioSesion.sede }}</h3>
-        <button class="btn btn-outline-danger" (click)="regresarPaso1()">Cerrar Sesión</button>
-      </div>
 
-      <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body p-4">
-          <h5 class="fw-bold mb-4">Citas para hoy</h5>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Hora</th>
-                  <th>Ciudadano</th>
-                  <th>Trámite</th>
-                  <th>Estatus</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (cita of citasDia; track cita.folio) {
+    <!-- NUEVO PASO 9: DASHBOARD DE EMPLEADOS -->
+    @if (pasoActual === 9) {
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="fw-bold text-dark">Panel de Control: {{ usuarioSesion?.sede }}</h3>
+          <button class="btn btn-outline-danger" (click)="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-body p-4">
+            <h5 class="fw-bold mb-4">Gestión de Citas</h5>
+            
+            <!-- FILTROS (Fecha y Búsqueda) -->
+            <div class="row mb-4">
+              <div class="col-md-4 mb-3 mb-md-0">
+                <label class="form-label fw-bold small text-secondary">Filtrar por Fecha</label>
+                <input type="date" class="form-control form-control-lg" [(ngModel)]="fechaDashboard" (change)="cargarCitasDashboard()">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-bold small text-secondary">Búsqueda Rápida</label>
+                <input type="text" class="form-control form-control-lg" placeholder="Escriba nombre, folio o CURP..." [(ngModel)]="textoBusquedaDashboard">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
                   <tr>
-                    <td>{{ cita.hora }}</td>
-                    <td>{{ cita.ciudadano }}</td>
-                    <td>{{ cita.tramite }}</td>
-                    <td><span class="badge bg-primary">{{ cita.estatus }}</span></td>
-                    <td>
-                      @if (cita.estatus === 'AGENDADA') {
-                        <button class="btn btn-sm btn-success me-2" (click)="actualizarEstatusCita(cita.folio, 'COMPLETADA')">Completar</button>
-                        <button class="btn btn-sm btn-warning" (click)="actualizarEstatusCita(cita.folio, 'NO_ASISTIO')">No asistió</button>
-                      }
-                    </td>
+                    <th>Hora</th>
+                    <th>Folio</th>
+                    <th>Ciudadano</th>
+                    <th>Trámite</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
                   </tr>
-                }
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @for (cita of citasFiltradas; track cita.folio) {
+                    <tr>
+                      <td class="fw-bold">{{ cita.hora }}</td>
+                      <td><span class="text-secondary small">{{ cita.folio }}</span></td>
+                      <td>{{ cita.ciudadano }}</td>
+                      <td>{{ cita.tramite }}</td>
+                      <td>
+                        <span class="badge" 
+                              [class.bg-primary]="cita.estatus === 'AGENDADA'"
+                              [class.bg-success]="cita.estatus === 'COMPLETADA'"
+                              [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
+                              [class.bg-danger]="cita.estatus === 'CANCELADA'">
+                          {{ cita.estatus }}
+                        </span>
+                      </td>
+                      <td>
+                        @if (cita.estatus === 'AGENDADA') {
+                          <!-- Botón de Completar con confirmación -->
+                          <button class="btn btn-sm btn-success me-2" 
+                                  (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como COMPLETADA?', () => actualizarEstatusCita(cita.folio, 'COMPLETADA'))">
+                            Completar <i class="fa-solid fa-check ms-1"></i>
+                          </button>
+                          
+                          <!-- Botón de No Asistió con confirmación -->
+                          <button class="btn btn-sm btn-warning text-dark" 
+                                  (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
+                            No asistió <i class="fa-solid fa-xmark ms-1"></i>
+                          </button>
+                        } @else {
+                          <span class="text-muted small">Sin acciones</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @if (citasFiltradas.length === 0) {
+                    <tr>
+                      <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-folder-open fs-2 mb-2"></i><br>
+                        No hay citas encontradas para los filtros seleccionados.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  }
+    }
 
-    
+    <!-- MODAL DE ALERTAS -->
     @if (mostrarAlerta) {
       <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
       
@@ -541,7 +585,7 @@
               @if (alertaTipo === 'confirmacion') {
                 <div class="d-flex justify-content-center gap-2">
                   <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Regresar</button>
-                  <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Cancelar</button>
+                  <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
                 </div>
               } @else {
                 <button class="btn btn-dark rounded-pill px-5 py-2 fw-bold w-100" (click)="cerrarAlerta()">Aceptar</button>
@@ -552,7 +596,7 @@
       </div>
     }
 
-    
+    <!-- MODAL DE AVISO GLOBAL -->
     @if (mostrarAvisoGlobal && avisoGlobal) {
       <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
       
@@ -594,7 +638,7 @@
 
   </main>
 
-  <!-- FOOTER -->
+  <!-- FOOTER CENTRADO -->
   <footer class="bg-dark text-light pt-5 pb-3 mt-auto w-100">
     <div class="container">
       <div class="row justify-content-center">
@@ -623,7 +667,7 @@
                   <i class="fa-brands fa-facebook-f fs-5 text-white"></i>
                 </span>
                 <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                  <i class="fa-brands fa-x fs-5 text-info"></i>
+                  <i class="fa-brands fa-twitter fs-5 text-info"></i>
                 </span>
               </div>
               <p class="small text-light text-opacity-75 mb-1">Registro Civil SLP | 01 444 812-80-50</p>
