@@ -1,48 +1,49 @@
-<!-- ENVOLTURA PRINCIPAL PARA MANTENER EL FOOTER ABAJO -->
-<div class="d-flex flex-column min-vh-100">
+<div class="d-flex flex-column min-vh-100 bg-white">
 
-  <header class="bg-white border-bottom py-3 shadow-sm sticky-top">
-    <div class="container d-flex justify-content-between align-items-center">
+  <!-- ENCABEZADO -->
+  <header class="bg-white sticky-top shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center py-2">
       <div class="d-flex align-items-center">
-        <img src="https://slp.gob.mx/secult/Imagenes/Logotipo%20Gobierno%20del%20Estado%202021-2027.png" alt="Logo SLP" height="60" class="me-3">
-        <div class="d-none d-md-block">
-          <h5 class="mb-0 text-success fw-bold">DIRECCIÓN DEL REGISTRO CIVIL</h5>
-          <small class="text-secondary">Gobierno del Estado de San Luis Potosí</small>
-        </div>
+        <!-- Logo Oficial -->
+        <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-verde.png" alt="Gobierno del Estado SLP" style="height: 3.5rem; object-fit: contain;">
       </div>
-      <button class="btn btn-outline-success rounded-pill fw-bold shadow-sm" (click)="irABuscarCita()">
+      
+      <button class="btn rounded-pill fw-semibold px-4" style="color: #232323; border: 1px solid #232323; background: transparent; font-size: 0.85rem;" (click)="irABuscarCita()">
         <i class="fa-solid fa-magnifying-glass me-2"></i> Consultar Cita
       </button>
     </div>
   </header>
 
-  <main class="container my-5 flex-grow-1">
+  <main class="container my-5 flex-grow-1 bg-white">
 
     @if (pasoActual === 1) {
       <div class="text-center mb-5">
-        <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 1 de 4</span>
-        <h2 class="fw-bold text-dark mt-2">Agende su Cita en Línea</h2>
-        <p class="text-muted fs-5">Seleccione la oficina para realizar su trámite</p>
+        <!-- APLICAMOS LA LÍNEA VERDE AL TÍTULO -->
+        <h3 class="fw-bold text-dark mt-2 green-line">Agende su Cita en Línea</h3>
+        <p class="text-secondary mt-3" style="font-size: 0.9rem;">Seleccione la oficina para realizar su trámite</p>
       </div>
 
       <div class="row justify-content-center mt-4">
         @for (sede of sedes; track sede.idSede) {
           <div class="col-md-5 col-lg-4 m-3">
-            <div class="card h-100 shadow-sm border-0 rounded-4 sede-card" (click)="seleccionarSede(sede)" style="cursor: pointer; transition: all 0.3s ease;">
+            <div class="card h-100 shadow-sm border-0 sede-card" (click)="seleccionarSede(sede)">
               <div class="card-body text-center p-4">
-                <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px; font-size: 1.8rem;">
-                  <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building-flag]="!sede.nombre.includes('Otros')"></i>
+                
+                <div class="icon-circle rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px; font-size: 1.3rem;">
+                  <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building]="!sede.nombre.includes('Otros')"></i>
                 </div>
-                <h4 class="card-title fw-bold text-dark mb-1">{{ sede.nombre }}</h4>
+                
+                <h6 class="card-title fw-bold mb-1 card-text-color">{{ sede.nombre }}</h6>
                 
                 @if (sede.direccion) {
-                  <div class="text-secondary text-start bg-light p-3 rounded-3 mt-3" style="font-size: 0.85rem; line-height: 1.4;">
-                    <i class="fa-solid fa-location-dot me-1 text-success"></i> {{ sede.direccion }}
+                  <div class="text-start p-3 rounded-3 mt-3 bg-light" style="font-size: 0.75rem; line-height: 1.5;">
+                    <i class="fa-solid fa-location-dot me-1 card-icon-location"></i> 
+                    <span class="card-subtext-color">{{ sede.direccion }}</span>
                   </div>
                 }
               </div>
               <div class="card-footer bg-transparent border-0 text-center pb-4">
-                <span class="text-success fw-bold small">Seleccionar <i class="fa-solid fa-arrow-right ms-1"></i></span>
+                <span class="fw-bold small card-footer-text" style="font-size: 0.8rem;">Seleccionar <i class="fa-solid fa-arrow-right ms-1"></i></span>
               </div>
             </div>
           </div>
@@ -52,71 +53,71 @@
 
     @if (pasoActual === 2) {
       <div class="mb-4">
-        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
+        <button class="btn btn-outline-secondary rounded-pill px-4" style="font-size: 0.85rem;" (click)="regresarPaso1()">
           <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Oficina
         </button>
       </div>
 
-      <div class="alert text-white text-center fw-bold rounded-0 py-3 mb-5" style="background-color: #fa8072;">
+      <div class="alert text-white text-center fw-bold rounded-3 py-3 mb-5 shadow-sm" style="background-color: #E60064;">
         SOLO SERÁ VÁLIDA SU CITA SI EL TRÁMITE ES PERSONAL
       </div>
 
       <div class="text-center mb-5">
         <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 2 de 4</span>
-        <h2 class="fw-bold text-dark mt-2">Seleccione su Trámite</h2>
-        <p class="text-muted fs-5">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
+        <h3 class="fw-bold text-dark mt-2 green-line">Seleccione su Trámite</h3>
+        <p class="text-secondary mt-3" style="font-size: 0.9rem;">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
       </div>
 
       <div class="row justify-content-center mt-4">
         <div class="col-lg-10">
           
           @for (cat of categorias; track cat.idCategoria) {
-            <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden" style="transition: all 0.3s ease;">
+            <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden bg-white" style="border: 1px solid #f4f4f4 !important; transition: all 0.3s ease;">
               
               <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center" 
-                   style="cursor: pointer; border-left: 6px solid #198754;"
+                   style="cursor: pointer; border-left: 6px solid #055A1C;"
                    (click)="toggleCategoria(cat.idCategoria)">
                 
                 <div class="d-flex align-items-center">
-                  <div class="bg-success-subtle text-success rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 55px; height: 55px; font-size: 1.6rem;">
+                  <div class="text-success rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 50px; height: 50px; font-size: 1.4rem; background-color: #D9E8D5;">
                     <i class="fa-solid {{ obtenerIconoCategoria(cat.nombreCategoria) }}"></i>
                   </div>
                   <div>
-                    <h4 class="fw-bold text-dark mb-1 m-0">{{ cat.nombreCategoria }}</h4>
-                    <p class="text-muted small mb-0">{{ cat.descripcion }}</p>
+                    <h6 class="fw-bold text-dark mb-1 m-0">{{ cat.nombreCategoria }}</h6>
+                    <p class="text-muted small mb-0" style="font-size: 0.8rem;">{{ cat.descripcion }}</p>
                   </div>
                 </div>
                 
-                <div class="text-success fs-4 transition-transform" [style.transform]="categoriaExpandida === cat.idCategoria ? 'rotate(180deg)' : 'rotate(0)'" style="transition: transform 0.3s;">
+                <div class="text-success fs-5 transition-transform" [style.transform]="categoriaExpandida === cat.idCategoria ? 'rotate(180deg)' : 'rotate(0)'" style="transition: transform 0.3s;">
                   <i class="fa-solid fa-chevron-down"></i>
                 </div>
               </div>
 
               @if (categoriaExpandida === cat.idCategoria) {
-                <div class="card-body p-4 bg-light border-top">
+                <div class="card-body p-4 border-top" style="background-color: #fafafa;">
                   @for (tramite of cat.tramites; track tramite.idTramite) {
                     
-                    <div class="card border-0 shadow-sm rounded-4 mb-3">
+                    <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white" style="border: 1px solid #f4f4f4 !important;">
                       <div class="card-body p-4">
                          <div class="row align-items-center">
                             
                             <div class="col-md-8 mb-3 mb-md-0">
-                              <h5 class="fw-bold text-dark mb-2">{{ tramite.nombreTramite }}</h5>
-                              <p class="text-muted small mb-3">{{ tramite.descripcion }}</p>
+                              <h6 class="fw-bold text-dark mb-2">{{ tramite.nombreTramite }}</h6>
+                              <p class="text-muted mb-3" style="font-size: 0.85rem;">{{ tramite.descripcion }}</p>
                               
-                              <div class="bg-light p-3 rounded-3 border-start border-warning border-3 shadow-sm">
-                                <span class="d-block fw-bold text-dark small mb-2"><i class="fa-solid fa-circle-info text-warning me-2"></i>REQUISITOS:</span>
-                                <small class="text-secondary" style="white-space: pre-line;">{{ tramite.requisitos }}</small>
+                              <div class="p-3 rounded-3 border-start border-3 shadow-sm" style="background-color: #fdfdfd; border-color: #76B82A !important;">
+                                <span class="d-block fw-bold text-dark mb-2" style="font-size: 0.75rem;"><i class="fa-solid fa-circle-info me-2" style="color: #76B82A;"></i>REQUISITOS:</span>
+                                <small class="text-secondary" style="white-space: pre-line; font-size: 0.75rem;">{{ tramite.requisitos }}</small>
                               </div>
                             </div>
                             
                             <div class="col-md-4 text-md-end text-center d-flex flex-column justify-content-between h-100">
                               <div class="mb-3 mt-2">
-                                <span class="badge bg-success text-white px-3 py-2 fs-5 rounded-pill mb-2 shadow-sm">${{ tramite.costo }}</span>
-                                <span class="d-block text-muted small fw-bold"><i class="fa-regular fa-clock me-1"></i> Aprox. {{ tramite.duracionMinutos }} mins</span>
+                                <span class="badge bg-success text-white px-3 py-2 fs-6 rounded-pill mb-2 shadow-sm">${{ tramite.costo }}</span>
+                                <span class="d-block text-muted fw-semibold" style="font-size: 0.75rem;"><i class="fa-regular fa-clock me-1"></i> Aprox. {{ tramite.duracionMinutos }} mins</span>
                               </div>
                               
-                              <button class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm" (click)="seleccionarTramite(tramite)">
+                              <button class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm" style="font-size: 0.85rem;" (click)="seleccionarTramite(tramite)">
                                 Agendar Servicio <i class="fa-solid fa-arrow-right ms-2"></i>
                               </button>
                             </div>
@@ -137,27 +138,27 @@
 
     @if (pasoActual === 3) {
       <div class="mb-4">
-        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso2()">
+        <button class="btn btn-outline-secondary rounded-pill px-4" style="font-size: 0.85rem;" (click)="regresarPaso2()">
           <i class="fa-solid fa-arrow-left me-2"></i> Cambiar Trámite
         </button>
       </div>
 
       <div class="text-center mb-5">
         <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 3 de 4</span>
-        <h2 class="fw-bold text-dark mt-2">Datos del Solicitante</h2>
-        <p class="text-muted fs-5">Servicio: <strong class="text-success">{{ tramiteSeleccionado?.nombreTramite }}</strong></p>
+        <h3 class="fw-bold text-dark mt-2 green-line">Datos del Solicitante</h3>
+        <p class="text-secondary mt-3" style="font-size: 0.9rem;">Servicio: <strong class="text-success">{{ tramiteSeleccionado?.nombreTramite }}</strong></p>
       </div>
 
       <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-          <div class="card shadow border-0 rounded-4 p-4">
-            <p class="text-danger small mb-4">* Campos obligatorios</p>
+          <div class="card shadow-sm border-0 rounded-4 p-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+            <p class="mb-4 fw-bold" style="color: #E60064 !important; font-size: 0.75rem;">* Campos obligatorios</p>
 
             <div class="row">
               @if (esOtrosEstados) {
                 <div class="col-md-6 mb-3">
-                  <label class="form-label fw-bold small text-secondary">ESTADO DONDE RADICA *</label>
-                  <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.estadoRegistro">
+                  <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">ESTADO DONDE RADICA *</label>
+                  <select class="form-select rounded-3" [(ngModel)]="ciudadano.estadoRegistro" style="font-size: 0.9rem;">
                     <option value="" disabled selected>Seleccione estado...</option>
                     @for (estado of estadosRepublica; track estado) {
                       <option [value]="estado">{{ estado }}</option>
@@ -165,8 +166,8 @@
                   </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
-                  <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
+                  <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">MUNICIPIO DE REGISTRO *</label>
+                  <select class="form-select rounded-3" [(ngModel)]="ciudadano.municipioRegistro" style="font-size: 0.9rem;">
                     <option value="" disabled selected>Seleccione municipio...</option>
                     @for (mun of municipiosRegistro; track mun) {
                       <option [value]="mun">{{ mun }}</option>
@@ -175,8 +176,8 @@
                 </div>
               } @else {
                 <div class="col-12 mb-3">
-                  <label class="form-label fw-bold small text-secondary">SELECCIONA MUNICIPIO DE REGISTRO DEL ACTA *</label>
-                  <select class="form-select form-select-lg rounded-3" [(ngModel)]="ciudadano.municipioRegistro">
+                  <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">MUNICIPIO DE REGISTRO DEL ACTA *</label>
+                  <select class="form-select rounded-3" [(ngModel)]="ciudadano.municipioRegistro" style="font-size: 0.9rem;">
                     <option value="" disabled selected>Seleccione municipio...</option>
                     @for (mun of municipiosRegistro; track mun) {
                       <option [value]="mun">{{ mun }}</option>
@@ -187,27 +188,27 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-bold small text-secondary">NOMBRE COMPLETO *</label>
-              <input type="text" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.nombre">
+              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">NOMBRE COMPLETO *</label>
+              <input type="text" class="form-control rounded-3" [(ngModel)]="ciudadano.nombre" style="font-size: 0.9rem;">
             </div>
             
             <div class="mb-3">
-              <label class="form-label fw-bold small text-secondary">CURP (18 CARACTERES)</label>
-              <input type="text" class="form-control form-control-lg rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18">
+              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CURP (18 CARACTERES)</label>
+              <input type="text" class="form-control rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18" style="font-size: 0.9rem;">
             </div>
             
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold small text-secondary">CORREO ELECTRÓNICO *</label>
-                <input type="email" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.correo">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CORREO ELECTRÓNICO *</label>
+                <input type="email" class="form-control rounded-3" [(ngModel)]="ciudadano.correo" style="font-size: 0.9rem;">
               </div>
               <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold small text-secondary">TELÉFONO *</label>
-                <input type="tel" class="form-control form-control-lg rounded-3" [(ngModel)]="ciudadano.telefono">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">TELÉFONO *</label>
+                <input type="tel" class="form-control rounded-3" [(ngModel)]="ciudadano.telefono" style="font-size: 0.9rem;">
               </div>
             </div>
             
-            <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm" 
+            <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm" style="font-size: 0.9rem;"
                     (click)="irAPaso4()" 
                     [disabled]="!ciudadano.nombre || !ciudadano.correo || !ciudadano.telefono || !ciudadano.municipioRegistro || (esOtrosEstados && !ciudadano.estadoRegistro)">
               CONTINUAR A FECHA Y HORA <i class="fa-solid fa-calendar-days ms-2"></i>
@@ -219,27 +220,27 @@
 
     @if (pasoActual === 4) {
       <div class="mb-4">
-        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso3()">
+        <button class="btn btn-outline-secondary rounded-pill px-4" style="font-size: 0.85rem;" (click)="regresarPaso3()">
           <i class="fa-solid fa-arrow-left me-2"></i> Atrás
         </button>
       </div>
       
       <div class="row justify-content-center">
         <div class="col-md-10 col-lg-8">
-          <h3 class="text-center fw-bold text-dark mb-4">Seleccione Fecha y Hora</h3>
+          <h3 class="text-center fw-bold text-dark mb-4 green-line">Seleccione Fecha y Hora</h3>
           
-          <div class="row">
+          <div class="row mt-4">
             <div class="col-md-6 mb-4">
-              <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+              <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-white" style="border: 1px solid #f4f4f4 !important;">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                   <button class="btn btn-light rounded-circle" (click)="cambiarMes(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                  <h5 class="fw-bold mb-0 text-capitalize text-success">{{ mesActual | date:'MMMM yyyy' }}</h5>
+                  <h6 class="fw-bold mb-0 text-capitalize text-success">{{ mesActual | date:'MMMM yyyy' }}</h6>
                   <button class="btn btn-light rounded-circle" (click)="cambiarMes(1)"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
                 
                 <div class="calendar-grid">
                   @for (dia of diasSemana; track dia) {
-                    <div class="calendar-day-header">{{ dia }}</div>
+                    <div class="calendar-day-header fw-bold text-secondary" style="font-size: 0.8rem;">{{ dia }}</div>
                   }
                   
                   @for (dia of diasMes; track $index) {
@@ -256,31 +257,32 @@
             </div>
 
             <div class="col-md-6 mb-4">
-              <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
-                <label class="form-label fw-bold text-secondary mb-3"><i class="fa-regular fa-clock me-2"></i>HORARIOS DISPONIBLES</label>
+              <div class="card shadow-sm border-0 rounded-4 p-4 h-100 bg-white" style="border: 1px solid #f4f4f4 !important;">
+                <label class="form-label fw-bold text-secondary mb-3" style="font-size: 0.75rem;"><i class="fa-regular fa-clock me-2"></i>HORARIOS DISPONIBLES</label>
                 
                 @if (cargandoHorarios) {
                   <div class="text-center mt-5 text-success">
                     <div class="spinner-border" role="status"></div>
-                    <p class="mt-2 fw-bold">Consultando disponibilidad...</p>
+                    <p class="mt-2 fw-bold" style="font-size: 0.8rem;">Consultando disponibilidad...</p>
                   </div>
                 } @else if (!fechaSeleccionada) {
                   <div class="text-center text-muted mt-5">
-                    <i class="fa-regular fa-calendar-check fs-1 mb-2"></i>
-                    <p>Seleccione un día en el calendario para ver los horarios.</p>
+                    <i class="fa-regular fa-calendar-check fs-2 mb-3"></i>
+                    <p style="font-size: 0.85rem;">Seleccione un día en el calendario para ver los horarios.</p>
                   </div>
                 } @else if (horariosDisponibles.length === 0) {
-                  <div class="alert alert-danger text-center mt-3">
-                    <i class="fa-solid fa-triangle-exclamation mb-2 fs-4"></i><br>
+                  <div class="alert text-center mt-3 fw-bold" style="background-color: #fdf3f4; color: #E60064; border: none; font-size: 0.85rem;">
+                    <i class="fa-solid fa-triangle-exclamation mb-2 fs-5"></i><br>
                     No hay citas disponibles para esta fecha.
                   </div>
                 } @else {
                   <div class="d-flex flex-wrap gap-2 justify-content-start">
                     @for (hora of horariosDisponibles; track hora) {
-                      <button class="btn rounded-pill px-3 py-2 fw-bold" 
+                      <button class="btn rounded-pill px-3 py-2 fw-semibold" 
                               [class.btn-success]="horaSeleccionada === hora" 
                               [class.btn-outline-secondary]="horaSeleccionada !== hora" 
-                              (click)="horaSeleccionada = hora">
+                              (click)="horaSeleccionada = hora"
+                              style="font-size: 0.8rem;">
                         {{ hora }}
                       </button>
                     }
@@ -290,7 +292,7 @@
             </div>
           </div>
           
-          <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" 
+          <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" style="font-size: 0.9rem;"
                   (click)="confirmarCita()" 
                   [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios">
             CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
@@ -301,19 +303,19 @@
 
     @if (pasoActual === 5) {
       <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6 text-center p-5 card shadow-sm rounded-4 border-0">
-          <div class="icon-circle bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px; font-size: 2.5rem;">
+        <div class="col-md-8 col-lg-6 text-center p-5 card shadow-sm rounded-4 border-0 bg-white" style="border: 1px solid #f4f4f4 !important;">
+          <div class="icon-circle text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px; font-size: 2.5rem; background-color: #055A1C;">
             <i class="fa-solid fa-check"></i>
           </div>
-          <h2 class="text-success fw-bold">¡Cita Agendada!</h2>
-          <p class="text-muted mb-4">Su cita ha sido registrada correctamente en el sistema.</p>
+          <h3 class="text-success fw-bold">¡Cita Agendada!</h3>
+          <p class="text-secondary mb-4" style="font-size: 0.9rem;">Su cita ha sido registrada correctamente en el sistema.</p>
           
-          <div class="bg-light p-4 rounded-3 mb-4">
-            <p class="text-secondary small fw-bold mb-1">SU NÚMERO DE FOLIO ES</p>
-            <h1 class="display-5 fw-bold text-dark mb-0">{{ folioExito }}</h1>
+          <div class="p-4 rounded-3 mb-4" style="background-color: #f9f9f9; border: 1px dashed #ccc;">
+            <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;">SU NÚMERO DE FOLIO ES</p>
+            <h2 class="display-6 fw-bold text-dark mb-0">{{ folioExito }}</h2>
           </div>
           
-          <button class="btn btn-dark rounded-pill px-5 py-3 fw-bold" (click)="regresarPaso1()">
+          <button class="btn rounded-pill px-5 py-3 fw-bold text-white" (click)="regresarPaso1()" style="background-color: #2b2727; border: none; font-size: 0.9rem;">
             FINALIZAR
           </button>
         </div>
@@ -322,21 +324,21 @@
 
     @if (pasoActual === 6) {
       <div class="mb-4">
-        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="regresarPaso1()">
+        <button class="btn btn-outline-secondary rounded-pill px-4" style="font-size: 0.85rem;" (click)="regresarPaso1()">
           <i class="fa-solid fa-arrow-left me-2"></i> Volver al Inicio
         </button>
       </div>
       <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0">
-          <div class="icon-circle bg-light text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem;">
+        <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0 bg-white" style="border: 1px solid #f4f4f4 !important;">
+          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.08);">
             <i class="fa-solid fa-magnifying-glass"></i>
           </div>
-          <h3 class="fw-bold text-dark mb-3">Consultar Cita</h3>
-          <p class="text-muted mb-4">Ingrese su número de folio (8 caracteres) para ver o cancelar su cita programada.</p>
+          <h4 class="fw-bold text-dark mb-3">Consultar Cita</h4>
+          <p class="text-secondary mb-4" style="font-size: 0.85rem;">Ingrese su número de folio (8 caracteres) para ver o cancelar su cita programada.</p>
           
           <input type="text" class="form-control form-control-lg rounded-3 mb-4 text-center text-uppercase fw-bold" placeholder="Ej: 3A4F9B2C" [(ngModel)]="folioBusqueda" maxlength="8">
           
-          <button class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" (click)="buscarCitaPorFolio()" [disabled]="!folioBusqueda || folioBusqueda.length < 8 || cargandoConsulta">
+          <button class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" style="font-size: 0.9rem;" (click)="buscarCitaPorFolio()" [disabled]="!folioBusqueda || folioBusqueda.length < 8 || cargandoConsulta">
             @if (cargandoConsulta) {
               <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Buscando...
             } @else {
@@ -349,19 +351,19 @@
 
     @if (pasoActual === 7) {
       <div class="mb-4">
-        <button class="btn btn-outline-secondary rounded-pill px-4" (click)="irABuscarCita()">
+        <button class="btn btn-outline-secondary rounded-pill px-4" style="font-size: 0.85rem;" (click)="irABuscarCita()">
           <i class="fa-solid fa-arrow-left me-2"></i> Buscar otro folio
         </button>
       </div>
       
       <div class="row justify-content-center">
         <div class="col-lg-8">
-          <div class="card shadow border-0 rounded-4 p-0 overflow-hidden">
+          <div class="card shadow-sm border-0 rounded-4 p-0 overflow-hidden bg-white" style="border: 1px solid #f4f4f4 !important;">
             
-            <div class="bg-light p-4 border-bottom d-flex justify-content-between align-items-center">
+            <div class="p-4 border-bottom d-flex justify-content-between align-items-center" style="background-color: #fafafa;">
               <div>
-                <p class="text-secondary small fw-bold mb-1">FOLIO DE CITA</p>
-                <h3 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h3>
+                <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;">FOLIO DE CITA</p>
+                <h4 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h4>
                 <span class="badge mt-2 fs-6 px-3 py-2" 
                       [class.bg-success]="citaConsultada?.estatus === 'AGENDADA'" 
                       [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
@@ -371,48 +373,48 @@
                 </span>
               </div>
               <div class="text-end">
-                <h2 class="fw-bold text-success mb-0">${{ citaConsultada?.costo }}</h2>
-                <small class="text-muted fw-bold">COSTO DEL TRÁMITE</small>
+                <h3 class="fw-bold text-success mb-0">${{ citaConsultada?.costo }}</h3>
+                <small class="text-muted fw-bold" style="font-size: 0.75rem;">COSTO DEL TRÁMITE</small>
               </div>
             </div>
 
             <div class="p-4">
               <div class="row mb-4">
                 <div class="col-md-6 mb-3">
-                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-user me-2"></i> CIUDADANO</p>
-                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.ciudadano }}</p>
+                  <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;"><i class="fa-solid fa-user me-2"></i> CIUDADANO</p>
+                  <p class="mb-0 fw-semibold text-dark" style="font-size: 0.95rem;">{{ citaConsultada?.ciudadano }}</p>
                   @if (citaConsultada?.curp && !citaConsultada?.curp.includes('ENM')) {
-                    <small class="text-muted">CURP: {{ citaConsultada?.curp }}</small>
+                    <small class="text-muted" style="font-size: 0.75rem;">CURP: {{ citaConsultada?.curp }}</small>
                   }
                 </div>
                 <div class="col-md-6 mb-3">
-                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-file-lines me-2"></i> TRÁMITE</p>
-                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.tramite }}</p>
-                  <small class="text-muted">Duración aprox: {{ citaConsultada?.duracion }} mins</small>
+                  <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;"><i class="fa-solid fa-file-lines me-2"></i> TRÁMITE</p>
+                  <p class="mb-0 fw-semibold text-dark" style="font-size: 0.95rem;">{{ citaConsultada?.tramite }}</p>
+                  <small class="text-muted" style="font-size: 0.75rem;">Duración aprox: {{ citaConsultada?.duracion }} mins</small>
                 </div>
               </div>
               
               <div class="row mb-4">
                 <div class="col-md-6 mb-3">
-                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-calendar-day me-2"></i> FECHA Y HORA</p>
-                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.fecha | date:'longDate' }}</p>
-                  <p class="mb-0 text-success fw-bold fs-4">{{ citaConsultada?.hora }} hrs</p>
+                  <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;"><i class="fa-solid fa-calendar-day me-2"></i> FECHA Y HORA</p>
+                  <p class="mb-0 fw-semibold text-dark" style="font-size: 0.95rem;">{{ citaConsultada?.fecha | date:'longDate' }}</p>
+                  <p class="mb-0 text-success fw-bold fs-5">{{ citaConsultada?.hora }} hrs</p>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <p class="text-secondary small fw-bold mb-1"><i class="fa-solid fa-building me-2"></i> SEDE</p>
-                  <p class="mb-0 fw-bold text-dark fs-5">{{ citaConsultada?.sede }}</p>
-                  <small class="text-muted">{{ citaConsultada?.direccion }}</small>
+                  <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;"><i class="fa-solid fa-building me-2"></i> SEDE</p>
+                  <p class="mb-0 fw-semibold text-dark" style="font-size: 0.95rem;">{{ citaConsultada?.sede }}</p>
+                  <small class="text-muted" style="font-size: 0.75rem;">{{ citaConsultada?.direccion }}</small>
                 </div>
               </div>
               
               @if (citaConsultada?.estatus === 'AGENDADA') {
-                <hr>
-                <div class="alert alert-danger mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm">
+                <hr style="border-color: #eaeaea;">
+                <div class="alert mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm" style="background-color: #fdf3f4; border-left: 5px solid #E60064 !important;">
                   <div class="mb-3 mb-md-0">
-                    <h6 class="fw-bold mb-1 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Desea cancelar su cita?</h6>
-                    <small class="text-dark">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
+                    <h6 class="fw-bold mb-1" style="color: #E60064;"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Desea cancelar su cita?</h6>
+                    <small class="text-dark" style="font-size: 0.8rem;">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
                   </div>
-                  <button class="btn btn-danger rounded-pill fw-bold px-4 py-2 text-nowrap shadow-sm" (click)="cancelarCita()">
+                  <button class="btn rounded-pill fw-bold px-4 py-2 text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="cancelarCita()">
                     <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
                   </button>
                 </div>
@@ -428,33 +430,33 @@
     @if (pasoActual === 8) {
       <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
-          <div class="card shadow-lg border-0 rounded-4 p-5 mt-4">
+          <div class="card shadow-lg border-0 rounded-4 p-5 mt-4 bg-white">
             <div class="text-center mb-4">
-              <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 70px; height: 70px; font-size: 1.8rem;">
+              <div class="text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: #055A1C;">
                 <i class="fa-solid fa-user-shield"></i>
               </div>
-              <h3 class="fw-bold text-dark">Acceso Autorizado</h3>
-              <p class="text-muted small">Portal exclusivo para personal administrativo y de ventanilla.</p>
+              <h4 class="fw-bold text-dark">Acceso Autorizado</h4>
+              <p class="text-secondary" style="font-size: 0.8rem;">Portal exclusivo para personal administrativo y de ventanilla.</p>
             </div>
             
             <form (ngSubmit)="iniciarSesion()">
               <div class="mb-3">
-                <label class="form-label fw-bold small text-secondary">USUARIO</label>
-                <div class="input-group input-group-lg">
-                  <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
-                  <input type="text" class="form-control border-start-0 bg-light" [(ngModel)]="credenciales.username" name="username" placeholder="Ingrese su usuario" required>
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">USUARIO</label>
+                <div class="input-group">
+                  <span class="input-group-text border-end-0" style="background-color: #f8f8f8;"><i class="fa-solid fa-user text-muted"></i></span>
+                  <input type="text" class="form-control border-start-0" style="background-color: #f8f8f8;" [(ngModel)]="credenciales.username" name="username" placeholder="Ingrese su usuario" required>
                 </div>
               </div>
               
               <div class="mb-4">
-                <label class="form-label fw-bold small text-secondary">CONTRASEÑA</label>
-                <div class="input-group input-group-lg">
-                  <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
-                  <input type="password" class="form-control border-start-0 bg-light" [(ngModel)]="credenciales.password" name="password" placeholder="••••••••" required>
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CONTRASEÑA</label>
+                <div class="input-group">
+                  <span class="input-group-text border-end-0" style="background-color: #f8f8f8;"><i class="fa-solid fa-lock text-muted"></i></span>
+                  <input type="password" class="form-control border-start-0" style="background-color: #f8f8f8;" [(ngModel)]="credenciales.password" name="password" placeholder="••••••••" required>
                 </div>
               </div>
               
-              <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold shadow-sm" [disabled]="cargandoLogin || !credenciales.username || !credenciales.password">
+              <button type="submit" class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" style="font-size: 0.9rem;" [disabled]="cargandoLogin || !credenciales.username || !credenciales.password">
                 @if (cargandoLogin) {
                   <span class="spinner-border spinner-border-sm me-2"></span> Verificando...
                 } @else {
@@ -464,7 +466,7 @@
             </form>
 
             <div class="text-center mt-4">
-              <button class="btn btn-link text-secondary text-decoration-none small" (click)="regresarPaso1()">
+              <button class="btn btn-link text-secondary text-decoration-none" style="font-size: 0.8rem;" (click)="regresarPaso1()">
                 <i class="fa-solid fa-arrow-left me-1"></i> Regresar al Portal Ciudadano
               </button>
             </div>
@@ -473,65 +475,65 @@
       </div>
     }
 
-   <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
+    <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
     @if (pasoActual === 9) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 class="fw-bold text-dark">Panel de Control: {{ usuarioSesion?.sede }}</h3>
+          <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
           <div>
             @if (usuarioSesion?.rol === 'Administrador') {
-              <button class="btn btn-primary me-3" (click)="irABitacora()"><i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría</button>
+              <button class="btn fw-bold me-3" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="irABitacora()">
+                <i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría
+              </button>
             }
-            <button class="btn btn-outline-danger" (click)="cerrarSesion()">Cerrar Sesión</button>
+            <button class="btn text-white fw-bold" style="font-size: 0.85rem; background-color: #2b2727; border: none;" (click)="cerrarSesion()">Cerrar Sesión</button>
           </div>
         </div>
 
-        <div class="card shadow-sm border-0 rounded-4">
+        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
           <div class="card-body p-4">
-            <h5 class="fw-bold mb-4">Gestión de Citas</h5>
+            <h6 class="fw-bold mb-4 text-dark">Gestión de Citas</h6>
             
-            <!-- FILTROS (Fecha y Búsqueda Global) -->
-            <div class="row mb-4 bg-light p-3 rounded-3">
+            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
               <div class="col-md-3 mb-3 mb-md-0">
-                <label class="form-label fw-bold small text-secondary">Filtrar por Día</label>
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
                 <input type="date" class="form-control" [(ngModel)]="fechaDashboard" (change)="limpiarBusqueda()">
               </div>
               <div class="col-md-9">
-                <label class="form-label fw-bold small text-secondary">Búsqueda Global (Folio, Nombre o CURP)</label>
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, NOMBRE O CURP)</label>
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
-                  <button class="btn btn-success" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
                   @if(textoBusquedaDashboard) {
                     <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
-                
+                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
               </div>
             </div>
 
             <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
+              <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                <thead style="background-color: #fdfdfd;">
                   <tr>
-                    <th>Fecha / Hora</th>
-                    <th>Folio</th>
-                    <th>Ciudadano</th>
-                    <th>Trámite</th>
-                    <th>Estatus</th>
-                    <th>Acciones</th>
+                    <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
+                    <th class="py-3" style="color: #055A1C;">Folio</th>
+                    <th class="py-3" style="color: #055A1C;">Ciudadano</th>
+                    <th class="py-3" style="color: #055A1C;">Trámite</th>
+                    <th class="py-3" style="color: #055A1C;">Estatus</th>
+                    <th class="py-3 text-center" style="color: #055A1C;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  
                   @for (cita of citasDia; track cita.folio) {
                     <tr>
                       <td>
-                        <span class="d-block fw-bold">{{ cita.hora }}</span>
+                        <span class="d-block fw-bold text-dark">{{ cita.hora }}</span>
                         <small class="text-muted">{{ cita.fechaStr }}</small>
                       </td>
-                      <td><span class="text-secondary small">{{ cita.folio }}</span></td>
-                      <td>{{ cita.ciudadano }}</td>
-                      <td>{{ cita.tramite }}</td>
+                      <td><span class="text-secondary fw-semibold">{{ cita.folio }}</span></td>
+                      <td class="fw-semibold text-dark">{{ cita.ciudadano }}</td>
+                      <td class="text-secondary">{{ cita.tramite }}</td>
                       <td>
                         <span class="badge" 
                               [class.bg-primary]="cita.estatus === 'AGENDADA'"
@@ -541,26 +543,26 @@
                           {{ cita.estatus }}
                         </span>
                       </td>
-                      <td>
+                      <td class="text-center">
                         @if (cita.estatus === 'AGENDADA') {
                           <button class="btn btn-sm btn-success me-2" title="Marcar Completada"
                                   (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como COMPLETADA?', () => actualizarEstatusCita(cita.folio, 'COMPLETADA'))">
                             <i class="fa-solid fa-check"></i>
                           </button>
                           
-                          <button class="btn btn-sm btn-warning text-dark" title="Marcar Inasistencia"
+                          <button class="btn btn-sm text-white" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
                                   (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
                             <i class="fa-solid fa-xmark"></i>
                           </button>
                         } @else {
-                          <span class="text-muted small">Sin acciones</span>
+                          <span class="text-muted" style="font-size: 0.75rem;">Sin acciones</span>
                         }
                       </td>
                     </tr>
                   }
                   @if (citasDia.length === 0) {
                     <tr>
-                      <td colspan="6" class="text-center py-4 text-muted">
+                      <td colspan="6" class="text-center py-5 text-muted">
                         <i class="fa-solid fa-folder-open fs-2 mb-2"></i><br>
                         No hay citas encontradas para los filtros seleccionados.
                       </td>
@@ -574,75 +576,74 @@
       </div>
     }
 
-    <!-- NUEVA PANTALLA 10: BITÁCORA DE AUDITORÍA -->
+    <!-- PANTALLA 10: BITÁCORA DE AUDITORÍA -->
     @if (pasoActual === 10) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 class="fw-bold text-dark">Bitácora de Movimientos</h3>
-          <button class="btn btn-outline-secondary" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+          <h4 class="fw-bold" style="color: #055A1C;">Bitácora de Movimientos</h4>
+          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
         </div>
 
-        <div class="card shadow-sm border-0 rounded-4">
+        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
           <div class="card-body p-4">
             
-        
-            <div class="row mb-4 bg-light p-3 rounded-3">
+            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #338C36;">
               <div class="col-md-3 mb-3 mb-md-0">
-                <label class="form-label fw-bold small text-secondary">Filtrar por Día</label>
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
                 <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusquedaBitacora()">
               </div>
               <div class="col-md-9">
-                <label class="form-label fw-bold small text-secondary">Búsqueda Global (Folio, Empleado, Acción)</label>
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, EMPLEADO, ACCIÓN)</label>
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
-                  <button class="btn btn-success" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  <button class="btn text-white fw-bold" style="background-color: #338C36; border-color: #338C36;" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
                   @if(textoBusquedaBitacora) {
                     <button class="btn btn-outline-secondary" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
-              
+                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
               </div>
             </div>
 
             @if (cargandoBitacora) {
               <div class="text-center my-5 text-success">
                 <div class="spinner-border" role="status"></div>
-                <p class="mt-2 fw-bold">Cargando registros...</p>
+                <p class="mt-2 fw-bold small">Cargando registros...</p>
               </div>
             } @else {
               <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle" style="font-size: 0.9rem;">
-                  <thead class="table-dark">
+                <table class="table table-bordered table-hover align-middle" style="font-size: 0.8rem;">
+                  <thead style="background-color: #fdfdfd;">
                     <tr>
-                      <th>Fecha / Hora</th>
-                      <th>Empleado</th>
-                      <th>Acción</th>
-                      <th>Folio / ID</th>
-                      <th>Valor Anterior</th>
-                      <th>Valor Nuevo</th>
-                      <th>Restaurar</th>
+                      <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
+                      <th class="py-3" style="color: #055A1C;">Empleado</th>
+                      <th class="py-3 text-center" style="color: #055A1C;">Acción</th>
+                      <th class="py-3" style="color: #055A1C;">Folio / ID</th>
+                      <th class="py-3" style="color: #055A1C;">Valor Anterior</th>
+                      <th class="py-3" style="color: #055A1C;">Valor Nuevo</th>
+                      <th class="py-3 text-center" style="color: #055A1C;">Restaurar</th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (log of bitacoraLogs; track log.idBitacora) {
                       <tr>
-                        <td class="text-nowrap">{{ log.fecha | date:'short' }}</td>
-                        <td class="fw-bold">{{ log.empleado }}</td>
-                        <td>
+                        <td class="text-nowrap text-secondary">{{ log.fecha | date:'short' }}</td>
+                        <td class="fw-semibold text-dark">{{ log.empleado }}</td>
+                        <td class="text-center">
                           <span class="badge" 
                                 [class.bg-info]="log.accion === 'UPDATE'"
                                 [class.bg-success]="log.accion === 'INSERT'"
-                                [class.bg-danger]="log.accion.includes('RESTAURADO')">
+                                [class.bg-danger]="log.accion.includes('RESTAURADO')"
+                                [style.background-color]="log.accion === 'UPDATE' ? '#76B82A' : ''">
                             {{ log.accion }}
                           </span>
                         </td>
-                        <td><span class="font-monospace text-primary">{{ log.registroId }}</span></td>
+                        <td><span class="font-monospace fw-bold" style="color: #338C36;">{{ log.registroId }}</span></td>
                         <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
-                        <td class="text-success fw-bold">{{ log.valorNuevo || 'N/A' }}</td>
+                        <td class="fw-bold" style="color: #338C36;">{{ log.valorNuevo || 'N/A' }}</td>
                         <td class="text-center">
-                          <!-- Mostrar el botón Deshacer SOLO si fue un UPDATE normal y NO una restauración -->
                           @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
-                            <button class="btn btn-sm btn-danger" 
+                            <button class="btn btn-sm text-white" style="background-color: #E60064; border: none;"
                                     (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
                               <i class="fa-solid fa-rotate-left"></i>
                             </button>
@@ -654,7 +655,7 @@
                     }
                     @if (bitacoraLogs.length === 0) {
                       <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No hay movimientos encontrados para su búsqueda.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">No hay movimientos encontrados para su búsqueda.</td>
                       </tr>
                     }
                   </tbody>
@@ -677,25 +678,25 @@
             <div class="modal-body p-5">
               <div class="mb-4">
                 @if (alertaIcono === 'success') {
-                  <i class="fa-solid fa-circle-check text-success" style="font-size: 4.5rem;"></i>
+                  <i class="fa-solid fa-circle-check" style="font-size: 4.5rem; color: #76B82A;"></i>
                 } @else if (alertaIcono === 'error') {
-                  <i class="fa-solid fa-circle-xmark text-danger" style="font-size: 4.5rem;"></i>
+                  <i class="fa-solid fa-circle-xmark" style="font-size: 4.5rem; color: #E60064;"></i>
                 } @else if (alertaIcono === 'warning') {
-                  <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 4.5rem;"></i>
+                  <i class="fa-solid fa-triangle-exclamation" style="font-size: 4.5rem; color: #ffc107;"></i>
                 } @else {
-                  <i class="fa-solid fa-circle-info text-info" style="font-size: 4.5rem;"></i>
+                  <i class="fa-solid fa-circle-info" style="font-size: 4.5rem; color: #338C36;"></i>
                 }
               </div>
-              <h3 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h3>
-              <p class="text-muted fs-5 mb-4">{{ alertaMensaje }}</p>
+              <h4 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h4>
+              <p class="text-secondary fs-6 mb-4">{{ alertaMensaje }}</p>
 
               @if (alertaTipo === 'confirmacion') {
                 <div class="d-flex justify-content-center gap-2">
-                  <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" (click)="cerrarAlerta()">Cancelar</button>
-                  <button class="btn btn-danger rounded-pill px-4 py-2 fw-bold" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
+                  <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" style="font-size: 0.85rem;" (click)="cerrarAlerta()">Cancelar</button>
+                  <button class="btn rounded-pill px-4 py-2 fw-bold text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
                 </div>
               } @else {
-                <button class="btn btn-dark rounded-pill px-5 py-2 fw-bold w-100" (click)="cerrarAlerta()">Aceptar</button>
+                <button class="btn btn-success rounded-pill px-5 py-2 fw-bold w-100 shadow-sm" style="font-size: 0.9rem;" (click)="cerrarAlerta()">Aceptar</button>
               }
             </div>
           </div>
@@ -716,23 +717,23 @@
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3 bg-white" style="z-index: 1070; opacity: 0.8;" aria-label="Cerrar" (click)="cerrarAvisoGlobal()"></button>
                 <img [src]="avisoGlobal.imagenUrl" alt="Aviso Importante" class="img-fluid w-100">
                 <div class="p-4 bg-white">
-                    <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm w-100" style="max-width: 400px;" (click)="cerrarAvisoGlobal()">
+                    <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
                       He leído y entendido <i class="fa-solid fa-check ms-2"></i>
                     </button>
                 </div>
               </div>
             } @else {
               <div class="modal-header border-0 bg-light justify-content-center pt-5 pb-3">
-                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem;">
+                <div class="text-success rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem; background-color: rgba(5, 90, 28, 0.08);">
                   <i class="fa-solid fa-bullhorn"></i>
                 </div>
               </div>
               <div class="modal-body px-5 pb-5 pt-2">
-                <h2 class="fw-bold text-dark mb-4">{{ avisoGlobal.titulo }}</h2>
-                <p class="text-secondary fs-5 mb-5" style="white-space: pre-line; line-height: 1.6;">
+                <h3 class="fw-bold text-dark mb-4">{{ avisoGlobal.titulo }}</h3>
+                <p class="text-secondary fs-6 mb-5" style="white-space: pre-line; line-height: 1.6;">
                   {{ avisoGlobal.mensaje }}
                 </p>
-                <button class="btn btn-primary rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm w-100" style="max-width: 400px;" (click)="cerrarAvisoGlobal()">
+                <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
                   He leído y entendido <i class="fa-solid fa-check ms-2"></i>
                 </button>
               </div>
@@ -745,56 +746,63 @@
 
   </main>
 
-  <!-- FOOTER CENTRADO -->
-  <footer class="bg-dark text-light pt-5 pb-3 mt-auto w-100">
+  <!-- PIE DE PÁGINA INSTITUCIONAL CON LOGOS OFICIALES -->
+  <footer class="mob-style-footer w-100 mt-auto">
     <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-lg-10">
-          <div class="row mb-4">
-            
-            <div class="col-md-4 mb-4 mb-md-0">
-              <h6 class="text-uppercase fw-bold text-success mb-2">San Luis Potosí, S.L.P.</h6>
-              <p class="small text-light text-opacity-75 mb-4"><i class="fa-solid fa-location-dot me-2 text-success"></i> Bolívar #965, Zona Centro Histórico, 78000</p>
-              
-              <h6 class="text-uppercase fw-bold text-success mb-2">Zona Huasteca</h6>
-              <p class="small text-light text-opacity-75 mb-0"><i class="fa-solid fa-location-dot me-2 text-success"></i> Ciudad Valles, S.L.P.</p>
-            </div>
+      <div class="row justify-content-start">
+        
+        <div class="col-12 col-sm-6 col-lg-3 mb-4 text-center text-sm-start">
+          <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-blanco.png" alt="Gobierno del Estado SLP" class="img-fluid" style="max-height: 4.4rem; object-fit: contain;">
+          <ul class="list mt-4" style="font-size: 0.9rem;">
+             <li style="font-weight: bold;">
+                 <i class="fa-solid fa-calendar-days me-2"></i>Fecha de Actualización: 17/02/2026
+             </li>
+             <li style="font-weight: bold;">
+                 <a href="#"><i class="fa-solid fa-circle-question me-2"></i>Preguntas Frecuentes</a>
+             </li>
+          </ul>
+        </div>
 
-            <div class="col-md-4 mb-4 mb-md-0">
-              <h6 class="text-uppercase fw-bold text-success mb-2">Zona Altiplano</h6>
-              <p class="small text-light text-opacity-75 mb-4"><i class="fa-solid fa-location-dot me-2 text-success"></i> Matehuala, S.L.P.</p>
-              
-              <h6 class="text-uppercase fw-bold text-success mb-2">Zona Media</h6>
-              <p class="small text-light text-opacity-75 mb-0"><i class="fa-solid fa-location-dot me-2 text-success"></i> Rioverde, S.L.P.</p>
-            </div>
+        <div class="col-12 col-sm-6 col-lg-3 mb-4">
+          <h5 class="mbr-section-subtitle">Sitios Recomendados</h5>
+          <ul class="list">
+             <li><a href="#">RENAPO</a></li>
+             <li><a href="#">Consulta CURP</a></li>
+             <li><a href="#">Acta de Nacimiento en línea</a></li>
+             <li><a href="#">Aviso de Privacidad Integral SGG</a></li>
+          </ul>
+        </div>
 
-            <div class="col-md-4 text-md-end text-start">
-              <div class="mb-3 d-flex justify-content-md-end align-items-center gap-3">
-                <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                  <i class="fa-brands fa-facebook-f fs-5 text-white"></i>
-                </span>
-                <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                  <i class="fa-brands fa-x fs-5 text-info"></i>
-                </span>
-              </div>
-              <p class="small text-light text-opacity-75 mb-1">Registro Civil SLP | 01 444 812-80-50</p>
-              <p class="small text-light text-opacity-75 mb-0">direccionrcslp&#64;gmail.com</p>
-            </div>
-            
-          </div>
+        <div class="col-12 col-sm-6 col-lg-3 mb-4">
+          <h5 class="mbr-section-subtitle">Números de Emergencia</h5>
+          <ul class="list">
+             <li><a href="#">Protección Civil - 4448143028</a></li>
+             <li><a href="#">Bomberos - 4448153583</a></li>
+             <li><a href="#">Cruz Roja - 4448157314</a></li>
+             <li><a href="#">Denuncia Anónima - 089</a></li>
+             <li><a href="#">Emergencias - 911</a></li>
+          </ul>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-4">
+          <h5 class="mbr-section-subtitle">Contáctanos</h5>
+          <ul class="list">
+             <li><a href="#">4441009000</a></li>
+             <li><a href="#">sgg.drc&#64;slp.gob.mx</a></li>
+             <li class="mt-3"><a href="#">Bolívar N° 965, Colonia San Luis<br>Potosí Centro, C.P. 78000, San Luis<br>Potosí, San Luis Potosí</a></li>
+          </ul>
         </div>
       </div>
-      
-      <hr class="border-secondary opacity-50">
-      
-      <div class="d-flex justify-content-between align-items-center">
-        <small class="text-light text-opacity-50">&copy; 2026 Registro Civil del Estado de San Luis Potosí.</small>
-        
-        <button class="btn btn-link text-light text-opacity-50 p-0 text-decoration-none small text-end" (click)="irALogin()" style="font-size: 0.8rem;">
-          Acceso Citas <i class="fa-solid fa-chevron-right ms-1"></i>
-        </button>
-      </div>
     </div>
+    
+    <nav class="px-3 py-3 slpColors-bg-g1 text-white">
+      <div class="container d-flex flex-wrap align-items-center justify-content-between" style="font-size: 0.85rem;">
+          <div>v4.1.9 &copy; 2026 Todos los derechos reservados | <a href="#" class="text-white text-decoration-none">Aviso de Privacidad</a> | <a href="#" class="text-white text-decoration-none">Contactar al Web Master</a></div>
+          <button class="btn btn-link p-0 text-white text-decoration-none ms-3" (click)="irALogin()">
+            Acceso Citas <i class="fa-solid fa-chevron-right ms-1"></i>
+          </button>
+      </div>
+    </nav>
   </footer>
 
 </div>

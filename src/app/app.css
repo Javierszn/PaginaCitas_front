@@ -1,66 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
-body {
-    background-color: #f8f9fa; 
+/* Aplicamos Montserrat SOLO a los textos, respetando los iconos de FontAwesome */
+body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong, td, th, span.badge {
+    font-family: 'Montserrat', sans-serif !important;
 }
 
-
-.sede-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
-    border: 1px solid #198754 !important; 
+:host {
+    display: block;
+    background-color: #ffffff;
+    color: #232323;
 }
 
+/* SOBRESCRITURA DE BOOTSTRAP CON HEXADECIMALES DIRECTOS */
+.text-success { color: #055A1C !important; }
+.bg-success { background-color: #055A1C !important; }
+.text-primary { color: #338C36 !important; }
+.bg-primary { background-color: #338C36 !important; }
+.text-secondary { color: #706f6f !important; }
 
-.sede-card:hover .icon-circle {
-    background-color: #198754 !important;
-    color: white !important;
+.btn-success {
+    background-color: #055A1C !important;
+    border-color: #055A1C !important;
+    color: #ffffff !important;
+}
+.btn-success:hover {
+    background-color: #033711 !important;
+    border-color: #033711 !important;
+}
+
+.btn-outline-success {
+    color: #055A1C !important;
+    border-color: #055A1C !important;
+}
+.btn-outline-success:hover {
+    background-color: #055A1C !important;
+    color: #ffffff !important;
+}
+
+.btn-primary {
+    background-color: #338C36 !important;
+    border-color: #338C36 !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-success {
+    background-color: #76B82A !important;
+    color: #ffffff !important;
+}
+
+/* LÍNEA VERDE DE LOS TÍTULOS PRINCIPALES */
+.green-line::after {
+    content: "";
+    display: block;
+    width: 70px;
+    height: 4px;
+    background-color: #055A1C;
+    margin: 15px auto 0;
+    border-radius: 2px;
+}
+
+/* =========================================
+   DISEÑO EXACTO DEL PIE DE PÁGINA (FOOTER)
+   ========================================= */
+.mob-style-footer {
+    padding-top: 3rem;
+    padding-bottom: 0px;
+    background-color: #2b2727 !important;
+    color: #ffffff !important;
+}
+
+.mob-style-footer .mbr-section-subtitle {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.mob-style-footer .list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 40px;
+    color: white;
+    text-align: left;
+}
+
+.mob-style-footer .list li {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.mob-style-footer .list a, .mob-style-footer .list p {
+    color: #ffffff !important;
+    text-decoration: none;
+    font-size: 0.95rem;
+    position: relative;
+    transition: 0.4s all;
+}
+
+.mob-style-footer .list a:hover {
+    color: #76B82A !important;
+}
+
+.mob-style-footer .list a:before {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background-color: #76B82A;
+    transition: 0.4s all;
+}
+
+.mob-style-footer .list a:hover:before {
+    width: 100%;
+}
+
+.slpColors-bg-g1 {
+    background-color: #706f6f !important;
+}
+
+@media (max-width: 767px) {
+    .mob-style-footer .mbr-section-subtitle, 
+    .mob-style-footer .list,
+    .mob-style-footer .navbar-brand {
+        text-align: center !important;
+        justify-content: center !important;
+    }
+}
+
+/* =========================================
+   EFECTOS VISUALES DE LAS TARJETAS Y HOVER
+   ========================================= */
+.sede-card {
+    border: 1px solid #eaeaea !important;
+    border-radius: 0.8rem !important;
+    transition: all 0.3s ease !important;
+    background-color: #ffffff;
+}
+
+/* ESTADO NORMAL DE LOS ÍCONOS DE LAS TARJETAS */
+.sede-card .icon-circle {
+    background-color: rgba(5, 90, 28, 0.08); /* Fondo verde clarito */
+    color: #055A1C; /* Ícono verde SLP */
+    transition: all 0.3s ease !important;
+}
+
+.sede-card .card-text-color {
+    color: #232323; /* Color de texto normal */
     transition: all 0.3s ease;
 }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    text-align: center;
+.sede-card .card-subtext-color {
+    color: #706f6f; /* Gris normal */
+    transition: all 0.3s ease;
 }
 
-.calendar-day-header {
-    font-weight: 700;
-    color: #6c757d;
-    font-size: 0.9rem;
-    padding-bottom: 10px;
+.sede-card .card-icon-location {
+    color: #9d9d9c; /* Gris para el ícono de ubicación */
+    transition: all 0.3s ease;
 }
 
-.calendar-day {
-    padding: 10px 0;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
-    color: #212529;
+.sede-card .card-footer-text {
+    color: #055A1C; /* Verde normal para "Seleccionar" */
+    transition: all 0.3s ease;
 }
 
-.calendar-day:not(.empty):not(.disabled):hover {
-    background-color: #e9ecef;
+/* ESTADO HOVER: FONDO ROSA MEXICANO Y LETRAS BLANCAS */
+.sede-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(230, 0, 100, 0.2) !important;
+    background-color: #E60064 !important;
+    border-color: #E60064 !important;
 }
 
-.calendar-day.disabled {
-    color: #dee2e6;
-    cursor: not-allowed;
-    background-color: transparent;
+.sede-card:hover .icon-circle {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
 }
 
-.calendar-day.selected {
-    background-color: #198754;
-    color: white;
-    font-weight: 700;
-    box-shadow: 0 4px 10px rgba(25, 135, 84, 0.4);
+/* Forzar que todos los textos internos se vuelvan blancos al hacer hover */
+.sede-card:hover .card-text-color,
+.sede-card:hover .card-subtext-color,
+.sede-card:hover .card-icon-location,
+.sede-card:hover .card-footer-text {
+    color: #ffffff !important;
 }
-@keyframes dropIn {
-  0% { opacity: 0; transform: translateY(-30px); }
-  100% { opacity: 1; transform: translateY(0); }
+
+.sede-card:hover .bg-light {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Vuelve el fondo de la ubicación translúcido */
 }

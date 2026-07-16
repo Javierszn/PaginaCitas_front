@@ -42,7 +42,6 @@ export class App implements OnInit {
   avisoGlobal: any = null;
   mostrarAvisoGlobal: boolean = false;
 
-  // --- VARIABLES PARA EL LOGIN, DASHBOARD Y BITÁCORA ---
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
   usuarioSesion: any = null;
@@ -52,7 +51,7 @@ export class App implements OnInit {
   
   bitacoraLogs: any[] = [];
   cargandoBitacora: boolean = false;
-  fechaBitacora: string = ''; // Lo dejamos vacío para que por defecto traiga todo el historial
+  fechaBitacora: string = ''; 
   textoBusquedaBitacora: string = '';
 
   municipiosRegistro: string[] = [];
@@ -76,7 +75,6 @@ export class App implements OnInit {
   ngOnInit() {
     this.cargarSedes();
     
-    // RECUPERACIÓN DE SESIÓN
     const sessionUser = sessionStorage.getItem('usuarioRC');
     const sessionPaso = sessionStorage.getItem('pasoRC');
     
@@ -87,7 +85,7 @@ export class App implements OnInit {
       if (this.pasoActual === 10) this.cargarBitacora();
     } else {
       history.replaceState({ paso: 1 }, '', '');
-      this.cargarAvisoGlobal(); // Si no hay sesión de admin, mostramos el aviso
+      this.cargarAvisoGlobal();
     }
   }
 
@@ -107,7 +105,6 @@ export class App implements OnInit {
   }
 
   cargarAvisoGlobal() {
-    // PROTECCIÓN: Si es un empleado, no mostramos el aviso global
     if (this.usuarioSesion) return;
 
     this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
@@ -366,7 +363,6 @@ export class App implements OnInit {
     );
   }
 
-  // --- MÉTODOS DEL EMPLEADO / ADMIN ---
   irALogin() {
     this.pasoActual = 8;
     this.credenciales = { username: '', password: '' };
@@ -444,7 +440,6 @@ export class App implements OnInit {
     });
   }
 
-  // --- MÉTODOS EXCLUSIVOS DE AUDITORÍA (ADMIN) ---
   irABitacora() {
     this.pasoActual = 10;
     sessionStorage.setItem('pasoRC', '10');
@@ -518,10 +513,9 @@ export class App implements OnInit {
     this.sedeSeleccionada = null; 
     this.categorias = []; 
     this.limpiarFormulario();
-    sessionStorage.removeItem('pasoRC'); // Limpiamos rastro
+    sessionStorage.removeItem('pasoRC'); 
     history.pushState({ paso: 1 }, '', ''); 
     
-    // Si nos regresamos al inicio y el aviso sigue prendido en el servidor, lo traemos de nuevo
     this.cargarAvisoGlobal();
     
     this.cdr.detectChanges(); 
