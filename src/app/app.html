@@ -524,7 +524,14 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
           <div>
-            @if (usuarioSesion?.rol === 'Administrador') {
+            <!-- EL SUPER ADMIN VE EL BOTON DE AJUSTES -->
+            @if (usuarioSesion?.rol === 'Super Administrador') {
+              <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #E60064; border: 1px solid #E60064; background: transparent;" (click)="irASuperAdmin()">
+                <i class="fa-solid fa-gear me-2"></i>Ajustes
+              </button>
+            }
+            <!-- ADMIN Y SUPER ADMIN VEN AUDITORÍA -->
+            @if (usuarioSesion?.rol === 'Administrador' || usuarioSesion?.rol === 'Super Administrador') {
               <button class="btn fw-bold me-3" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="irABitacora()">
                 <i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría
               </button>
@@ -588,14 +595,14 @@
                       </td>
                       <td class="text-center">
                         @if (cita.estatus === 'AGENDADA') {
-                          <button class="btn btn-sm btn-success me-2" title="Marcar Completada"
+                          <button class="btn btn-sm btn-success me-2 fw-semibold" title="Marcar Completada"
                                   (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como COMPLETADA?', () => actualizarEstatusCita(cita.folio, 'COMPLETADA'))">
-                            <i class="fa-solid fa-check"></i>
+                            <i class="fa-solid fa-check me-1"></i> Asistió
                           </button>
                           
-                          <button class="btn btn-sm text-white" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
+                          <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
                                   (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
-                            <i class="fa-solid fa-xmark"></i>
+                            <i class="fa-solid fa-xmark me-1"></i> No asistió
                           </button>
                         } @else {
                           <span class="text-muted" style="font-size: 0.75rem;">Sin acciones</span>
@@ -686,9 +693,9 @@
                         <td class="fw-bold" style="color: #338C36;">{{ log.valorNuevo || 'N/A' }}</td>
                         <td class="text-center">
                           @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
-                            <button class="btn btn-sm text-white" style="background-color: #E60064; border: none;"
+                            <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;"
                                     (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
-                              <i class="fa-solid fa-rotate-left"></i>
+                              <i class="fa-solid fa-rotate-left me-1"></i> Deshacer
                             </button>
                           } @else {
                             <i class="fa-solid fa-minus text-muted"></i>
@@ -711,7 +718,154 @@
       </div>
     }
 
-    <!-- MODAL DE ALERTAS -->
+    <!-- PANTALLA 11: CONFIGURACIÓN SUPER ADMIN -->
+    @if (pasoActual === 11) {
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold" style="color: #E60064;">Configuración Global (Super Admin)</h4>
+          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+        </div>
+
+        <div class="row">
+          <!-- GESTIÓN DE USUARIOS (TABLA 1) -->
+          <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users-gear me-2" style="color: #338C36;"></i>Gestión de Personal</h6>
+              </div>
+              <div class="card-body p-4">
+                
+                <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #338C36;">
+                  <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.85rem;">NUEVO EMPLEADO</h6>
+                  <div class="col-md-3">
+                    <input type="text" class="form-control" placeholder="Nombre Completo" [(ngModel)]="nuevoUsuario.nombreCompleto">
+                  </div>
+                  <div class="col-md-3">
+                    <input type="text" class="form-control" placeholder="Usuario (Ej: juan.perez)" [(ngModel)]="nuevoUsuario.username">
+                  </div>
+                  <div class="col-md-2">
+                    <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoUsuario.password">
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-select" [(ngModel)]="nuevoUsuario.idRol">
+                      <option [value]="2">Ventanilla</option>
+                      <option [value]="1">Administrador</option>
+                      <option [value]="3">Super Admin</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button class="btn btn-success w-100 fw-bold" (click)="crearUsuario()">Crear</button>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                    <thead style="background-color: #fdfdfd;">
+                      <tr>
+                        <th class="py-3 text-secondary">Nombre</th>
+                        <th class="py-3 text-secondary">Usuario</th>
+                        <th class="py-3 text-secondary">Rol</th>
+                        <th class="py-3 text-secondary text-center">Estado</th>
+                        <th class="py-3 text-secondary text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (usr of usuariosSistema; track usr.idUsuario) {
+                        <tr>
+                          <td class="fw-semibold text-dark">{{ usr.nombreCompleto }}</td>
+                          <td>{{ usr.username }}</td>
+                          <td>{{ usr.rol }}</td>
+                          <td class="text-center">
+                            @if(usr.activo) { <span class="badge bg-success">Activo</span> }
+                            @else { <span class="badge" style="background-color: #E60064;">Bloqueado</span> }
+                          </td>
+                          <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary me-2" title="Cambiar Contraseña" (click)="cambiarPasswordUsuario(usr.idUsuario)">
+                              <i class="fa-solid fa-key"></i>
+                            </button>
+                            <button class="btn btn-sm" [class.btn-outline-danger]="usr.activo" [class.btn-outline-success]="!usr.activo" title="Activar/Desactivar" (click)="toggleEstadoUsuario(usr.idUsuario)">
+                              <i class="fa-solid" [class.fa-ban]="usr.activo" [class.fa-check]="!usr.activo"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                      @if (usuariosSistema.length === 0) {
+                        <tr>
+                          <td colspan="5" class="text-center py-4 text-muted">No hay usuarios registrados.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- REGLAS DE NEGOCIO Y TRÁMITES (TABLA 2) -->
+          <div class="col-lg-12">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sliders me-2" style="color: #055A1C;"></i>Configuración de Trámites y Tiempos</h6>
+                <p class="text-muted small mb-0 mt-1">Los minutos que asignes dictarán el intervalo en el que el sistema agenda las citas en el calendario (Ej: 15, 30 o 60 mins).</p>
+              </div>
+              <div class="card-body p-4">
+                
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                    <thead style="background-color: #fdfdfd;">
+                      <tr>
+                        <th class="py-3 text-secondary">Trámite</th>
+                        <th class="py-3 text-secondary">Precio ($)</th>
+                        <th class="py-3 text-secondary">Duración (Mins)</th>
+                        <th class="py-3 text-secondary text-center">Límite Diario</th>
+                        <th class="py-3 text-secondary text-center">Permitir Agendar</th>
+                        <th class="py-3 text-secondary text-center">Guardar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (t of tramitesSistema; track t.idTramite) {
+                        <tr>
+                          <td class="fw-semibold text-dark">{{ t.nombreTramite }}</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm" [(ngModel)]="t.costo" style="width: 90px;">
+                          </td>
+                          <td>
+                            <select class="form-select form-select-sm" [(ngModel)]="t.duracionMinutos" style="width: 110px;">
+                              <option [value]="15">15 mins</option>
+                              <option [value]="20">20 mins</option>
+                              <option [value]="30">30 mins</option>
+                              <option [value]="45">45 mins</option>
+                              <option [value]="60">60 mins</option>
+                            </select>
+                          </td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm mx-auto" [(ngModel)]="t.limiteDiarioSede" style="width: 80px;" placeholder="Ilimitado" min="1">
+                          </td>
+                          <td class="text-center">
+                            <div class="form-check form-switch d-flex justify-content-center">
+                              <input class="form-check-input" type="checkbox" [(ngModel)]="t.activo">
+                            </div>
+                          </td>
+                          <td class="text-center">
+                            <button class="btn btn-sm btn-success" (click)="actualizarTramite(t)">
+                              <i class="fa-solid fa-floppy-disk"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL DE ALERTAS Y ENTRADA DE TEXTO -->
     @if (mostrarAlerta) {
       <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
       
@@ -733,7 +887,14 @@
               <h4 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h4>
               <p class="text-secondary fs-6 mb-4">{{ alertaMensaje }}</p>
 
-              @if (alertaTipo === 'confirmacion') {
+              <!-- MODO INPUT PARA CONTRASEÑAS -->
+              @if (alertaTipo === 'input') {
+                <input type="text" class="form-control mb-4 text-center" [(ngModel)]="inputTemporal" placeholder="Escriba aquí...">
+                <div class="d-flex justify-content-center gap-2">
+                  <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" style="font-size: 0.85rem;" (click)="cerrarAlerta()">Cancelar</button>
+                  <button class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;" (click)="ejecutarConfirmacion()">Guardar</button>
+                </div>
+              } @else if (alertaTipo === 'confirmacion') {
                 <div class="d-flex justify-content-center gap-2">
                   <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" style="font-size: 0.85rem;" (click)="cerrarAlerta()">Cancelar</button>
                   <button class="btn rounded-pill px-4 py-2 fw-bold text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
@@ -742,46 +903,6 @@
                 <button class="btn btn-success rounded-pill px-5 py-2 fw-bold w-100 shadow-sm" style="font-size: 0.9rem;" (click)="cerrarAlerta()">Aceptar</button>
               }
             </div>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- MODAL DE AVISO GLOBAL -->
-    @if (mostrarAvisoGlobal && avisoGlobal) {
-      <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
-      
-      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1065; margin-top: 5vh;">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.4s ease; overflow: hidden;">
-            
-            @if (avisoGlobal.imagenUrl) {
-              <div class="modal-body p-0 position-relative">
-                <button type="button" class="btn-close position-absolute top-0 end-0 m-3 bg-white" style="z-index: 1070; opacity: 0.8;" aria-label="Cerrar" (click)="cerrarAvisoGlobal()"></button>
-                <img [src]="avisoGlobal.imagenUrl" alt="Aviso Importante" class="img-fluid w-100">
-                <div class="p-4 bg-white">
-                    <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
-                      He leído y entendido <i class="fa-solid fa-check ms-2"></i>
-                    </button>
-                </div>
-              </div>
-            } @else {
-              <div class="modal-header border-0 bg-light justify-content-center pt-5 pb-3">
-                <div class="text-success rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem; background-color: rgba(5, 90, 28, 0.1);">
-                  <i class="fa-solid fa-bullhorn"></i>
-                </div>
-              </div>
-              <div class="modal-body px-5 pb-5 pt-2">
-                <h3 class="fw-bold text-dark mb-4">{{ avisoGlobal.titulo }}</h3>
-                <p class="text-secondary fs-6 mb-5" style="white-space: pre-line; line-height: 1.6;">
-                  {{ avisoGlobal.mensaje }}
-                </p>
-                <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
-                  He leído y entendido <i class="fa-solid fa-check ms-2"></i>
-                </button>
-              </div>
-            }
-
           </div>
         </div>
       </div>
