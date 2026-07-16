@@ -131,63 +131,190 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
 }
 
 /* =========================================
-   EFECTOS VISUALES DE LAS TARJETAS Y HOVER
+   EFECTOS VISUALES DE LAS TARJETAS (HOVER VERDE)
    ========================================= */
-.sede-card {
+.slp-hover-card {
     border: 1px solid #eaeaea !important;
     border-radius: 0.8rem !important;
     transition: all 0.3s ease !important;
     background-color: #ffffff;
 }
 
-/* ESTADO NORMAL DE LOS ÍCONOS DE LAS TARJETAS */
-.sede-card .icon-circle {
-    background-color: rgba(5, 90, 28, 0.08); /* Fondo verde clarito */
-    color: #055A1C; /* Ícono verde SLP */
+/* ESTADO NORMAL */
+.slp-hover-card .icon-circle {
+    background-color: rgba(5, 90, 28, 0.08);
+    color: #055A1C;
     transition: all 0.3s ease !important;
 }
-
-.sede-card .card-text-color {
-    color: #232323; /* Color de texto normal */
+.slp-hover-card .card-text-color {
+    color: #232323;
+    transition: all 0.3s ease;
+}
+.slp-hover-card .card-subtext-color {
+    color: #706f6f;
+    transition: all 0.3s ease;
+}
+.slp-hover-card .card-icon-location {
+    color: #9d9d9c;
+    transition: all 0.3s ease;
+}
+.slp-hover-card .card-footer-text {
+    color: #055A1C;
     transition: all 0.3s ease;
 }
 
-.sede-card .card-subtext-color {
-    color: #706f6f; /* Gris normal */
-    transition: all 0.3s ease;
-}
-
-.sede-card .card-icon-location {
-    color: #9d9d9c; /* Gris para el ícono de ubicación */
-    transition: all 0.3s ease;
-}
-
-.sede-card .card-footer-text {
-    color: #055A1C; /* Verde normal para "Seleccionar" */
-    transition: all 0.3s ease;
-}
-
-/* ESTADO HOVER: FONDO ROSA MEXICANO Y LETRAS BLANCAS */
-.sede-card:hover {
+/* ESTADO HOVER: FONDO VERDE INSTITUCIONAL Y LETRAS BLANCAS */
+.slp-hover-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(230, 0, 100, 0.2) !important;
-    background-color: #E60064 !important;
-    border-color: #E60064 !important;
+    box-shadow: 0 10px 20px rgba(5, 90, 28, 0.2) !important;
+    background-color: #338C36 !important;
+    border-color: #338C36 !important;
 }
 
-.sede-card:hover .icon-circle {
+.slp-hover-card:hover .icon-circle {
     background-color: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
 }
 
 /* Forzar que todos los textos internos se vuelvan blancos al hacer hover */
-.sede-card:hover .card-text-color,
-.sede-card:hover .card-subtext-color,
-.sede-card:hover .card-icon-location,
-.sede-card:hover .card-footer-text {
+.slp-hover-card:hover .card-text-color,
+.slp-hover-card:hover .card-subtext-color,
+.slp-hover-card:hover .card-icon-location,
+.slp-hover-card:hover .card-footer-text {
     color: #ffffff !important;
 }
 
-.sede-card:hover .bg-light {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Vuelve el fondo de la ubicación translúcido */
+.slp-hover-card:hover .bg-light {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+
+/* =========================================
+   TIMELINE INTERACTIVO (MAPAS)
+   ========================================= */
+.timeline-container {
+    position: relative;
+    max-width: 900px;
+    margin: 4rem auto;
+}
+.timeline-container::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    background-color: #055A1C;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -2px;
+    border-radius: 2px;
+}
+.timeline-item {
+    padding: 10px 40px;
+    position: relative;
+    width: 50%;
+}
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: -10px;
+    background-color: white;
+    border: 4px solid #338C36;
+    top: 40px;
+    border-radius: 50%;
+    z-index: 1;
+}
+.timeline-left {
+    left: 0;
+}
+.timeline-right {
+    left: 50%;
+}
+.timeline-left::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 40px;
+    width: 0;
+    z-index: 1;
+    right: 30px;
+    border: medium solid #f4f4f4;
+    border-width: 10px 0 10px 10px;
+    border-color: transparent transparent transparent #f4f4f4;
+}
+.timeline-right::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 40px;
+    width: 0;
+    z-index: 1;
+    left: 30px;
+    border: medium solid #f4f4f4;
+    border-width: 10px 10px 10px 0;
+    border-color: transparent #f4f4f4 transparent transparent;
+}
+.timeline-right::after {
+    left: -10px;
+}
+.timeline-content {
+    padding: 0;
+    background-color: white;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+.timeline-content:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 25px rgba(5,90,28,0.15);
+    border-color: #338C36;
+}
+.timeline-img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: #ffffff;
+    padding: 1rem;
+}
+.timeline-title {
+    background-color: #055A1C;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+    margin: 0;
+    font-size: 1.1rem;
+}
+.timeline-desc {
+    padding: 15px;
+    text-align: center;
+    background-color: #fdfdfd;
+}
+
+/* Responsivo para móviles (Timeline) */
+@media screen and (max-width: 768px) {
+    .timeline-container::after {
+        left: 31px;
+    }
+    .timeline-item {
+        width: 100%;
+        padding-left: 70px;
+        padding-right: 15px;
+    }
+    .timeline-item::before {
+        left: 60px;
+        border: medium solid #f4f4f4;
+        border-width: 10px 10px 10px 0;
+        border-color: transparent #f4f4f4 transparent transparent;
+    }
+    .timeline-left::after, .timeline-right::after {
+        left: 21px;
+    }
+    .timeline-right {
+        left: 0%;
+    }
 }

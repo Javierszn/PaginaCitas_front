@@ -18,7 +18,6 @@
 
     @if (pasoActual === 1) {
       <div class="text-center mb-5">
-        <!-- APLICAMOS LA LÍNEA VERDE AL TÍTULO -->
         <h3 class="fw-bold text-dark mt-2 green-line">Agende su Cita en Línea</h3>
         <p class="text-secondary mt-3" style="font-size: 0.9rem;">Seleccione la oficina para realizar su trámite</p>
       </div>
@@ -26,13 +25,11 @@
       <div class="row justify-content-center mt-4">
         @for (sede of sedes; track sede.idSede) {
           <div class="col-md-5 col-lg-4 m-3">
-            <div class="card h-100 shadow-sm border-0 sede-card" (click)="seleccionarSede(sede)">
+            <div class="card h-100 shadow-sm border-0 slp-hover-card" (click)="seleccionarSede(sede)" style="cursor: pointer;">
               <div class="card-body text-center p-4">
-                
-                <div class="icon-circle rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px; font-size: 1.3rem;">
+                <div class="icon-circle rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
                   <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building]="!sede.nombre.includes('Otros')"></i>
                 </div>
-                
                 <h6 class="card-title fw-bold mb-1 card-text-color">{{ sede.nombre }}</h6>
                 
                 @if (sede.direccion) {
@@ -48,6 +45,52 @@
             </div>
           </div>
         }
+      </div>
+
+      <!-- TIMELINE INTERACTIVO: OFICINAS DE ENLACE -->
+      <div class="mt-5 pt-5 border-top">
+        <div class="text-center mb-5">
+          <h3 class="fw-bold text-dark mt-2 green-line">Cada día más cerca de ti</h3>
+          <p class="text-secondary mt-3">Creamos Oficinas de Enlace para la ciudadanía</p>
+        </div>
+
+        <div class="timeline-container">
+          <!-- Item 1: Valles -->
+          <div class="timeline-item timeline-left">
+            <div class="timeline-content">
+              <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/img/ub_valles_L3FDVc0.jpeg" alt="Ciudad Valles" class="timeline-img">
+              <h5 class="timeline-title">Ciudad Valles</h5>
+              <div class="timeline-desc">
+                <p class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">Creación de Oficina de Enlace del Registro Civil</p>
+                <small class="text-muted">Octubre 2022</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Item 2: Charcas -->
+          <div class="timeline-item timeline-right">
+            <div class="timeline-content">
+              <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/img/ub_charcas_AprIQK0.jpeg" alt="Charcas" class="timeline-img">
+              <h5 class="timeline-title">Charcas</h5>
+              <div class="timeline-desc">
+                <p class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">Creación de Oficina de Enlace del Registro Civil</p>
+                <small class="text-muted">Febrero 2024</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 3: Tamazunchale -->
+          <div class="timeline-item timeline-left">
+            <div class="timeline-content">
+              <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/img/of_enlace_tamazunchale3.png" alt="Tamazunchale" class="timeline-img">
+              <h5 class="timeline-title">Tamazunchale</h5>
+              <div class="timeline-desc">
+                <p class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">Creación de Oficina de Enlace del Registro Civil</p>
+                <small class="text-muted">Agosto 2025</small>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     }
 
@@ -330,7 +373,7 @@
       </div>
       <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0 bg-white" style="border: 1px solid #f4f4f4 !important;">
-          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.08);">
+          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.1);">
             <i class="fa-solid fa-magnifying-glass"></i>
           </div>
           <h4 class="fw-bold text-dark mb-3">Consultar Cita</h4>
@@ -724,7 +767,7 @@
               </div>
             } @else {
               <div class="modal-header border-0 bg-light justify-content-center pt-5 pb-3">
-                <div class="text-success rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem; background-color: rgba(5, 90, 28, 0.08);">
+                <div class="text-success rounded-circle d-flex justify-content-center align-items-center" style="width: 90px; height: 90px; font-size: 3rem; background-color: rgba(5, 90, 28, 0.1);">
                   <i class="fa-solid fa-bullhorn"></i>
                 </div>
               </div>
