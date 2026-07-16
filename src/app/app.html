@@ -505,7 +505,7 @@
                     <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
-                <small class="text-muted" style="font-size: 0.75rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
+                
               </div>
             </div>
 
@@ -522,7 +522,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- AHORA USAMOS citasDia DIRECTAMENTE, EL BACKEND HACE EL FILTRO -->
+                  
                   @for (cita of citasDia; track cita.folio) {
                     <tr>
                       <td>
@@ -585,6 +585,25 @@
         <div class="card shadow-sm border-0 rounded-4">
           <div class="card-body p-4">
             
+        
+            <div class="row mb-4 bg-light p-3 rounded-3">
+              <div class="col-md-3 mb-3 mb-md-0">
+                <label class="form-label fw-bold small text-secondary">Filtrar por Día</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusquedaBitacora()">
+              </div>
+              <div class="col-md-9">
+                <label class="form-label fw-bold small text-secondary">Búsqueda Global (Folio, Empleado, Acción)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
+                  <button class="btn btn-success" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  @if(textoBusquedaBitacora) {
+                    <button class="btn btn-outline-secondary" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
+                  }
+                </div>
+              
+              </div>
+            </div>
+
             @if (cargandoBitacora) {
               <div class="text-center my-5 text-success">
                 <div class="spinner-border" role="status"></div>
@@ -613,7 +632,7 @@
                           <span class="badge" 
                                 [class.bg-info]="log.accion === 'UPDATE'"
                                 [class.bg-success]="log.accion === 'INSERT'"
-                                [class.bg-danger]="log.accion.includes('DESHACER')">
+                                [class.bg-danger]="log.accion.includes('RESTAURADO')">
                             {{ log.accion }}
                           </span>
                         </td>
@@ -621,8 +640,8 @@
                         <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
                         <td class="text-success fw-bold">{{ log.valorNuevo || 'N/A' }}</td>
                         <td class="text-center">
-                          <!-- Mostrar el botón Deshacer SOLO si fue un UPDATE que no sea ya un rollback -->
-                          @if (log.accion === 'UPDATE' && log.tabla === 'Citas') {
+                          <!-- Mostrar el botón Deshacer SOLO si fue un UPDATE normal y NO una restauración -->
+                          @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
                             <button class="btn btn-sm btn-danger" 
                                     (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
                               <i class="fa-solid fa-rotate-left"></i>
@@ -635,7 +654,7 @@
                     }
                     @if (bitacoraLogs.length === 0) {
                       <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No hay movimientos registrados.</td>
+                        <td colspan="7" class="text-center py-4 text-muted">No hay movimientos encontrados para su búsqueda.</td>
                       </tr>
                     }
                   </tbody>
@@ -755,7 +774,7 @@
                   <i class="fa-brands fa-facebook-f fs-5 text-white"></i>
                 </span>
                 <span class="bg-light bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                  <i class="fa-brands fa-twitter fs-5 text-info"></i>
+                  <i class="fa-brands fa-x fs-5 text-info"></i>
                 </span>
               </div>
               <p class="small text-light text-opacity-75 mb-1">Registro Civil SLP | 01 444 812-80-50</p>

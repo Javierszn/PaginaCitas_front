@@ -52,6 +52,8 @@ export class App implements OnInit {
   
   bitacoraLogs: any[] = [];
   cargandoBitacora: boolean = false;
+  fechaBitacora: string = ''; // Lo dejamos vacío para que por defecto traiga todo el historial
+  textoBusquedaBitacora: string = '';
 
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [
@@ -73,9 +75,8 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.cargarSedes();
-    this.cargarAvisoGlobal();
     
-    // RECUPERACIÓN DE SESIÓN (Soluciona el problema de recargar la página con F5)
+    // RECUPERACIÓN DE SESIÓN
     const sessionUser = sessionStorage.getItem('usuarioRC');
     const sessionPaso = sessionStorage.getItem('pasoRC');
     
@@ -86,6 +87,7 @@ export class App implements OnInit {
       if (this.pasoActual === 10) this.cargarBitacora();
     } else {
       history.replaceState({ paso: 1 }, '', '');
+      this.cargarAvisoGlobal(); // Si no hay sesión de admin, mostramos el aviso
     }
   }
 
@@ -105,6 +107,9 @@ export class App implements OnInit {
   }
 
   cargarAvisoGlobal() {
+    // PROTECCIÓN: Si es un empleado, no mostramos el aviso global
+    if (this.usuarioSesion) return;
+
     this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
       next: (res: any) => {
         if (res && res.titulo) {
@@ -380,8 +385,6 @@ export class App implements OnInit {
       next: (res: any) => {
         this.cargandoLogin = false;
         this.usuarioSesion = res;
-        
-        // Guardar Sesión en el navegador
         sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion));
         sessionStorage.setItem('pasoRC', '9');
 
@@ -405,7 +408,6 @@ export class App implements OnInit {
     this.regresarPaso1();
   }
 
-  // Se modificó para buscar globalmente si hay texto, ignorando la fecha
   cargarCitasDashboard() {
     let url = `http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}`;
     
@@ -461,7 +463,20 @@ export class App implements OnInit {
 
   cargarBitacora() {
     this.cargandoBitacora = true;
-    this.http.get('http://localhost:5076/api/Bitacora').subscribe({
+    let url = 'http://localhost:5076/api/Bitacora';
+    
+    const params = [];
+    if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) {
+      params.push(`busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`);
+    } else if (this.fechaBitacora) {
+      params.push(`fecha=${this.fechaBitacora}`);
+    }
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+
+    this.http.get(url).subscribe({
       next: (res: any) => {
         this.bitacoraLogs = res;
         this.cargandoBitacora = false;
@@ -473,6 +488,11 @@ export class App implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  limpiarBusquedaBitacora() {
+    this.textoBusquedaBitacora = '';
+    this.cargarBitacora();
   }
 
   deshacerAccion(idBitacora: number) {
@@ -500,6 +520,10 @@ export class App implements OnInit {
     this.limpiarFormulario();
     sessionStorage.removeItem('pasoRC'); // Limpiamos rastro
     history.pushState({ paso: 1 }, '', ''); 
+    
+    // Si nos regresamos al inicio y el aviso sigue prendido en el servidor, lo traemos de nuevo
+    this.cargarAvisoGlobal();
+    
     this.cdr.detectChanges(); 
   }
   regresarPaso2() { this.pasoActual = 2; this.tramiteSeleccionado = null; history.pushState({ paso: 2 }, '', ''); this.cdr.detectChanges(); }
