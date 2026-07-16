@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
-/* Aplicamos Montserrat SOLO a los textos, respetando los iconos de FontAwesome */
 body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong, td, th, span.badge {
     font-family: 'Montserrat', sans-serif !important;
 }
