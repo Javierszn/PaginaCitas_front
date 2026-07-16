@@ -60,6 +60,11 @@ export class App implements OnInit {
   tramitesSistema: any[] = [];
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 };
 
+  // --- VARIABLES SISTEMA DE PETICIONES (TICKETS) ---
+  mostrarModalPeticion: boolean = false;
+  peticionesSistema: any[] = [];
+  nuevaPeticion = { username: '', tipo: 'RECUPERAR CONTRASEÑA', descripcion: '' };
+
   municipiosRegistro: string[] = [];
   estadosRepublica: string[] = [ 'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México (CDMX)', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas' ];
   todosLosMunicipiosSLP: string[] = [ 'Ahualulco', 'Alaquines', 'Aquismón', 'Armadillo de los Infante', 'Axtla de Terrazas', 'Cárdenas', 'Catorce', 'Cedral', 'Cerritos', 'Cerro de San Pedro', 'Charcas', 'Ciudad del Maíz', 'Ciudad Fernández', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Guadalcázar', 'Huehuetlán', 'Lagunillas', 'Matehuala', 'Matlapa', 'Mexquitic de Carmona', 'Moctezuma', 'Rayón', 'Rioverde', 'Salinas', 'San Antonio', 'San Ciro de Acosta', 'San Luis Potosí', 'San Martín Chalchicuautla', 'San Nicolás Tolentino', 'San Vicente Tancuayalab', 'Santa Catarina', 'Santa María del Río', 'Santo Domingo', 'Soledad de Graciano Sánchez', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Tierra Nueva', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Arriaga', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa de Reyes', 'Villa Hidalgo', 'Villa Juárez', 'Xilitla', 'Zaragoza', 'Villa de Pozos (Municipio 59)' ].sort();
@@ -78,7 +83,7 @@ export class App implements OnInit {
       this.pasoActual = parseInt(sessionPaso, 10);
       if (this.pasoActual === 9) this.cargarCitasDashboard();
       if (this.pasoActual === 10) this.cargarBitacora();
-      if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); }
+      if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarPeticionesAdmin(); }
     } else {
       history.replaceState({ paso: 1 }, '', '');
       this.cargarAvisoGlobal();
@@ -291,10 +296,50 @@ export class App implements OnInit {
     });
   }
 
+  // --- MÉTODOS DE PETICIONES (TICKETS DE SOPORTE) ---
+  abrirModalPeticion(desdeLogin: boolean = false) {
+    this.nuevaPeticion = {
+      username: desdeLogin ? this.credenciales.username : this.usuarioSesion?.username,
+      tipo: desdeLogin ? 'RECUPERAR CONTRASEÑA' : 'SOPORTE TÉCNICO',
+      descripcion: ''
+    };
+    this.mostrarModalPeticion = true;
+    this.cdr.detectChanges();
+  }
+  
+  cerrarModalPeticion() { this.mostrarModalPeticion = false; this.cdr.detectChanges(); }
+
+  enviarPeticion() {
+    if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) {
+      this.abrirAlerta('Atención', 'Por favor, llene todos los campos requeridos.', 'warning');
+      return;
+    }
+    this.http.post('http://localhost:5076/api/Peticiones', this.nuevaPeticion).subscribe({
+      next: (res: any) => {
+        this.cerrarModalPeticion();
+        this.abrirAlerta('Solicitud Enviada', res.mensaje, 'success');
+      },
+      error: () => this.abrirAlerta('Error', 'No se pudo enviar la solicitud.', 'error')
+    });
+  }
+
+  cargarPeticionesAdmin() {
+    this.http.get('http://localhost:5076/api/Peticiones').subscribe({
+      next: (res: any) => { this.peticionesSistema = res; this.cdr.detectChanges(); }
+    });
+  }
+
+  resolverPeticion(id: number) {
+    this.http.put(`http://localhost:5076/api/Peticiones/${id}/resolver`, {}).subscribe({
+      next: () => this.cargarPeticionesAdmin(),
+      error: () => this.abrirAlerta('Error', 'No se pudo actualizar el ticket.', 'error')
+    });
+  }
+
   // --- CONFIGURACIÓN DEL SISTEMA (SUPER ADMIN) ---
   irASuperAdmin() { 
     this.pasoActual = 11; sessionStorage.setItem('pasoRC', '11'); 
-    this.cargarUsuariosAdmin(); this.cargarTramitesAdmin();
+    this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarPeticionesAdmin();
     history.pushState({ paso: 11 }, '', ''); this.cdr.detectChanges(); 
   }
 
@@ -333,7 +378,6 @@ export class App implements OnInit {
   }
 
   cargarTramitesAdmin() {
-    // LLAMADO A LA NUEVA RUTA PARA QUE MUESTRE TODOS INCLUSO LOS INACTIVOS
     this.http.get('http://localhost:5076/api/Tramites/Admin').subscribe({
       next: (res: any) => { 
         let t: any[] = [];
@@ -345,12 +389,7 @@ export class App implements OnInit {
   }
 
   actualizarTramite(tramite: any) {
-    const payload = { 
-        duracionMinutos: tramite.duracionMinutos, 
-        costo: tramite.costo, 
-        activo: tramite.activo, 
-        limiteDiario: tramite.limiteDiarioSede // AHORA SE ENVÍA EL LIMITE
-    };
+    const payload = { duracionMinutos: tramite.duracionMinutos, costo: tramite.costo, activo: tramite.activo, limiteDiario: tramite.limiteDiarioSede };
     this.http.put(`http://localhost:5076/api/Tramites/${tramite.idTramite}`, payload).subscribe({
       next: (res: any) => this.abrirAlerta('Guardado', res.mensaje, 'success'),
       error: () => this.abrirAlerta('Error', 'No se pudo guardar la configuración.', 'error')
