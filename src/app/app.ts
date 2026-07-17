@@ -50,6 +50,11 @@ export class App implements OnInit {
   fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
   
+  // --- VARIABLES SEGURIDAD PRIMER ACCESO ---
+  mostrarForzarPassword: boolean = false;
+  nuevaPassword = '';
+  confirmarPassword = '';
+
   bitacoraLogs: any[] = [];
   cargandoBitacora: boolean = false;
   fechaBitacora: string = ''; 
@@ -60,9 +65,14 @@ export class App implements OnInit {
   tramitesSistema: any[] = [];
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 };
 
-  // --- VARIABLES SISTEMA DE PETICIONES (TICKETS) ---
+  // --- VARIABLES SISTEMA DE PETICIONES (TICKETS Y NOTIFICACIONES) ---
   mostrarModalPeticion: boolean = false;
+  mostrarBandeja: boolean = false; 
+  peticionDesdeLogin: boolean = false;
   peticionesSistema: any[] = [];
+  misPeticiones: any[] = [];
+  notificacionesNuevas: number = 0;
+  usuariosSoporte: any[] = []; 
   nuevaPeticion = { username: '', tipo: 'RECUPERAR CONTRASEÑA', descripcion: '' };
 
   municipiosRegistro: string[] = [];
@@ -76,14 +86,21 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.cargarSedes();
+    this.cargarUsuariosSoporte();
+
     const sessionUser = sessionStorage.getItem('usuarioRC');
     const sessionPaso = sessionStorage.getItem('pasoRC');
     if (sessionUser && sessionPaso) {
       this.usuarioSesion = JSON.parse(sessionUser);
       this.pasoActual = parseInt(sessionPaso, 10);
-      if (this.pasoActual === 9) this.cargarCitasDashboard();
+      if (this.pasoActual === 9) { 
+        this.cargarCitasDashboard(); 
+        if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin();
+        else this.cargarMisPeticiones(); 
+      }
       if (this.pasoActual === 10) this.cargarBitacora();
-      if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarPeticionesAdmin(); }
+      if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); }
+      if (this.pasoActual === 12) this.cargarPeticionesAdmin();
     } else {
       history.replaceState({ paso: 1 }, '', '');
       this.cargarAvisoGlobal();
@@ -94,7 +111,7 @@ export class App implements OnInit {
   onPopState(event: any) {
     if (event.state && event.state.paso) {
       this.pasoActual = event.state.paso;
-      if ([9, 10, 11].includes(this.pasoActual)) {
+      if ([9, 10, 11, 12].includes(this.pasoActual)) {
         sessionStorage.setItem('pasoRC', this.pasoActual.toString());
       }
     } else { this.pasoActual = 1; }
@@ -172,9 +189,7 @@ export class App implements OnInit {
   }
 
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
-
   irAPaso4() { this.pasoActual = 4; this.generarCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); }
-
   cambiarMes(delta: number) { this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + delta, 1); this.generarCalendario(); }
 
   generarCalendario() {
@@ -246,12 +261,50 @@ export class App implements OnInit {
     this.cargandoLogin = true;
     this.http.post('http://localhost:5076/api/Auth/login', this.credenciales).subscribe({
       next: (res: any) => {
-        this.cargandoLogin = false; this.usuarioSesion = res;
-        sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9');
-        this.pasoActual = 9; this.cargarCitasDashboard(); history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges();
+        this.cargandoLogin = false; 
+        this.usuarioSesion = res;
+        
+        if (this.usuarioSesion.requiereCambioPassword) {
+            this.mostrarForzarPassword = true;
+            this.cdr.detectChanges();
+            return;
+        }
+        this.procesarAccesoCorrecto();
       },
       error: (err) => { this.cargandoLogin = false; this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Usuario o contraseña incorrectos.', 'error'); this.cdr.detectChanges(); }
     });
+  }
+
+  guardarNuevaPasswordForzada() {
+    if (this.nuevaPassword.length < 5) { this.abrirAlerta('Atención', 'La contraseña debe tener al menos 5 caracteres.', 'warning'); return; }
+    if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; }
+
+    this.http.put(`http://localhost:5076/api/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({
+        next: (res: any) => {
+            this.mostrarForzarPassword = false;
+            this.abrirAlerta('Éxito', 'Su contraseña fue actualizada. Bienvenido al sistema.', 'success');
+            this.usuarioSesion.requiereCambioPassword = false;
+            this.procesarAccesoCorrecto();
+        },
+        error: () => this.abrirAlerta('Error', 'No se pudo actualizar la contraseña.', 'error')
+    });
+  }
+
+  procesarAccesoCorrecto() {
+    sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion));
+    sessionStorage.setItem('pasoRC', '9');
+    this.pasoActual = 9; 
+    this.cargarCitasDashboard(); 
+    
+    // Si es SuperAdmin carga las de todo el sistema, si no, solo las suyas
+    if (this.usuarioSesion?.rol === 'Super Administrador') {
+        this.cargarPeticionesAdmin();
+    } else {
+        this.cargarMisPeticiones();
+    }
+    
+    history.pushState({ paso: 9 }, '', ''); 
+    this.cdr.detectChanges();
   }
 
   cerrarSesion() { this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); }
@@ -274,7 +327,15 @@ export class App implements OnInit {
 
   // --- BITÁCORA (ADMIN / SUPER ADMIN) ---
   irABitacora() { this.pasoActual = 10; sessionStorage.setItem('pasoRC', '10'); this.cargarBitacora(); history.pushState({ paso: 10 }, '', ''); this.cdr.detectChanges(); }
-  regresarADashboard() { this.pasoActual = 9; sessionStorage.setItem('pasoRC', '9'); history.pushState({ paso: 9 }, '', ''); this.cargarCitasDashboard(); this.cdr.detectChanges(); }
+  regresarADashboard() { 
+      this.pasoActual = 9; 
+      sessionStorage.setItem('pasoRC', '9'); 
+      history.pushState({ paso: 9 }, '', ''); 
+      this.cargarCitasDashboard(); 
+      if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin();
+      else this.cargarMisPeticiones();
+      this.cdr.detectChanges(); 
+  }
 
   cargarBitacora() {
     this.cargandoBitacora = true; let url = 'http://localhost:5076/api/Bitacora'; const params = [];
@@ -296,28 +357,60 @@ export class App implements OnInit {
     });
   }
 
-  // --- MÉTODOS DE PETICIONES (TICKETS DE SOPORTE) ---
+  // --- MÉTODOS DE PETICIONES (NOTIFICACIONES ESTILO APP) ---
+  cargarUsuariosSoporte() {
+    this.http.get('http://localhost:5076/api/Usuarios/Soporte').subscribe({
+      next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); }
+    });
+  }
+
+  cargarMisPeticiones() {
+    if (!this.usuarioSesion) return;
+    this.http.get('http://localhost:5076/api/Peticiones/MisPeticiones/' + this.usuarioSesion.username).subscribe({
+      next: (res: any) => { 
+          this.misPeticiones = res; 
+          this.notificacionesNuevas = this.misPeticiones.filter(p => p.estatus === 'RESUELTA').length;
+          this.cdr.detectChanges(); 
+      }
+    });
+  }
+
+  // Lógica inteligente de la campanita
+  abrirBandeja() {
+    if (this.usuarioSesion?.rol === 'Super Administrador') {
+        this.irACentroSoporte(); // El Super Admin es redirigido a Paso 12
+    } else {
+        this.mostrarBandeja = true; // El empleado normal abre su bandeja flotante
+        this.notificacionesNuevas = 0; 
+        this.cdr.detectChanges();
+    }
+  }
+  cerrarBandeja() { this.mostrarBandeja = false; this.cdr.detectChanges(); }
+
   abrirModalPeticion(desdeLogin: boolean = false) {
+    this.peticionDesdeLogin = desdeLogin;
     this.nuevaPeticion = {
-      username: desdeLogin ? this.credenciales.username : this.usuarioSesion?.username,
+      username: desdeLogin ? '' : this.usuarioSesion?.username,
       tipo: desdeLogin ? 'RECUPERAR CONTRASEÑA' : 'SOPORTE TÉCNICO',
       descripcion: ''
     };
     this.mostrarModalPeticion = true;
     this.cdr.detectChanges();
   }
-  
   cerrarModalPeticion() { this.mostrarModalPeticion = false; this.cdr.detectChanges(); }
 
   enviarPeticion() {
     if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) {
-      this.abrirAlerta('Atención', 'Por favor, llene todos los campos requeridos.', 'warning');
-      return;
+      this.abrirAlerta('Atención', 'Por favor, llene todos los campos requeridos.', 'warning'); return;
     }
     this.http.post('http://localhost:5076/api/Peticiones', this.nuevaPeticion).subscribe({
       next: (res: any) => {
-        this.cerrarModalPeticion();
-        this.abrirAlerta('Solicitud Enviada', res.mensaje, 'success');
+        this.cerrarModalPeticion(); this.abrirAlerta('Solicitud Enviada', res.mensaje, 'success');
+        if (this.usuarioSesion?.rol === 'Super Administrador') {
+            this.cargarPeticionesAdmin();
+        } else if (this.usuarioSesion) {
+            this.cargarMisPeticiones();
+        }
       },
       error: () => this.abrirAlerta('Error', 'No se pudo enviar la solicitud.', 'error')
     });
@@ -325,50 +418,55 @@ export class App implements OnInit {
 
   cargarPeticionesAdmin() {
     this.http.get('http://localhost:5076/api/Peticiones').subscribe({
-      next: (res: any) => { this.peticionesSistema = res; this.cdr.detectChanges(); }
+      next: (res: any) => { 
+          this.peticionesSistema = res; 
+          this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE').length;
+          this.cdr.detectChanges(); 
+      }
     });
   }
 
   resolverPeticion(id: number) {
-    this.http.put(`http://localhost:5076/api/Peticiones/${id}/resolver`, {}).subscribe({
-      next: () => this.cargarPeticionesAdmin(),
-      error: () => this.abrirAlerta('Error', 'No se pudo actualizar el ticket.', 'error')
+    this.abrirInput('Responder Ticket', 'Escriba un mensaje de resolución o soporte para el empleado:', () => {
+      this.http.put(`http://localhost:5076/api/Peticiones/${id}/resolver`, { respuesta: this.inputTemporal }).subscribe({
+        next: (res: any) => { this.abrirAlerta('Resuelto', res.mensaje, 'success'); this.cargarPeticionesAdmin(); },
+        error: () => this.abrirAlerta('Error', 'No se pudo actualizar el ticket.', 'error')
+      });
     });
   }
 
   // --- CONFIGURACIÓN DEL SISTEMA (SUPER ADMIN) ---
   irASuperAdmin() { 
     this.pasoActual = 11; sessionStorage.setItem('pasoRC', '11'); 
-    this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarPeticionesAdmin();
+    this.cargarUsuariosAdmin(); this.cargarTramitesAdmin();
     history.pushState({ paso: 11 }, '', ''); this.cdr.detectChanges(); 
   }
 
+  irACentroSoporte() {
+    this.pasoActual = 12; sessionStorage.setItem('pasoRC', '12'); 
+    this.cargarPeticionesAdmin();
+    history.pushState({ paso: 12 }, '', ''); this.cdr.detectChanges(); 
+  }
+
   cargarUsuariosAdmin() {
-    this.http.get('http://localhost:5076/api/Usuarios').subscribe({
-      next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); }
-    });
+    this.http.get('http://localhost:5076/api/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
   }
 
   crearUsuario() {
     this.http.post('http://localhost:5076/api/Usuarios', this.nuevoUsuario).subscribe({
-      next: (res: any) => { 
-        this.abrirAlerta('Éxito', res.mensaje, 'success'); 
-        this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 };
-        this.cargarUsuariosAdmin(); 
-      },
+      next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 }; this.cargarUsuariosAdmin(); },
       error: (err) => this.abrirAlerta('Error', err.error?.mensaje || 'Error al crear usuario.', 'error')
     });
   }
 
   toggleEstadoUsuario(id: number) {
     this.http.put(`http://localhost:5076/api/Usuarios/${id}/estado`, {}).subscribe({
-      next: () => this.cargarUsuariosAdmin(),
-      error: () => this.abrirAlerta('Error', 'No se pudo cambiar el estado.', 'error')
+      next: () => this.cargarUsuariosAdmin(), error: () => this.abrirAlerta('Error', 'No se pudo cambiar el estado.', 'error')
     });
   }
 
   cambiarPasswordUsuario(id: number) {
-    this.abrirInput('Nueva Contraseña', 'Ingrese la nueva contraseña para este usuario:', () => {
+    this.abrirInput('Restablecer Contraseña', 'Asigne una contraseña temporal. El usuario deberá cambiarla al iniciar sesión:', () => {
       if (this.inputTemporal.length < 5) { this.abrirAlerta('Error', 'La contraseña debe ser mayor a 5 caracteres.', 'error'); return; }
       this.http.put(`http://localhost:5076/api/Usuarios/${id}/password`, { password: this.inputTemporal }).subscribe({
         next: (res: any) => this.abrirAlerta('Actualizado', res.mensaje, 'success'),
@@ -380,10 +478,7 @@ export class App implements OnInit {
   cargarTramitesAdmin() {
     this.http.get('http://localhost:5076/api/Tramites/Admin').subscribe({
       next: (res: any) => { 
-        let t: any[] = [];
-        res.forEach((cat: any) => { t = t.concat(cat.tramites); });
-        this.tramitesSistema = t;
-        this.cdr.detectChanges();
+        let t: any[] = []; res.forEach((cat: any) => { t = t.concat(cat.tramites); }); this.tramitesSistema = t; this.cdr.detectChanges();
       }
     });
   }

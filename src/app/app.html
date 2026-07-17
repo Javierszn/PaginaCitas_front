@@ -373,7 +373,7 @@
       </div>
       <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0 bg-white" style="border: 1px solid #f4f4f4 !important;">
-          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.08);">
+          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.1);">
             <i class="fa-solid fa-magnifying-glass"></i>
           </div>
           <h4 class="fw-bold text-dark mb-3">Consultar Cita</h4>
@@ -526,10 +526,36 @@
     <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
     @if (pasoActual === 9) {
       <div class="container mt-4">
+        
+        <!-- SECCIÓN DE NOTIFICACIONES PARA TODOS LOS EMPLEADOS -->
+        @if (notificacionesNuevas > 0) {
+          <div class="alert alert-info shadow-sm d-flex justify-content-between align-items-center rounded-4 mb-4" style="background-color: #f0f8ff; border-left: 5px solid #0dcaf0;">
+            <div>
+              @if (usuarioSesion?.rol === 'Super Administrador') {
+                <h6 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-bell me-2" style="color: #0dcaf0;"></i>Tiene peticiones de soporte pendientes</h6>
+                <span class="small text-muted">Haga clic en la campanita para revisar y resolver los tickets de los empleados.</span>
+              } @else {
+                <h6 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-bell me-2" style="color: #0dcaf0;"></i>Tiene respuestas de Sistemas</h6>
+                <span class="small text-muted">Revise la bandeja en la campanita para leer las soluciones de soporte.</span>
+              }
+            </div>
+          </div>
+        }
+
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
-          <div>
-            <!-- BOTÓN DE SOPORTE PARA EMPLEADOS LOGUEADOS -->
+          <div class="d-flex align-items-center">
+
+            <!-- CAMPANITA DE NOTIFICACIONES TIPO APP -->
+            <button class="btn position-relative me-3 border-0 bg-transparent" (click)="abrirBandeja()" title="Ver Notificaciones">
+              <i class="fa-solid fa-bell fs-4" [style.color]="notificacionesNuevas > 0 ? '#E60064' : '#9d9d9c'"></i>
+              @if (notificacionesNuevas > 0) {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: #E60064; font-size: 0.65rem;">
+                  {{ notificacionesNuevas }}
+                </span>
+              }
+            </button>
+
             <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #76B82A; border: 1px solid #76B82A; background: transparent;" (click)="abrirModalPeticion(false)">
               <i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda
             </button>
@@ -594,26 +620,33 @@
                       <td class="text-secondary">{{ cita.tramite }}</td>
                       <td>
                         <span class="badge" 
-                              [class.bg-primary]="cita.estatus === 'AGENDADA'"
-                              [class.bg-success]="cita.estatus === 'COMPLETADA'"
+                              [class.bg-primary]="cita.estatus === 'PROGRAMADA'"
+                              [class.bg-info]="cita.estatus === 'CONFIRMADA'"
+                              [class.bg-success]="cita.estatus === 'ATENDIDA'"
                               [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
+                              [class.bg-secondary]="cita.estatus === 'REPROGRAMADA'"
                               [class.bg-danger]="cita.estatus === 'CANCELADA'">
                           {{ cita.estatus }}
                         </span>
                       </td>
                       <td class="text-center">
-                        @if (cita.estatus === 'AGENDADA') {
-                          <button class="btn btn-sm btn-success me-2 fw-semibold" title="Marcar Completada"
-                                  (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como COMPLETADA?', () => actualizarEstatusCita(cita.folio, 'COMPLETADA'))">
-                            <i class="fa-solid fa-check me-1"></i> Asistió
+                        @if (cita.estatus === 'PROGRAMADA') {
+                          <button class="btn btn-sm btn-primary me-2 fw-semibold" title="Marcar Confirmada"
+                                  (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
+                            <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar
+                          </button>
+                        } @else if (cita.estatus === 'CONFIRMADA') {
+                          <button class="btn btn-sm btn-success me-2 fw-semibold" title="Marcar Atendida"
+                                  (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como ATENDIDA?', () => actualizarEstatusCita(cita.folio, 'ATENDIDA'))">
+                            <i class="fa-solid fa-check me-1"></i> Atendida
                           </button>
                           
                           <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
                                   (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
-                            <i class="fa-solid fa-xmark me-1"></i> No asistió
+                            <i class="fa-solid fa-xmark me-1"></i> Falta
                           </button>
                         } @else {
-                          <span class="text-muted" style="font-size: 0.75rem;">Sin acciones</span>
+                          <span class="text-muted" style="font-size: 0.75rem;">Finalizada</span>
                         }
                       </td>
                     </tr>
@@ -654,7 +687,7 @@
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, EMPLEADO, ACCIÓN)</label>
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
-                  <button class="btn text-white fw-bold" style="background-color: #338C36; border-color: #338C36;" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  <button class="btn btn-success fw-bold" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
                   @if(textoBusquedaBitacora) {
                     <button class="btn btn-outline-secondary" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
                   }
@@ -726,7 +759,7 @@
       </div>
     }
 
-    <!-- PANTALLA 11: CONFIGURACIÓN SUPER ADMIN -->
+    <!-- PANTALLA 11: CONFIGURACIÓN SUPER ADMIN (USUARIOS Y TRÁMITES) -->
     @if (pasoActual === 11) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -735,6 +768,7 @@
         </div>
 
         <div class="row">
+          <!-- GESTIÓN DE USUARIOS -->
           <div class="col-lg-12 mb-4">
             <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
               <div class="card-header bg-white p-4 border-bottom">
@@ -808,6 +842,7 @@
             </div>
           </div>
 
+          <!-- CONFIGURACIÓN DE TRÁMITES Y LÍMITES -->
           <div class="col-lg-12 mb-4">
             <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
               <div class="card-header bg-white p-4 border-bottom">
@@ -865,76 +900,148 @@
               </div>
             </div>
           </div>
-
-          <!-- NUEVA SECCIÓN DE PETICIONES Y TICKETS (SUPER ADMIN) -->
-          <div class="col-lg-12">
-            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
-              <div class="card-header bg-white p-4 border-bottom">
-                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-headset me-2" style="color: #76B82A;"></i>Centro de Soporte y Peticiones</h6>
-              </div>
-              <div class="card-body p-4">
-                
-                <div class="table-responsive">
-                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
-                    <thead style="background-color: #fdfdfd;">
-                      <tr>
-                        <th class="py-3 text-secondary">Fecha</th>
-                        <th class="py-3 text-secondary">Usuario / Empleado</th>
-                        <th class="py-3 text-secondary">Tipo de Petición</th>
-                        <th class="py-3 text-secondary">Descripción</th>
-                        <th class="py-3 text-secondary text-center">Estatus</th>
-                        <th class="py-3 text-secondary text-center">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (p of peticionesSistema; track p.idPeticion) {
-                        <tr>
-                          <td class="text-nowrap">{{ p.fecha | date:'short' }}</td>
-                          <td class="fw-bold text-dark">{{ p.username }}</td>
-                          <td>
-                            <span class="badge" [class.bg-warning]="p.tipo.includes('CONTRASEÑA')" [class.bg-info]="!p.tipo.includes('CONTRASEÑA')">
-                              {{ p.tipo }}
-                            </span>
-                          </td>
-                          <td style="max-width: 300px; white-space: normal;">{{ p.descripcion }}</td>
-                          <td class="text-center">
-                            <span class="badge" [class.bg-success]="p.estatus === 'RESUELTA'" [class.bg-secondary]="p.estatus === 'PENDIENTE'">
-                              {{ p.estatus }}
-                            </span>
-                          </td>
-                          <td class="text-center">
-                            @if (p.estatus === 'PENDIENTE') {
-                              <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion)">
-                                Marcar Resuelto
-                              </button>
-                            } @else {
-                              <i class="fa-solid fa-check text-success fs-5"></i>
-                            }
-                          </td>
-                        </tr>
-                      }
-                      @if (peticionesSistema.length === 0) {
-                        <tr>
-                          <td colspan="6" class="text-center py-4 text-muted">Bandeja de entrada limpia. No hay peticiones.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     }
 
-    <!-- MODAL DE ALERTAS Y ENTRADA DE TEXTO -->
-    @if (mostrarAlerta) {
-      <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
+    <!-- PANTALLA 12: CENTRO DE SOPORTE EXCLUSIVO PARA SUPER ADMIN -->
+    @if (pasoActual === 12) {
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold" style="color: #76B82A;"><i class="fa-solid fa-headset me-2"></i>Centro de Soporte y Peticiones</h4>
+          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+          <div class="card-body p-4">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                <thead style="background-color: #fdfdfd;">
+                  <tr>
+                    <th class="py-3 text-secondary">Fecha</th>
+                    <th class="py-3 text-secondary">Usuario / Empleado</th>
+                    <th class="py-3 text-secondary">Tipo de Petición</th>
+                    <th class="py-3 text-secondary">Descripción</th>
+                    <th class="py-3 text-secondary text-center">Estatus</th>
+                    <th class="py-3 text-secondary">Respuesta</th>
+                    <th class="py-3 text-secondary text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of peticionesSistema; track p.idPeticion) {
+                    <tr>
+                      <td class="text-nowrap">{{ p.fecha | date:'short' }}</td>
+                      <td class="fw-bold text-dark">{{ p.username }}</td>
+                      <td>
+                        <span class="badge" [class.bg-warning]="p.tipo.includes('CONTRASEÑA')" [class.bg-info]="!p.tipo.includes('CONTRASEÑA')">
+                          {{ p.tipo }}
+                        </span>
+                      </td>
+                      <td style="max-width: 250px; white-space: normal;">{{ p.descripcion }}</td>
+                      <td class="text-center">
+                        <span class="badge" [class.bg-success]="p.estatus === 'RESUELTA'" [class.bg-secondary]="p.estatus === 'PENDIENTE'">
+                          {{ p.estatus }}
+                        </span>
+                      </td>
+                      <td style="max-width: 200px; white-space: normal;" class="text-success fw-bold">{{ p.respuesta }}</td>
+                      <td class="text-center">
+                        @if (p.estatus === 'PENDIENTE') {
+                          <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion)">
+                            Responder
+                          </button>
+                        } @else {
+                          <i class="fa-solid fa-check text-success fs-5"></i>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @if (peticionesSistema.length === 0) {
+                    <tr>
+                      <td colspan="7" class="text-center py-4 text-muted">Bandeja de entrada limpia. No hay peticiones.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL BANDEJA DE NOTIFICACIONES (ESTILO APP MENSAJES PARA EMPLEADOS) -->
+    @if (mostrarBandeja) {
+      <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.5);"></div>
+      <div class="modal d-block" tabindex="-1" style="z-index: 1065; margin-top: 5vh;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content rounded-4 border-0 shadow-lg">
+            
+            <div class="modal-header bg-light border-0 px-4 py-3">
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-bell me-2" style="color: #E60064;"></i>Bandeja de Notificaciones</h5>
+              <button type="button" class="btn-close" (click)="cerrarBandeja()"></button>
+            </div>
+            
+            <div class="modal-body p-4 text-start" style="max-height: 60vh; overflow-y: auto; background-color: #ffffff;">
+              @for (mp of misPeticiones; track mp.idPeticion) {
+                <div class="card mb-3 border-0 shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #338C36 !important;">
+                  <div class="card-body">
+                     <div class="d-flex justify-content-between mb-2">
+                       <h6 class="fw-bold text-dark m-0">{{ mp.tipo }}</h6>
+                       <small class="text-muted" style="font-size: 0.75rem;">{{ mp.fecha | date:'short' }}</small>
+                     </div>
+                     <p class="text-secondary small mb-3"><strong>Tú:</strong> {{ mp.descripcion }}</p>
+                     
+                     @if (mp.estatus === 'RESUELTA') {
+                       <div class="p-3 rounded-3" style="background-color: #D9E8D5;">
+                         <p class="text-dark small fw-bold mb-0"><i class="fa-solid fa-reply me-2" style="color: #055A1C;"></i>Sistemas: <span class="fw-normal">{{ mp.respuesta }}</span></p>
+                       </div>
+                     } @else {
+                       <span class="badge bg-secondary"><i class="fa-solid fa-clock me-1"></i> En revisión...</span>
+                     }
+                  </div>
+                </div>
+              }
+              @if (misPeticiones.length === 0) {
+                <div class="text-center my-5 text-muted">
+                  <i class="fa-solid fa-inbox fs-1 mb-3"></i>
+                  <p>No tienes notificaciones ni peticiones recientes.</p>
+                </div>
+              }
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL DE CAMBIO DE CONTRASEÑA FORZOSO (PRIMER LOGIN) -->
+    @if (mostrarForzarPassword) {
+      <div class="modal-backdrop fade show" style="z-index: 1070; background-color: rgba(5, 90, 28, 0.9);"></div>
       
-      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1055; margin-top: 15vh;">
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1075; margin-top: 15vh;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
+            <div class="modal-body p-5">
+              <div class="mb-4">
+                  <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #76B82A;"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-2">Seguridad de la Cuenta</h4>
+              <p class="text-secondary fs-6 mb-4">Para proteger su cuenta, es obligatorio crear una contraseña personal nueva en su primer inicio de sesión.</p>
+
+              <input type="password" class="form-control mb-3 text-center" [(ngModel)]="nuevaPassword" placeholder="Nueva Contraseña">
+              <input type="password" class="form-control mb-4 text-center" [(ngModel)]="confirmarPassword" placeholder="Confirmar Contraseña">
+
+              <button class="btn btn-success rounded-pill px-5 py-2 fw-bold w-100 shadow-sm" style="font-size: 0.9rem;" (click)="guardarNuevaPasswordForzada()">Guardar e Iniciar Sesión</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL DE ALERTAS (AHORA SIEMPRE AL FRENTE z-index: 9999) -->
+    @if (mostrarAlerta) {
+      <div class="modal-backdrop fade show" style="z-index: 9990; background-color: rgba(0,0,0,0.6);"></div>
+      
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 9995; margin-top: 15vh;">
         <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
           <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
             <div class="modal-body p-5">
@@ -952,7 +1059,7 @@
               <h4 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h4>
               <p class="text-secondary fs-6 mb-4">{{ alertaMensaje }}</p>
 
-              <!-- MODO INPUT PARA CONTRASEÑAS -->
+              <!-- MODO INPUT PARA CONTRASEÑAS Y RESPUESTAS -->
               @if (alertaTipo === 'input') {
                 <input type="text" class="form-control mb-4 text-center" [(ngModel)]="inputTemporal" placeholder="Escriba aquí...">
                 <div class="d-flex justify-content-center gap-2">
@@ -990,8 +1097,18 @@
               <p class="text-secondary small mb-4">Complete este formulario. Un Administrador del sistema revisará su caso y se pondrá en contacto con usted o realizará los ajustes en el sistema.</p>
               
               <div class="mb-3">
-                <label class="form-label fw-bold small text-secondary">SU USUARIO (O NOMBRE COMPLETO)</label>
-                <input type="text" class="form-control bg-light" [(ngModel)]="nuevaPeticion.username" placeholder="Escriba su usuario">
+                <label class="form-label fw-bold small text-secondary">SU USUARIO O NOMBRE COMPLETO</label>
+                <!-- DESDE EL LOGIN ELIGE DEL MENÚ, SI YA INICIÓ SESIÓN SE PONE SOLO -->
+                @if (peticionDesdeLogin) {
+                  <select class="form-select bg-light" [(ngModel)]="nuevaPeticion.username">
+                    <option value="" disabled selected>Elija su cuenta...</option>
+                    @for (u of usuariosSoporte; track u.username) {
+                      <option [value]="u.username">{{ u.nombreCompleto }} ({{ u.username }})</option>
+                    }
+                  </select>
+                } @else {
+                  <input type="text" class="form-control" [value]="usuarioSesion?.nombreCompleto + ' (' + usuarioSesion?.username + ')'" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                }
               </div>
 
               <div class="mb-3">
