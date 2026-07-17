@@ -10,11 +10,11 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     color: #232323;
 }
 
-/* SOBRESCRITURA DE BOOTSTRAP CON HEXADECIMALES DIRECTOS */
+/* TODOS LOS VERDES UNIFICADOS AL FUERTE INSTITUCIONAL */
 .text-success { color: #055A1C !important; }
 .bg-success { background-color: #055A1C !important; }
-.text-primary { color: #338C36 !important; }
-.bg-primary { background-color: #338C36 !important; }
+.text-primary { color: #055A1C !important; }
+.bg-primary { background-color: #055A1C !important; }
 .text-secondary { color: #706f6f !important; }
 
 .btn-success {
@@ -37,17 +37,16 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
 }
 
 .btn-primary {
-    background-color: #338C36 !important;
-    border-color: #338C36 !important;
+    background-color: #055A1C !important;
+    border-color: #055A1C !important;
     color: #ffffff !important;
 }
 
 .badge.bg-success {
-    background-color: #76B82A !important;
+    background-color: #055A1C !important;
     color: #ffffff !important;
 }
 
-/* LÍNEA VERDE DE LOS TÍTULOS PRINCIPALES */
 .green-line::after {
     content: "";
     display: block;
@@ -58,9 +57,6 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     border-radius: 2px;
 }
 
-/* =========================================
-   DISEÑO EXACTO DEL PIE DE PÁGINA (FOOTER)
-   ========================================= */
 .mob-style-footer {
     padding-top: 3rem;
     padding-bottom: 0px;
@@ -98,7 +94,7 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
 }
 
 .mob-style-footer .list a:hover {
-    color: #76B82A !important;
+    color: #055A1C !important;
 }
 
 .mob-style-footer .list a:before {
@@ -108,7 +104,7 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     left: 0;
     width: 0;
     height: 1px;
-    background-color: #76B82A;
+    background-color: #055A1C;
     transition: 0.4s all;
 }
 
@@ -129,9 +125,6 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     }
 }
 
-/* =========================================
-   EFECTOS VISUALES DE LAS TARJETAS (HOVER VERDE)
-   ========================================= */
 .slp-hover-card {
     border: 1px solid #eaeaea !important;
     border-radius: 0.8rem !important;
@@ -139,7 +132,6 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     background-color: #ffffff;
 }
 
-/* ESTADO NORMAL */
 .slp-hover-card .icon-circle {
     background-color: rgba(5, 90, 28, 0.08);
     color: #055A1C;
@@ -162,12 +154,11 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     transition: all 0.3s ease;
 }
 
-/* ESTADO HOVER: FONDO VERDE INSTITUCIONAL Y LETRAS BLANCAS */
 .slp-hover-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(5, 90, 28, 0.2) !important;
-    background-color: #338C36 !important;
-    border-color: #338C36 !important;
+    background-color: #055A1C !important;
+    border-color: #055A1C !important;
 }
 
 .slp-hover-card:hover .icon-circle {
@@ -175,7 +166,6 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     color: #ffffff !important;
 }
 
-/* Forzar que todos los textos internos se vuelvan blancos al hacer hover */
 .slp-hover-card:hover .card-text-color,
 .slp-hover-card:hover .card-subtext-color,
 .slp-hover-card:hover .card-icon-location,
@@ -187,10 +177,6 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-
-/* =========================================
-   TIMELINE INTERACTIVO (MAPAS)
-   ========================================= */
 .timeline-container {
     position: relative;
     max-width: 900px;
@@ -219,150 +205,45 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     height: 20px;
     right: -10px;
     background-color: white;
-    border: 4px solid #338C36;
+    border: 4px solid #055A1C;
     top: 40px;
     border-radius: 50%;
     z-index: 1;
 }
-.timeline-left {
-    left: 0;
-}
-.timeline-right {
-    left: 50%;
-}
+.timeline-left { left: 0; }
+.timeline-right { left: 50%; }
 .timeline-left::before {
-    content: " ";
-    height: 0;
-    position: absolute;
-    top: 40px;
-    width: 0;
-    z-index: 1;
-    right: 30px;
-    border: medium solid #f4f4f4;
-    border-width: 10px 0 10px 10px;
-    border-color: transparent transparent transparent #f4f4f4;
+    content: " "; height: 0; position: absolute; top: 40px; width: 0; z-index: 1; right: 30px;
+    border: medium solid #f4f4f4; border-width: 10px 0 10px 10px; border-color: transparent transparent transparent #f4f4f4;
 }
 .timeline-right::before {
-    content: " ";
-    height: 0;
-    position: absolute;
-    top: 40px;
-    width: 0;
-    z-index: 1;
-    left: 30px;
-    border: medium solid #f4f4f4;
-    border-width: 10px 10px 10px 0;
-    border-color: transparent #f4f4f4 transparent transparent;
+    content: " "; height: 0; position: absolute; top: 40px; width: 0; z-index: 1; left: 30px;
+    border: medium solid #f4f4f4; border-width: 10px 10px 10px 0; border-color: transparent #f4f4f4 transparent transparent;
 }
-.timeline-right::after {
-    left: -10px;
-}
+.timeline-right::after { left: -10px; }
 .timeline-content {
-    padding: 0;
-    background-color: white;
-    position: relative;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #eaeaea;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: transform 0.3s ease;
+    padding: 0; background-color: white; position: relative; border-radius: 12px; overflow: hidden;
+    border: 1px solid #eaeaea; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.3s ease;
 }
 .timeline-content:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 25px rgba(5,90,28,0.15);
-    border-color: #338C36;
+    transform: scale(1.03); box-shadow: 0 8px 25px rgba(5,90,28,0.15); border-color: #055A1C;
 }
-.timeline-img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    background: #ffffff;
-    padding: 1rem;
-}
-.timeline-title {
-    background-color: #055A1C;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    font-weight: 600;
-    margin: 0;
-    font-size: 1.1rem;
-}
-.timeline-desc {
-    padding: 15px;
-    text-align: center;
-    background-color: #fdfdfd;
+.timeline-img { width: 100%; height: auto; object-fit: contain; background: #ffffff; padding: 1rem; }
+.timeline-title { background-color: #055A1C; color: white; padding: 10px; text-align: center; font-weight: 600; margin: 0; font-size: 1.1rem; }
+.timeline-desc { padding: 15px; text-align: center; background-color: #fdfdfd; }
+
+@media screen and (max-width: 768px) {
+    .timeline-container::after { left: 31px; }
+    .timeline-item { width: 100%; padding-left: 70px; padding-right: 15px; }
+    .timeline-item::before { border: medium solid #f4f4f4; border-width: 10px 10px 10px 0; border-color: transparent #f4f4f4 transparent transparent; left: 60px; }
+    .timeline-left::after, .timeline-right::after { left: 21px; }
+    .timeline-right { left: 0%; }
 }
 
-/* Responsivo para móviles (Timeline) */
-@media screen and (max-width: 768px) {
-    .timeline-container::after {
-        left: 31px;
-    }
-    .timeline-item {
-        width: 100%;
-        padding-left: 70px;
-        padding-right: 15px;
-    }
-    .timeline-item::before {
-        left: 60px;
-        border: medium solid #f4f4f4;
-        border-width: 10px 10px 10px 0;
-        border-color: transparent #f4f4f4 transparent transparent;
-    }
-    .timeline-left::after, .timeline-right::after {
-        left: 21px;
-    }
-    .timeline-right {
-        left: 0%;
-    }
-}
-/* =========================================
-   CALENDARIO GRID
-   ========================================= */
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    text-align: center;
-    margin-top: 15px;
-}
-.calendar-day-header {
-    font-weight: 700;
-    color: #9d9d9c;
-    padding: 5px 0;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-}
-.calendar-day {
-    padding: 12px 0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
-    border: 1px solid transparent;
-    color: #232323;
-    font-weight: 500;
-}
-.calendar-day:not(.empty):not(.disabled):hover {
-    background-color: #D9E8D5;
-    border-color: #338C36;
-    color: #055A1C;
-    transform: scale(1.05);
-}
-.calendar-day.selected {
-    background-color: #055A1C !important;
-    color: white !important;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(5,90,28,0.3);
-    border-color: #055A1C;
-    transform: scale(1.05);
-}
-.calendar-day.disabled {
-    color: #cccccc;
-    cursor: not-allowed;
-    background-color: #fdfdfd;
-}
-.calendar-day.empty {
-    cursor: default;
-}
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; margin-top: 15px; }
+.calendar-day-header { font-weight: 700; color: #9d9d9c; padding: 5px 0; font-size: 0.85rem; text-transform: uppercase; }
+.calendar-day { padding: 12px 0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; font-size: 0.95rem; border: 1px solid transparent; color: #232323; font-weight: 500; }
+.calendar-day:not(.empty):not(.disabled):hover { background-color: #D9E8D5; border-color: #055A1C; color: #055A1C; transform: scale(1.05); }
+.calendar-day.selected { background-color: #055A1C !important; color: white !important; font-weight: bold; box-shadow: 0 4px 8px rgba(5,90,28,0.3); border-color: #055A1C; transform: scale(1.05); }
+.calendar-day.disabled { color: #cccccc; cursor: not-allowed; background-color: #fdfdfd; }
+.calendar-day.empty { cursor: default; }

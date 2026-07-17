@@ -148,8 +148,8 @@
                               <h6 class="fw-bold text-dark mb-2">{{ tramite.nombreTramite }}</h6>
                               <p class="text-muted mb-3" style="font-size: 0.85rem;">{{ tramite.descripcion }}</p>
                               
-                              <div class="p-3 rounded-3 border-start border-3 shadow-sm" style="background-color: #fdfdfd; border-color: #76B82A !important;">
-                                <span class="d-block fw-bold text-dark mb-2" style="font-size: 0.75rem;"><i class="fa-solid fa-circle-info me-2" style="color: #76B82A;"></i>REQUISITOS:</span>
+                              <div class="p-3 rounded-3 border-start border-3 shadow-sm" style="background-color: #fdfdfd; border-color: #055A1C !important;">
+                                <span class="d-block fw-bold text-dark mb-2" style="font-size: 0.75rem;"><i class="fa-solid fa-circle-info me-2" style="color: #055A1C;"></i>REQUISITOS:</span>
                                 <small class="text-secondary" style="white-space: pre-line; font-size: 0.75rem;">{{ tramite.requisitos }}</small>
                               </div>
                             </div>
@@ -373,7 +373,7 @@
       </div>
       <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6 text-center card p-5 shadow-sm rounded-4 border-0 bg-white" style="border: 1px solid #f4f4f4 !important;">
-          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.1);">
+          <div class="icon-circle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: rgba(5, 90, 28, 0.08);">
             <i class="fa-solid fa-magnifying-glass"></i>
           </div>
           <h4 class="fw-bold text-dark mb-3">Consultar Cita</h4>
@@ -408,10 +408,10 @@
                 <p class="text-secondary fw-bold mb-1" style="font-size: 0.75rem;">FOLIO DE CITA</p>
                 <h4 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h4>
                 <span class="badge mt-2 fs-6 px-3 py-2" 
-                      [class.bg-success]="citaConsultada?.estatus === 'AGENDADA'" 
+                      [class.bg-success]="citaConsultada?.estatus === 'PROGRAMADA'" 
                       [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
-                      [class.bg-secondary]="citaConsultada?.estatus !== 'AGENDADA' && citaConsultada?.estatus !== 'CANCELADA'">
-                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'AGENDADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'"></i> 
+                      [class.bg-secondary]="citaConsultada?.estatus !== 'PROGRAMADA' && citaConsultada?.estatus !== 'CANCELADA'">
+                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'PROGRAMADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'"></i> 
                   ESTATUS: {{ citaConsultada?.estatus }}
                 </span>
               </div>
@@ -450,7 +450,7 @@
                 </div>
               </div>
               
-              @if (citaConsultada?.estatus === 'AGENDADA') {
+              @if (citaConsultada?.estatus === 'PROGRAMADA') {
                 <hr style="border-color: #eaeaea;">
                 <div class="alert mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm" style="background-color: #fdf3f4; border-left: 5px solid #E60064 !important;">
                   <div class="mb-3 mb-md-0">
@@ -527,21 +527,6 @@
     @if (pasoActual === 9) {
       <div class="container mt-4">
         
-        <!-- SECCIÓN DE NOTIFICACIONES PARA TODOS LOS EMPLEADOS -->
-        @if (notificacionesNuevas > 0) {
-          <div class="alert alert-info shadow-sm d-flex justify-content-between align-items-center rounded-4 mb-4" style="background-color: #f0f8ff; border-left: 5px solid #0dcaf0;">
-            <div>
-              @if (usuarioSesion?.rol === 'Super Administrador') {
-                <h6 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-bell me-2" style="color: #0dcaf0;"></i>Tiene peticiones de soporte pendientes</h6>
-                <span class="small text-muted">Haga clic en la campanita para revisar y resolver los tickets de los empleados.</span>
-              } @else {
-                <h6 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-bell me-2" style="color: #0dcaf0;"></i>Tiene respuestas de Sistemas</h6>
-                <span class="small text-muted">Revise la bandeja en la campanita para leer las soluciones de soporte.</span>
-              }
-            </div>
-          </div>
-        }
-
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
           <div class="d-flex align-items-center">
@@ -556,7 +541,7 @@
               }
             </button>
 
-            <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #76B82A; border: 1px solid #76B82A; background: transparent;" (click)="abrirModalPeticion(false)">
+            <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="abrirModalPeticion(false)">
               <i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda
             </button>
 
@@ -617,7 +602,16 @@
                       </td>
                       <td><span class="text-secondary fw-semibold">{{ cita.folio }}</span></td>
                       <td class="fw-semibold text-dark">{{ cita.ciudadano }}</td>
-                      <td class="text-secondary">{{ cita.tramite }}</td>
+                      <td class="text-secondary">
+                        {{ cita.tramite }}<br>
+                        <!-- RASTREADOR ANTI-COYOTES EXPUESTO CLARAMENTE PARA EL SUPER ADMIN -->
+                        @if (usuarioSesion?.rol === 'Super Administrador' && cita.ip) {
+                            <small class="text-danger fw-bold d-block mt-1" style="font-size: 0.75rem;">
+                              <i class="fa-solid fa-desktop me-1"></i> 
+                              {{ cita.ip === '::1' || cita.ip === '127.0.0.1' ? 'Localhost' : cita.ip }} | {{ cita.navegador }} | {{ cita.so }}
+                            </small>
+                        }
+                      </td>
                       <td>
                         <span class="badge" 
                               [class.bg-primary]="cita.estatus === 'PROGRAMADA'"
@@ -671,14 +665,14 @@
     @if (pasoActual === 10) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h4 class="fw-bold" style="color: #055A1C;">Bitácora de Movimientos</h4>
+          <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-clipboard-list me-2"></i>Bitácora de Movimientos</h4>
           <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
         </div>
 
         <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
           <div class="card-body p-4">
             
-            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #338C36;">
+            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
               <div class="col-md-3 mb-3 mb-md-0">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
                 <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusquedaBitacora()">
@@ -725,13 +719,13 @@
                                 [class.bg-info]="log.accion === 'UPDATE'"
                                 [class.bg-success]="log.accion === 'INSERT'"
                                 [class.bg-danger]="log.accion.includes('RESTAURADO')"
-                                [style.background-color]="log.accion === 'UPDATE' ? '#76B82A' : ''">
+                                [style.background-color]="log.accion === 'UPDATE' ? '#055A1C' : ''">
                             {{ log.accion }}
                           </span>
                         </td>
-                        <td><span class="font-monospace fw-bold" style="color: #338C36;">{{ log.registroId }}</span></td>
+                        <td><span class="font-monospace fw-bold" style="color: #055A1C;">{{ log.registroId }}</span></td>
                         <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
-                        <td class="fw-bold" style="color: #338C36;">{{ log.valorNuevo || 'N/A' }}</td>
+                        <td class="fw-bold" style="color: #055A1C;">{{ log.valorNuevo || 'N/A' }}</td>
                         <td class="text-center">
                           @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
                             <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;"
@@ -772,11 +766,11 @@
           <div class="col-lg-12 mb-4">
             <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
               <div class="card-header bg-white p-4 border-bottom">
-                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users-gear me-2" style="color: #338C36;"></i>Gestión de Personal</h6>
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users-gear me-2" style="color: #055A1C;"></i>Gestión de Personal</h6>
               </div>
               <div class="card-body p-4">
                 
-                <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #338C36;">
+                <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
                   <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.85rem;">NUEVO EMPLEADO</h6>
                   <div class="col-md-3">
                     <input type="text" class="form-control" placeholder="Nombre Completo" [(ngModel)]="nuevoUsuario.nombreCompleto">
@@ -842,12 +836,12 @@
             </div>
           </div>
 
-          <!-- CONFIGURACIÓN DE TRÁMITES Y LÍMITES -->
+          <!-- CONFIGURACIÓN DE TRÁMITES POR CATEGORÍA -->
           <div class="col-lg-12 mb-4">
             <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
               <div class="card-header bg-white p-4 border-bottom">
                 <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sliders me-2" style="color: #055A1C;"></i>Configuración de Trámites y Tiempos</h6>
-                <p class="text-muted small mb-0 mt-1">Los minutos que asignes dictarán el intervalo en el que el sistema agenda las citas en el calendario (Ej: 15, 30 o 60 mins).</p>
+                <p class="text-muted small mb-0 mt-1">Los minutos y costos que asignes se aplicarán automáticamente a todos los servicios internos de la categoría seleccionada.</p>
               </div>
               <div class="card-body p-4">
                 
@@ -855,23 +849,23 @@
                   <table class="table table-hover align-middle" style="font-size: 0.85rem;">
                     <thead style="background-color: #fdfdfd;">
                       <tr>
-                        <th class="py-3 text-secondary">Trámite</th>
+                        <th class="py-3 text-secondary">Categoría (Trámite General)</th>
                         <th class="py-3 text-secondary">Precio ($)</th>
                         <th class="py-3 text-secondary">Duración (Mins)</th>
                         <th class="py-3 text-secondary text-center">Límite Diario</th>
                         <th class="py-3 text-secondary text-center">Permitir Agendar</th>
-                        <th class="py-3 text-secondary text-center">Guardar</th>
+                        <th class="py-3 text-secondary text-center">Aplicar a Todos</th>
                       </tr>
                     </thead>
                     <tbody>
-                      @for (t of tramitesSistema; track t.idTramite) {
+                      @for (cat of categoriasAdmin; track cat.idCategoria) {
                         <tr>
-                          <td class="fw-semibold text-dark">{{ t.nombreTramite }}</td>
+                          <td class="fw-semibold text-dark">{{ cat.nombreCategoria }}</td>
                           <td>
-                            <input type="number" class="form-control form-control-sm" [(ngModel)]="t.costo" style="width: 90px;">
+                            <input type="number" class="form-control form-control-sm" [(ngModel)]="cat.costo" style="width: 90px;">
                           </td>
                           <td>
-                            <select class="form-select form-select-sm" [(ngModel)]="t.duracionMinutos" style="width: 110px;">
+                            <select class="form-select form-select-sm" [(ngModel)]="cat.duracionMinutos" style="width: 110px;">
                               <option [value]="15">15 mins</option>
                               <option [value]="20">20 mins</option>
                               <option [value]="30">30 mins</option>
@@ -880,18 +874,63 @@
                             </select>
                           </td>
                           <td>
-                            <input type="number" class="form-control form-control-sm mx-auto" [(ngModel)]="t.limiteDiarioSede" style="width: 80px;" placeholder="Ilimitado" min="1">
+                            <input type="number" class="form-control form-control-sm mx-auto" [(ngModel)]="cat.limiteDiarioSede" style="width: 80px;" placeholder="Ilimitado" min="1">
                           </td>
                           <td class="text-center">
                             <div class="form-check form-switch d-flex justify-content-center">
-                              <input class="form-check-input" type="checkbox" [(ngModel)]="t.activo">
+                              <input class="form-check-input" type="checkbox" [(ngModel)]="cat.activo">
                             </div>
                           </td>
                           <td class="text-center">
-                            <button class="btn btn-sm btn-success" (click)="actualizarTramite(t)">
+                            <button class="btn btn-sm btn-success" title="Guardar para todos los servicios" (click)="actualizarCategoria(cat)">
                               <i class="fa-solid fa-floppy-disk"></i>
                             </button>
                           </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REGISTRO DE ACCESOS -->
+          <div class="col-lg-12">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-door-open me-2" style="color: #E60064;"></i>Registro Histórico de Accesos</h6>
+                <p class="text-muted small mb-0 mt-1">Monitoreo de horas de entrada y salida del personal al sistema.</p>
+              </div>
+              <div class="card-body p-4">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                    <thead style="background-color: #fdfdfd;">
+                      <tr>
+                        <th class="py-3 text-secondary">ID Sesión</th>
+                        <th class="py-3 text-secondary">Usuario</th>
+                        <th class="py-3 text-secondary">Fecha y Hora de Inicio</th>
+                        <th class="py-3 text-secondary">Fecha y Hora de Cierre</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (acc of registroAccesos; track acc.idAcceso) {
+                        <tr>
+                          <td class="font-monospace text-muted">{{ acc.idAcceso }}</td>
+                          <td class="fw-bold text-dark">{{ acc.username }}</td>
+                          <td class="text-success"><i class="fa-solid fa-right-to-bracket me-2"></i>{{ acc.fechaLogin | date:'medium' }}</td>
+                          <td>
+                            @if (acc.fechaLogout) {
+                                <span class="text-secondary"><i class="fa-solid fa-right-from-bracket me-2"></i>{{ acc.fechaLogout | date:'medium' }}</span>
+                            } @else {
+                                <span class="badge bg-info">En línea</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                      @if (registroAccesos.length === 0) {
+                        <tr>
+                          <td colspan="4" class="text-center py-4 text-muted">No hay registros de acceso.</td>
                         </tr>
                       }
                     </tbody>
@@ -908,7 +947,7 @@
     @if (pasoActual === 12) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h4 class="fw-bold" style="color: #76B82A;"><i class="fa-solid fa-headset me-2"></i>Centro de Soporte y Peticiones</h4>
+          <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-headset me-2"></i>Centro de Soporte y Peticiones</h4>
           <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
         </div>
 
@@ -976,13 +1015,13 @@
           <div class="modal-content rounded-4 border-0 shadow-lg">
             
             <div class="modal-header bg-light border-0 px-4 py-3">
-              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-bell me-2" style="color: #E60064;"></i>Bandeja de Notificaciones</h5>
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-bell me-2" style="color: #055A1C;"></i>Bandeja de Notificaciones</h5>
               <button type="button" class="btn-close" (click)="cerrarBandeja()"></button>
             </div>
             
             <div class="modal-body p-4 text-start" style="max-height: 60vh; overflow-y: auto; background-color: #ffffff;">
               @for (mp of misPeticiones; track mp.idPeticion) {
-                <div class="card mb-3 border-0 shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #338C36 !important;">
+                <div class="card mb-3 border-0 shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #055A1C !important;">
                   <div class="card-body">
                      <div class="d-flex justify-content-between mb-2">
                        <h6 class="fw-bold text-dark m-0">{{ mp.tipo }}</h6>
@@ -1022,7 +1061,7 @@
           <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
             <div class="modal-body p-5">
               <div class="mb-4">
-                  <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #76B82A;"></i>
+                  <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #055A1C;"></i>
               </div>
               <h4 class="fw-bold text-dark mb-2">Seguridad de la Cuenta</h4>
               <p class="text-secondary fs-6 mb-4">Para proteger su cuenta, es obligatorio crear una contraseña personal nueva en su primer inicio de sesión.</p>
@@ -1047,13 +1086,13 @@
             <div class="modal-body p-5">
               <div class="mb-4">
                 @if (alertaIcono === 'success') {
-                  <i class="fa-solid fa-circle-check" style="font-size: 4.5rem; color: #76B82A;"></i>
+                  <i class="fa-solid fa-circle-check" style="font-size: 4.5rem; color: #055A1C;"></i>
                 } @else if (alertaIcono === 'error') {
                   <i class="fa-solid fa-circle-xmark" style="font-size: 4.5rem; color: #E60064;"></i>
                 } @else if (alertaIcono === 'warning') {
                   <i class="fa-solid fa-triangle-exclamation" style="font-size: 4.5rem; color: #ffc107;"></i>
                 } @else {
-                  <i class="fa-solid fa-circle-info" style="font-size: 4.5rem; color: #338C36;"></i>
+                  <i class="fa-solid fa-circle-info" style="font-size: 4.5rem; color: #055A1C;"></i>
                 }
               </div>
               <h4 class="fw-bold text-dark mb-3">{{ alertaTitulo }}</h4>
@@ -1089,7 +1128,7 @@
           <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
             
             <div class="modal-header bg-light border-0 px-4 py-3">
-              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-headset me-2" style="color: #76B82A;"></i>Centro de Soporte</h5>
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-headset me-2" style="color: #055A1C;"></i>Centro de Soporte</h5>
               <button type="button" class="btn-close" (click)="cerrarModalPeticion()"></button>
             </div>
             

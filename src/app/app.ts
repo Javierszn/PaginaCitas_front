@@ -50,7 +50,6 @@ export class App implements OnInit {
   fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
   
-  // --- VARIABLES SEGURIDAD PRIMER ACCESO ---
   mostrarForzarPassword: boolean = false;
   nuevaPassword = '';
   confirmarPassword = '';
@@ -62,7 +61,8 @@ export class App implements OnInit {
 
   // --- VARIABLES SUPER ADMIN ---
   usuariosSistema: any[] = [];
-  tramitesSistema: any[] = [];
+  categoriasAdmin: any[] = []; // AHORA GUARDAMOS LAS CATEGORÍAS, NO LOS TRÁMITES SUELTOS
+  registroAccesos: any[] = [];
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 };
 
   // --- VARIABLES SISTEMA DE PETICIONES (TICKETS Y NOTIFICACIONES) ---
@@ -99,7 +99,7 @@ export class App implements OnInit {
         else this.cargarMisPeticiones(); 
       }
       if (this.pasoActual === 10) this.cargarBitacora();
-      if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); }
+      if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin(); }
       if (this.pasoActual === 12) this.cargarPeticionesAdmin();
     } else {
       history.replaceState({ paso: 1 }, '', '');
@@ -127,7 +127,7 @@ export class App implements OnInit {
         if (res && res.titulo) {
           this.avisoGlobal = res; this.mostrarAvisoGlobal = true; this.cdr.detectChanges();
         }
-      }, error: () => console.log('No hay avisos activos.')
+      }
     });
   }
 
@@ -222,11 +222,30 @@ export class App implements OnInit {
       });
   }
 
+  getBrowserInfo() {
+    const ua = navigator.userAgent;
+    let browser = "Desconocido"; let os = "Desconocido";
+    if(ua.includes("Firefox")) browser = "Firefox";
+    else if(ua.includes("Opera") || ua.includes("OPR")) browser = "Opera";
+    else if(ua.includes("Trident") || ua.includes("MSIE")) browser = "Internet Explorer";
+    else if(ua.includes("Edge") || ua.includes("Edg")) browser = "Edge";
+    else if(ua.includes("Chrome")) browser = "Chrome";
+    else if(ua.includes("Safari")) browser = "Safari";
+    if(ua.includes("Win")) os = "Windows";
+    else if(ua.includes("Mac")) os = "MacOS/iOS";
+    else if(ua.includes("Linux")) os = "Linux";
+    else if(ua.includes("Android")) os = "Android";
+    return { browser, os };
+  }
+
   confirmarCita() {
+    const navInfo = this.getBrowserInfo();
     const solicitud = {
       curp: this.ciudadano.curp, nombre: this.ciudadano.nombre, correo: this.ciudadano.correo, telefono: this.ciudadano.telefono,
       municipioRegistro: this.ciudadano.municipioRegistro, estadoRegistro: this.ciudadano.estadoRegistro,
-      idTramite: this.tramiteSeleccionado.idTramite, idSede: this.sedeSeleccionada.idSede, fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`
+      idTramite: this.tramiteSeleccionado.idTramite, idSede: this.sedeSeleccionada.idSede, 
+      fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`,
+      navegador: navInfo.browser, sistemaOperativo: navInfo.os
     };
     this.http.post('http://localhost:5076/api/Citas', solicitud).subscribe({
       next: (res: any) => { this.folioExito = res.folio; this.pasoActual = 5; history.pushState({ paso: 5 }, '', ''); this.limpiarFormulario(); this.cdr.detectChanges(); },
@@ -296,7 +315,6 @@ export class App implements OnInit {
     this.pasoActual = 9; 
     this.cargarCitasDashboard(); 
     
-    // Si es SuperAdmin carga las de todo el sistema, si no, solo las suyas
     if (this.usuarioSesion?.rol === 'Super Administrador') {
         this.cargarPeticionesAdmin();
     } else {
@@ -307,7 +325,12 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  cerrarSesion() { this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); }
+  cerrarSesion() { 
+    if(this.usuarioSesion?.idAcceso) {
+        this.http.post(`http://localhost:5076/api/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe();
+    }
+    this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); 
+  }
 
   // --- DASHBOARD EMPLEADOS ---
   cargarCitasDashboard() {
@@ -357,7 +380,7 @@ export class App implements OnInit {
     });
   }
 
-  // --- MÉTODOS DE PETICIONES (NOTIFICACIONES ESTILO APP) ---
+  // --- MÉTODOS DE PETICIONES ---
   cargarUsuariosSoporte() {
     this.http.get('http://localhost:5076/api/Usuarios/Soporte').subscribe({
       next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); }
@@ -369,18 +392,19 @@ export class App implements OnInit {
     this.http.get('http://localhost:5076/api/Peticiones/MisPeticiones/' + this.usuarioSesion.username).subscribe({
       next: (res: any) => { 
           this.misPeticiones = res; 
-          this.notificacionesNuevas = this.misPeticiones.filter(p => p.estatus === 'RESUELTA').length;
+          this.notificacionesNuevas = this.misPeticiones.filter((p: any) => p.estatus === 'RESUELTA' && p.leido === false).length;
           this.cdr.detectChanges(); 
       }
     });
   }
 
-  // Lógica inteligente de la campanita
   abrirBandeja() {
     if (this.usuarioSesion?.rol === 'Super Administrador') {
-        this.irACentroSoporte(); // El Super Admin es redirigido a Paso 12
+        this.http.put('http://localhost:5076/api/Peticiones/MarcarLeidasAdmin', {}).subscribe();
+        this.irACentroSoporte(); 
     } else {
-        this.mostrarBandeja = true; // El empleado normal abre su bandeja flotante
+        this.mostrarBandeja = true; 
+        this.http.put(`http://localhost:5076/api/Peticiones/MarcarLeidasUsuario/${this.usuarioSesion.username}`, {}).subscribe();
         this.notificacionesNuevas = 0; 
         this.cdr.detectChanges();
     }
@@ -420,7 +444,7 @@ export class App implements OnInit {
     this.http.get('http://localhost:5076/api/Peticiones').subscribe({
       next: (res: any) => { 
           this.peticionesSistema = res; 
-          this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE').length;
+          this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE' && p.leido === false).length;
           this.cdr.detectChanges(); 
       }
     });
@@ -438,7 +462,7 @@ export class App implements OnInit {
   // --- CONFIGURACIÓN DEL SISTEMA (SUPER ADMIN) ---
   irASuperAdmin() { 
     this.pasoActual = 11; sessionStorage.setItem('pasoRC', '11'); 
-    this.cargarUsuariosAdmin(); this.cargarTramitesAdmin();
+    this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin();
     history.pushState({ paso: 11 }, '', ''); this.cdr.detectChanges(); 
   }
 
@@ -450,6 +474,10 @@ export class App implements OnInit {
 
   cargarUsuariosAdmin() {
     this.http.get('http://localhost:5076/api/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
+  }
+
+  cargarAccesosAdmin() {
+    this.http.get('http://localhost:5076/api/Usuarios/Accesos').subscribe({ next: (res: any) => { this.registroAccesos = res; this.cdr.detectChanges(); } });
   }
 
   crearUsuario() {
@@ -475,18 +503,34 @@ export class App implements OnInit {
     });
   }
 
+  // LÓGICA DE CARGA DE CATEGORÍAS (ANTES TRAMITES) EN ADMIN
   cargarTramitesAdmin() {
     this.http.get('http://localhost:5076/api/Tramites/Admin').subscribe({
       next: (res: any) => { 
-        let t: any[] = []; res.forEach((cat: any) => { t = t.concat(cat.tramites); }); this.tramitesSistema = t; this.cdr.detectChanges();
+        // AHORA MAPEAMOS A LAS CATEGORÍAS EN VEZ DE A LOS TRÁMITES
+        this.categoriasAdmin = res.map((cat: any) => {
+          const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {};
+          return {
+            idCategoria: cat.idCategoria,
+            nombreCategoria: cat.nombreCategoria,
+            costo: primerServicio.costo || 0,
+            duracionMinutos: primerServicio.duracionMinutos || 30,
+            limiteDiarioSede: primerServicio.limiteDiarioSede || 50,
+            activo: cat.activa
+          };
+        });
+        this.cdr.detectChanges();
       }
     });
   }
 
-  actualizarTramite(tramite: any) {
-    const payload = { duracionMinutos: tramite.duracionMinutos, costo: tramite.costo, activo: tramite.activo, limiteDiario: tramite.limiteDiarioSede };
-    this.http.put(`http://localhost:5076/api/Tramites/${tramite.idTramite}`, payload).subscribe({
-      next: (res: any) => this.abrirAlerta('Guardado', res.mensaje, 'success'),
+  actualizarCategoria(cat: any) {
+    const payload = { duracionMinutos: cat.duracionMinutos, costo: cat.costo, activo: cat.activo, limiteDiario: cat.limiteDiarioSede };
+    this.http.put(`http://localhost:5076/api/Tramites/Categoria/${cat.idCategoria}`, payload).subscribe({
+      next: (res: any) => {
+          this.abrirAlerta('Guardado', res.mensaje, 'success');
+          this.cargarTramites(); // Refresca en segundo plano para el ciudadano
+      },
       error: () => this.abrirAlerta('Error', 'No se pudo guardar la configuración.', 'error')
     });
   }
