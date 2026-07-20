@@ -32,6 +32,10 @@ export class App implements OnInit {
   citaConsultada: any = null;
   cargandoConsulta: boolean = false;
 
+  // --- VARIABLES REAGENDAR CITA ---
+  modoReagendar: boolean = false;
+  folioReagendar: string = '';
+
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
   alertaMensaje: string = '';
@@ -128,11 +132,7 @@ export class App implements OnInit {
   cargarAvisoGlobal() {
     if (this.usuarioSesion) return;
     this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
-      next: (res: any) => {
-        if (res && res.titulo) {
-          this.avisoGlobal = res; this.mostrarAvisoGlobal = true; this.cdr.detectChanges();
-        }
-      }
+      next: (res: any) => { if (res && res.titulo) { this.avisoGlobal = res; this.mostrarAvisoGlobal = true; this.cdr.detectChanges(); } }
     });
   }
 
@@ -172,6 +172,7 @@ export class App implements OnInit {
     this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
     this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
     this.diasMes.forEach(d => d.seleccionado = false); this.folioBusqueda = ''; this.categoriaExpandida = null;
+    this.modoReagendar = false; this.folioReagendar = '';
   }
 
   cargarSedes() { this.http.get('http://localhost:5076/api/Sedes').subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
@@ -244,18 +245,36 @@ export class App implements OnInit {
   }
 
   confirmarCita() {
-    const navInfo = this.getBrowserInfo();
-    const solicitud = {
-      curp: this.ciudadano.curp, nombre: this.ciudadano.nombre, correo: this.ciudadano.correo, telefono: this.ciudadano.telefono,
-      municipioRegistro: this.ciudadano.municipioRegistro, estadoRegistro: this.ciudadano.estadoRegistro,
-      idTramite: this.tramiteSeleccionado.idTramite, idSede: this.sedeSeleccionada.idSede, 
-      fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`,
-      navegador: navInfo.browser, sistemaOperativo: navInfo.os
-    };
-    this.http.post('http://localhost:5076/api/Citas', solicitud).subscribe({
-      next: (res: any) => { this.folioExito = res.folio; this.pasoActual = 5; history.pushState({ paso: 5 }, '', ''); this.limpiarFormulario(); this.cdr.detectChanges(); },
-      error: (err) => { this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning'); }
-    });
+    // Si estamos Reagendando, llamamos a la ruta PUT nueva
+    if (this.modoReagendar) {
+      const payload = { nuevaFechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00` };
+      this.http.put(`http://localhost:5076/api/Citas/${this.folioReagendar}/reagendar`, payload).subscribe({
+          next: (res: any) => {
+              this.folioExito = this.folioReagendar;
+              this.modoReagendar = false;
+              this.folioReagendar = '';
+              this.pasoActual = 5;
+              history.pushState({ paso: 5 }, '', '');
+              this.limpiarFormulario();
+              this.cdr.detectChanges();
+          },
+          error: (err) => this.abrirAlerta('Error', err.error.mensaje || 'No se pudo reagendar.', 'error')
+      });
+    } else {
+      // Flujo normal de Agendar Cita Nueva
+      const navInfo = this.getBrowserInfo();
+      const solicitud = {
+        curp: this.ciudadano.curp, nombre: this.ciudadano.nombre, correo: this.ciudadano.correo, telefono: this.ciudadano.telefono,
+        municipioRegistro: this.ciudadano.municipioRegistro, estadoRegistro: this.ciudadano.estadoRegistro,
+        idTramite: this.tramiteSeleccionado.idTramite, idSede: this.sedeSeleccionada.idSede, 
+        fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`,
+        navegador: navInfo.browser, sistemaOperativo: navInfo.os
+      };
+      this.http.post('http://localhost:5076/api/Citas', solicitud).subscribe({
+        next: (res: any) => { this.folioExito = res.folio; this.pasoActual = 5; history.pushState({ paso: 5 }, '', ''); this.limpiarFormulario(); this.cdr.detectChanges(); },
+        error: (err) => { this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning'); }
+      });
+    }
   }
 
   irABuscarCita() { this.pasoActual = 6; this.limpiarFormulario(); this.citaConsultada = null; history.pushState({ paso: 6 }, '', ''); this.cdr.detectChanges(); }
@@ -269,8 +288,25 @@ export class App implements OnInit {
     });
   }
 
+  // --- LÓGICA DE REAGENDAR (Desde Paso 7 al Paso 4) ---
+  prepararReagendar() {
+    this.modoReagendar = true;
+    this.folioReagendar = this.citaConsultada.folio;
+    
+    // Fingimos que seleccionaron sede y trámite para que funcione el Paso 4
+    this.sedeSeleccionada = { idSede: this.citaConsultada.idSede, nombre: this.citaConsultada.sede };
+    this.tramiteSeleccionado = { idTramite: this.citaConsultada.idTramite, nombreTramite: this.citaConsultada.tramite };
+    
+    this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
+    
+    this.pasoActual = 4;
+    this.generarCalendario();
+    history.pushState({ paso: 4 }, '', '');
+    this.cdr.detectChanges();
+  }
+
   cancelarCita() {
-    this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo.', () => {
+    this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario, liberará el espacio y tendrá que generar un folio nuevo.', () => {
         this.http.put(`http://localhost:5076/api/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
           next: (res: any) => { this.abrirAlerta('Cita Cancelada', res.mensaje, 'success'); this.citaConsultada.estatus = 'CANCELADA'; this.cdr.detectChanges(); },
           error: (err) => { this.abrirAlerta('Error', err.error.mensaje || "Error al cancelar la cita", 'error'); }
@@ -481,7 +517,6 @@ export class App implements OnInit {
     this.http.get('http://localhost:5076/api/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
   }
 
-  // METODO NUEVO: Lógica de carga de accesos con filtros y loaders
   cargarAccesosAdmin() {
     this.cargandoAccesos = true;
     let url = 'http://localhost:5076/api/Usuarios/Accesos';

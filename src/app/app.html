@@ -55,7 +55,6 @@
         </div>
 
         <div class="timeline-container">
-          <!-- Item 1: Valles -->
           <div class="timeline-item timeline-left">
             <div class="timeline-content">
               <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/img/ub_valles_L3FDVc0.jpeg" alt="Ciudad Valles" class="timeline-img">
@@ -67,7 +66,6 @@
             </div>
           </div>
           
-          <!-- Item 2: Charcas -->
           <div class="timeline-item timeline-right">
             <div class="timeline-content">
               <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/img/ub_charcas_AprIQK0.jpeg" alt="Charcas" class="timeline-img">
@@ -79,7 +77,6 @@
             </div>
           </div>
 
-          <!-- Item 3: Tamazunchale -->
           <div class="timeline-item timeline-left">
             <div class="timeline-content">
               <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/img/of_enlace_tamazunchale3.png" alt="Tamazunchale" class="timeline-img">
@@ -409,10 +406,12 @@
                 <h4 class="fw-bold text-dark mb-0">{{ citaConsultada?.folio }}</h4>
                 <span class="badge mt-2 fs-6 px-3 py-2" 
                       [class.bg-success]="citaConsultada?.estatus === 'PROGRAMADA'" 
+                      [class.bg-info]="citaConsultada?.estatus === 'REPROGRAMADA'" 
                       [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
-                      [class.bg-secondary]="citaConsultada?.estatus !== 'PROGRAMADA' && citaConsultada?.estatus !== 'CANCELADA'">
-                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'PROGRAMADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'"></i> 
-                  ESTATUS: {{ citaConsultada?.estatus }}
+                      [class.bg-warning]="citaConsultada?.estatus === 'NO_ASISTIO'"
+                      [class.bg-secondary]="citaConsultada?.estatus !== 'PROGRAMADA' && citaConsultada?.estatus !== 'REPROGRAMADA' && citaConsultada?.estatus !== 'CANCELADA' && citaConsultada?.estatus !== 'NO_ASISTIO'">
+                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'" [class.fa-user-slash]="citaConsultada?.estatus === 'NO_ASISTIO'"></i> 
+                  ESTATUS: {{ citaConsultada?.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : citaConsultada?.estatus }}
                 </span>
               </div>
               <div class="text-end">
@@ -450,16 +449,39 @@
                 </div>
               </div>
               
-              @if (citaConsultada?.estatus === 'PROGRAMADA') {
+              <!-- SECCIÓN DE ACCIONES (REAGENDAR / CANCELAR) -->
+              @if (citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA') {
                 <hr style="border-color: #eaeaea;">
-                <div class="alert mt-4 p-4 rounded-3 d-flex flex-column flex-md-row align-items-center justify-content-between border-0 shadow-sm" style="background-color: #fdf3f4; border-left: 5px solid #E60064 !important;">
-                  <div class="mb-3 mb-md-0">
-                    <h6 class="fw-bold mb-1" style="color: #E60064;"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Desea cancelar su cita?</h6>
-                    <small class="text-dark" style="font-size: 0.8rem;">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
+                <div class="row mt-4 justify-content-center">
+                  
+                  <!-- Tarjeta de Reagendar (SOLO SI ES PROGRAMADA) -->
+                  @if (citaConsultada?.estatus === 'PROGRAMADA') {
+                    <div class="col-md-6 mb-3">
+                      <div class="alert p-4 rounded-3 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background-color: #f0f8ff; border-left: 5px solid #0dcaf0 !important;">
+                        <div class="mb-3">
+                          <h6 class="fw-bold mb-1" style="color: #0dcaf0;"><i class="fa-solid fa-calendar-week me-2"></i>¿Cambiar fecha u hora?</h6>
+                          <small class="text-dark" style="font-size: 0.8rem;">Conserve su folio actual y elija un nuevo horario disponible para este trámite.</small>
+                        </div>
+                        <button class="btn rounded-pill fw-bold py-2 text-white shadow-sm mt-auto" style="background-color: #0dcaf0; border: none; font-size: 0.85rem;" (click)="prepararReagendar()">
+                          <i class="fa-solid fa-clock-rotate-left me-2"></i> Reagendar Cita
+                        </button>
+                      </div>
+                    </div>
+                  }
+                  
+                  <!-- Tarjeta de Cancelar (SE HACE MAS GRANDE SI YA NO SE PUEDE REAGENDAR) -->
+                  <div class="mb-3" [class.col-md-6]="citaConsultada?.estatus === 'PROGRAMADA'" [class.col-md-8]="citaConsultada?.estatus === 'REPROGRAMADA'">
+                    <div class="alert p-4 rounded-3 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background-color: #fdf3f4; border-left: 5px solid #E60064 !important;">
+                      <div class="mb-3">
+                        <h6 class="fw-bold mb-1" style="color: #E60064;"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Cancelar cita?</h6>
+                        <small class="text-dark" style="font-size: 0.8rem;">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
+                      </div>
+                      <button class="btn rounded-pill fw-bold py-2 text-white shadow-sm mt-auto" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="cancelarCita()">
+                        <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
+                      </button>
+                    </div>
                   </div>
-                  <button class="btn rounded-pill fw-bold px-4 py-2 text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="cancelarCita()">
-                    <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
-                  </button>
+
                 </div>
               }
             </div>
@@ -620,11 +642,11 @@
                               [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
                               [class.bg-secondary]="cita.estatus === 'REPROGRAMADA'"
                               [class.bg-danger]="cita.estatus === 'CANCELADA'">
-                          {{ cita.estatus }}
+                          {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus }}
                         </span>
                       </td>
                       <td class="text-center">
-                        @if (cita.estatus === 'PROGRAMADA') {
+                        @if (cita.estatus === 'PROGRAMADA' || cita.estatus === 'REPROGRAMADA') {
                           <button class="btn btn-sm btn-primary me-2 fw-semibold" title="Marcar Confirmada"
                                   (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
                             <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar
@@ -904,7 +926,6 @@
               </div>
               <div class="card-body p-4">
                 
-                <!-- NUEVO: FILTROS DE BÚSQUEDA PARA ACCESOS -->
                 <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
                   <div class="col-md-3 mb-3 mb-md-0">
                     <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
