@@ -926,6 +926,7 @@
               </div>
               <div class="card-body p-4">
                 
+                <!-- NUEVO: FILTROS DE BÚSQUEDA PARA ACCESOS -->
                 <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
                   <div class="col-md-3 mb-3 mb-md-0">
                     <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
@@ -983,6 +984,33 @@
                       </tbody>
                     </table>
                   </div>
+
+                  <!-- AÑADIR ESTO DEBAJO DE LA TABLA DE ACCESOS -->
+                  @if (totalPaginasAccesos > 1) {
+                    <nav class="mt-4">
+                      <ul class="pagination justify-content-center">
+                        <li class="page-item" [class.disabled]="paginaActualAccesos === 1">
+                          <button class="page-link" style="color: #055A1C;" (click)="cargarAccesosAdmin(paginaActualAccesos - 1)">Anterior</button>
+                        </li>
+                        
+                        @for (p of arregloPaginas; track p) {
+                          <li class="page-item" [class.active]="p === paginaActualAccesos">
+                            <button class="page-link" 
+                                    [style.background-color]="p === paginaActualAccesos ? '#055A1C' : '#fff'" 
+                                    [style.border-color]="p === paginaActualAccesos ? '#055A1C' : '#dee2e6'" 
+                                    [style.color]="p === paginaActualAccesos ? '#fff' : '#055A1C'"
+                                    (click)="cargarAccesosAdmin(p)">
+                              {{ p }}
+                            </button>
+                          </li>
+                        }
+                        
+                        <li class="page-item" [class.disabled]="paginaActualAccesos === totalPaginasAccesos">
+                          <button class="page-link" style="color: #055A1C;" (click)="cargarAccesosAdmin(paginaActualAccesos + 1)">Siguiente</button>
+                        </li>
+                      </ul>
+                    </nav>
+                  }
                 }
               </div>
             </div>

@@ -73,6 +73,10 @@ export class App implements OnInit {
   fechaAccesos: string = '';
   textoBusquedaAccesos: string = '';
   cargandoAccesos: boolean = false;
+  // Variables nuevas para paginación
+  paginaActualAccesos: number = 1;
+  totalPaginasAccesos: number = 1;
+  arregloPaginas: number[] = [];
 
   // --- VARIABLES SISTEMA DE PETICIONES (TICKETS Y NOTIFICACIONES) ---
   mostrarModalPeticion: boolean = false;
@@ -517,20 +521,26 @@ export class App implements OnInit {
     this.http.get('http://localhost:5076/api/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
   }
 
-  cargarAccesosAdmin() {
+  cargarAccesosAdmin(paginaSolicitada: number = 1) {
     this.cargandoAccesos = true;
-    let url = 'http://localhost:5076/api/Usuarios/Accesos';
-    const params = [];
+    let url = `http://localhost:5076/api/Usuarios/Accesos?page=${paginaSolicitada}&pageSize=10`;
+    
     if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) {
-      params.push(`busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`);
+      url += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`;
     } else if (this.fechaAccesos) {
-      params.push(`fecha=${this.fechaAccesos}`);
+      url += `&fecha=${this.fechaAccesos}`;
     }
-    if (params.length > 0) { url += '?' + params.join('&'); }
     
     this.http.get(url).subscribe({ 
       next: (res: any) => { 
-          this.registroAccesos = res; 
+          // Ahora recibimos un objeto paginado del backend
+          this.registroAccesos = res.datos; 
+          this.paginaActualAccesos = res.paginaActual;
+          this.totalPaginasAccesos = res.totalPaginas;
+          
+          // Generamos un arreglo [1, 2, 3...] para pintar los botones en HTML
+          this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1);
+          
           this.cargandoAccesos = false;
           this.cdr.detectChanges(); 
       },
