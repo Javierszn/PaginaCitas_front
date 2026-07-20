@@ -32,9 +32,10 @@ export class App implements OnInit {
   citaConsultada: any = null;
   cargandoConsulta: boolean = false;
 
-  // --- VARIABLES REAGENDAR CITA ---
+  // --- VARIABLES REAGENDAR Y ANTI-DUPLICADOS ---
   modoReagendar: boolean = false;
   folioReagendar: string = '';
+  procesandoCita: boolean = false; // <-- BLOQUEO ANTI DOBLE CLIC
 
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
@@ -66,14 +67,13 @@ export class App implements OnInit {
   // --- VARIABLES SUPER ADMIN ---
   usuariosSistema: any[] = [];
   categoriasAdmin: any[] = []; 
-  nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 };
+  nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
   
   // -- VARIABLES DE ACCESOS --
   registroAccesos: any[] = [];
   fechaAccesos: string = '';
   textoBusquedaAccesos: string = '';
   cargandoAccesos: boolean = false;
-  // Variables nuevas para paginación
   paginaActualAccesos: number = 1;
   totalPaginasAccesos: number = 1;
   arregloPaginas: number[] = [];
@@ -176,7 +176,7 @@ export class App implements OnInit {
     this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
     this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
     this.diasMes.forEach(d => d.seleccionado = false); this.folioBusqueda = ''; this.categoriaExpandida = null;
-    this.modoReagendar = false; this.folioReagendar = '';
+    this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false;
   }
 
   cargarSedes() { this.http.get('http://localhost:5076/api/Sedes').subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
@@ -249,7 +249,8 @@ export class App implements OnInit {
   }
 
   confirmarCita() {
-    // Si estamos Reagendando, llamamos a la ruta PUT nueva
+    this.procesandoCita = true; // <-- BLOQUEO ACTIVADO
+
     if (this.modoReagendar) {
       const payload = { nuevaFechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00` };
       this.http.put(`http://localhost:5076/api/Citas/${this.folioReagendar}/reagendar`, payload).subscribe({
@@ -262,10 +263,12 @@ export class App implements OnInit {
               this.limpiarFormulario();
               this.cdr.detectChanges();
           },
-          error: (err) => this.abrirAlerta('Error', err.error.mensaje || 'No se pudo reagendar.', 'error')
+          error: (err) => {
+              this.procesandoCita = false; // <-- LIBERA EL BOTÓN SI HAY ERROR
+              this.abrirAlerta('Error', err.error.mensaje || 'No se pudo reagendar.', 'error');
+          }
       });
     } else {
-      // Flujo normal de Agendar Cita Nueva
       const navInfo = this.getBrowserInfo();
       const solicitud = {
         curp: this.ciudadano.curp, nombre: this.ciudadano.nombre, correo: this.ciudadano.correo, telefono: this.ciudadano.telefono,
@@ -275,8 +278,17 @@ export class App implements OnInit {
         navegador: navInfo.browser, sistemaOperativo: navInfo.os
       };
       this.http.post('http://localhost:5076/api/Citas', solicitud).subscribe({
-        next: (res: any) => { this.folioExito = res.folio; this.pasoActual = 5; history.pushState({ paso: 5 }, '', ''); this.limpiarFormulario(); this.cdr.detectChanges(); },
-        error: (err) => { this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning'); }
+        next: (res: any) => { 
+            this.folioExito = res.folio; 
+            this.pasoActual = 5; 
+            history.pushState({ paso: 5 }, '', ''); 
+            this.limpiarFormulario(); 
+            this.cdr.detectChanges(); 
+        },
+        error: (err) => { 
+            this.procesandoCita = false; // <-- LIBERA EL BOTÓN SI HAY ERROR
+            this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning'); 
+        }
       });
     }
   }
@@ -292,17 +304,12 @@ export class App implements OnInit {
     });
   }
 
-  // --- LÓGICA DE REAGENDAR (Desde Paso 7 al Paso 4) ---
   prepararReagendar() {
     this.modoReagendar = true;
     this.folioReagendar = this.citaConsultada.folio;
-    
-    // Fingimos que seleccionaron sede y trámite para que funcione el Paso 4
     this.sedeSeleccionada = { idSede: this.citaConsultada.idSede, nombre: this.citaConsultada.sede };
     this.tramiteSeleccionado = { idTramite: this.citaConsultada.idTramite, nombreTramite: this.citaConsultada.tramite };
-    
     this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
-    
     this.pasoActual = 4;
     this.generarCalendario();
     history.pushState({ paso: 4 }, '', '');
@@ -533,14 +540,10 @@ export class App implements OnInit {
     
     this.http.get(url).subscribe({ 
       next: (res: any) => { 
-          // Ahora recibimos un objeto paginado del backend
           this.registroAccesos = res.datos; 
           this.paginaActualAccesos = res.paginaActual;
           this.totalPaginasAccesos = res.totalPaginas;
-          
-          // Generamos un arreglo [1, 2, 3...] para pintar los botones en HTML
           this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1);
-          
           this.cargandoAccesos = false;
           this.cdr.detectChanges(); 
       },
@@ -559,7 +562,7 @@ export class App implements OnInit {
 
   crearUsuario() {
     this.http.post('http://localhost:5076/api/Usuarios', this.nuevoUsuario).subscribe({
-      next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 }; this.cargarUsuariosAdmin(); },
+      next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 }; this.cargarUsuariosAdmin(); },
       error: (err) => this.abrirAlerta('Error', err.error?.mensaje || 'Error al crear usuario.', 'error')
     });
   }
@@ -579,7 +582,35 @@ export class App implements OnInit {
       });
     });
   }
-
+  
+ // NUEVO: CAMBIAR LA SEDE DEL EMPLEADO (CORREGIDO PARA EVITAR EL BUG DEL EVENT.TARGET)
+  cambiarSedeUsuario(usr: any) {
+    // Como usamos [(ngModel)], 'usr.idSede' YA TIENE el número correcto. No usamos event.
+    const idSedeNueva = usr.idSede;
+    
+    this.http.put(`http://localhost:5076/api/Usuarios/${usr.idUsuario}/sede`, { idSede: idSedeNueva }).subscribe({
+      next: (res: any) => { 
+        this.abrirAlerta('Actualizado', res.mensaje, 'success');
+        
+        // Si el usuario editado es el mismo que tiene la sesión iniciada
+        if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) {
+            this.usuarioSesion.idSede = idSedeNueva;
+            
+            const sedeEncontrada = this.sedes.find(s => s.idSede === idSedeNueva);
+            if (sedeEncontrada) {
+                this.usuarioSesion.sede = sedeEncontrada.nombre;
+            }
+            
+            sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion));
+        }
+      },
+      error: () => {
+        // Si falla en el servidor, recargamos la tabla para que el select regrese a como estaba
+        this.cargarUsuariosAdmin();
+        this.abrirAlerta('Error', 'No se pudo actualizar la sede del usuario.', 'error');
+      }
+    });
+  }
   cargarTramitesAdmin() {
     this.http.get('http://localhost:5076/api/Tramites/Admin').subscribe({
       next: (res: any) => { 

@@ -332,10 +332,15 @@
             </div>
           </div>
           
+          <!-- BOTÓN ACTUALIZADO PARA BLOQUEAR EL DOBLE CLIC Y MOSTRAR SPINNER -->
           <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" style="font-size: 0.9rem;"
                   (click)="confirmarCita()" 
-                  [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios">
-            CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
+                  [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios || procesandoCita">
+            @if (procesandoCita) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Procesando...
+            } @else {
+              CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
+            }
           </button>
         </div>
       </div>
@@ -449,12 +454,10 @@
                 </div>
               </div>
               
-              <!-- SECCIÓN DE ACCIONES (REAGENDAR / CANCELAR) -->
               @if (citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA') {
                 <hr style="border-color: #eaeaea;">
                 <div class="row mt-4 justify-content-center">
                   
-                  <!-- Tarjeta de Reagendar (SOLO SI ES PROGRAMADA) -->
                   @if (citaConsultada?.estatus === 'PROGRAMADA') {
                     <div class="col-md-6 mb-3">
                       <div class="alert p-4 rounded-3 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background-color: #f0f8ff; border-left: 5px solid #0dcaf0 !important;">
@@ -469,7 +472,6 @@
                     </div>
                   }
                   
-                  <!-- Tarjeta de Cancelar (SE HACE MAS GRANDE SI YA NO SE PUEDE REAGENDAR) -->
                   <div class="mb-3" [class.col-md-6]="citaConsultada?.estatus === 'PROGRAMADA'" [class.col-md-8]="citaConsultada?.estatus === 'REPROGRAMADA'">
                     <div class="alert p-4 rounded-3 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background-color: #fdf3f4; border-left: 5px solid #E60064 !important;">
                       <div class="mb-3">
@@ -626,7 +628,6 @@
                       <td class="fw-semibold text-dark">{{ cita.ciudadano }}</td>
                       <td class="text-secondary">
                         {{ cita.tramite }}<br>
-                        <!-- RASTREADOR ANTI-COYOTES EXPUESTO CLARAMENTE PARA EL SUPER ADMIN -->
                         @if (usuarioSesion?.rol === 'Super Administrador' && cita.ip) {
                             <small class="text-danger fw-bold d-block mt-1" style="font-size: 0.75rem;">
                               <i class="fa-solid fa-desktop me-1"></i> 
@@ -792,13 +793,14 @@
               </div>
               <div class="card-body p-4">
                 
+                <!-- NUEVO: SELECTOR DE SEDE AL CREAR EMPLEADO -->
                 <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
                   <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.85rem;">NUEVO EMPLEADO</h6>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <input type="text" class="form-control" placeholder="Nombre Completo" [(ngModel)]="nuevoUsuario.nombreCompleto">
                   </div>
-                  <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Usuario (Ej: juan.perez)" [(ngModel)]="nuevoUsuario.username">
+                  <div class="col-md-2">
+                    <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="nuevoUsuario.username">
                   </div>
                   <div class="col-md-2">
                     <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoUsuario.password">
@@ -808,6 +810,13 @@
                       <option [value]="2">Ventanilla</option>
                       <option [value]="1">Administrador</option>
                       <option [value]="3">Super Admin</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-select" [(ngModel)]="nuevoUsuario.idSede">
+                      @for (s of sedes; track s.idSede) {
+                        <option [value]="s.idSede">{{ s.nombre }}</option>
+                      }
                     </select>
                   </div>
                   <div class="col-md-2">
@@ -821,6 +830,7 @@
                       <tr>
                         <th class="py-3 text-secondary">Nombre</th>
                         <th class="py-3 text-secondary">Usuario</th>
+                        <th class="py-3 text-secondary">Sucursal</th>
                         <th class="py-3 text-secondary">Rol</th>
                         <th class="py-3 text-secondary text-center">Estado</th>
                         <th class="py-3 text-secondary text-center">Acciones</th>
@@ -831,6 +841,14 @@
                         <tr>
                           <td class="fw-semibold text-dark">{{ usr.nombreCompleto }}</td>
                           <td>{{ usr.username }}</td>
+                         <td>
+                            <!-- CAMBIAMOS (change) POR (ngModelChange) Y QUITAMOS EL $event -->
+                            <select class="form-select form-select-sm" style="max-width: 250px;" [(ngModel)]="usr.idSede" (ngModelChange)="cambiarSedeUsuario(usr)">
+                              @for (s of sedes; track s.idSede) {
+                                <option [ngValue]="s.idSede">{{ s.nombre }}</option>
+                              }
+                            </select>
+                          </td>
                           <td>{{ usr.rol }}</td>
                           <td class="text-center">
                             @if(usr.activo) { <span class="badge bg-success">Activo</span> }
@@ -848,7 +866,7 @@
                       }
                       @if (usuariosSistema.length === 0) {
                         <tr>
-                          <td colspan="5" class="text-center py-4 text-muted">No hay usuarios registrados.</td>
+                          <td colspan="6" class="text-center py-4 text-muted">No hay usuarios registrados.</td>
                         </tr>
                       }
                     </tbody>
@@ -917,7 +935,7 @@
             </div>
           </div>
 
-          <!-- REGISTRO DE ACCESOS -->
+          <!-- REGISTRO DE ACCESOS (CON PAGINACIÓN) -->
           <div class="col-lg-12">
             <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
               <div class="card-header bg-white p-4 border-bottom">
@@ -985,7 +1003,6 @@
                     </table>
                   </div>
 
-                  <!-- AÑADIR ESTO DEBAJO DE LA TABLA DE ACCESOS -->
                   @if (totalPaginasAccesos > 1) {
                     <nav class="mt-4">
                       <ul class="pagination justify-content-center">
@@ -1018,7 +1035,6 @@
         </div>
       </div>
     }
-
     <!-- PANTALLA 12: CENTRO DE SOPORTE EXCLUSIVO PARA SUPER ADMIN -->
     @if (pasoActual === 12) {
       <div class="container mt-4">
