@@ -903,39 +903,66 @@
                 <p class="text-muted small mb-0 mt-1">Monitoreo de horas de entrada y salida del personal al sistema.</p>
               </div>
               <div class="card-body p-4">
-                <div class="table-responsive">
-                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
-                    <thead style="background-color: #fdfdfd;">
-                      <tr>
-                        <th class="py-3 text-secondary">ID Sesión</th>
-                        <th class="py-3 text-secondary">Usuario</th>
-                        <th class="py-3 text-secondary">Fecha y Hora de Inicio</th>
-                        <th class="py-3 text-secondary">Fecha y Hora de Cierre</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (acc of registroAccesos; track acc.idAcceso) {
-                        <tr>
-                          <td class="font-monospace text-muted">{{ acc.idAcceso }}</td>
-                          <td class="fw-bold text-dark">{{ acc.username }}</td>
-                          <td class="text-success"><i class="fa-solid fa-right-to-bracket me-2"></i>{{ acc.fechaLogin | date:'medium' }}</td>
-                          <td>
-                            @if (acc.fechaLogout) {
-                                <span class="text-secondary"><i class="fa-solid fa-right-from-bracket me-2"></i>{{ acc.fechaLogout | date:'medium' }}</span>
-                            } @else {
-                                <span class="badge bg-info">En línea</span>
-                            }
-                          </td>
-                        </tr>
+                
+                <!-- NUEVO: FILTROS DE BÚSQUEDA PARA ACCESOS -->
+                <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
+                  <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
+                    <input type="date" class="form-control" [(ngModel)]="fechaAccesos" (change)="limpiarBusquedaAccesos()">
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (USUARIO O ID)</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="Escriba el nombre de usuario y presione Enter..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin()">
+                      <button class="btn text-white fw-bold" style="background-color: #E60064; border-color: #E60064;" (click)="cargarAccesosAdmin()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                      @if(textoBusquedaAccesos) {
+                        <button class="btn btn-outline-secondary" (click)="limpiarBusquedaAccesos()"><i class="fa-solid fa-xmark"></i></button>
                       }
-                      @if (registroAccesos.length === 0) {
-                        <tr>
-                          <td colspan="4" class="text-center py-4 text-muted">No hay registros de acceso.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
+                  </div>
                 </div>
+
+                @if (cargandoAccesos) {
+                  <div class="text-center my-5" style="color: #E60064;">
+                    <div class="spinner-border" role="status"></div>
+                    <p class="mt-2 fw-bold small text-dark">Cargando registros...</p>
+                  </div>
+                } @else {
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                      <thead style="background-color: #fdfdfd;">
+                        <tr>
+                          <th class="py-3 text-secondary">ID Sesión</th>
+                          <th class="py-3 text-secondary">Usuario</th>
+                          <th class="py-3 text-secondary">Fecha y Hora de Inicio</th>
+                          <th class="py-3 text-secondary">Fecha y Hora de Cierre</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (acc of registroAccesos; track acc.idAcceso) {
+                          <tr>
+                            <td class="font-monospace text-muted">{{ acc.idAcceso }}</td>
+                            <td class="fw-bold text-dark">{{ acc.username }}</td>
+                            <td class="text-success"><i class="fa-solid fa-right-to-bracket me-2"></i>{{ acc.fechaLogin | date:'medium' }}</td>
+                            <td>
+                              @if (acc.fechaLogout) {
+                                  <span class="text-secondary"><i class="fa-solid fa-right-from-bracket me-2"></i>{{ acc.fechaLogout | date:'medium' }}</span>
+                              } @else {
+                                  <span class="badge bg-info">En línea</span>
+                              }
+                            </td>
+                          </tr>
+                        }
+                        @if (registroAccesos.length === 0) {
+                          <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No hay registros de acceso.</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
               </div>
             </div>
           </div>

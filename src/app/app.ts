@@ -61,9 +61,14 @@ export class App implements OnInit {
 
   // --- VARIABLES SUPER ADMIN ---
   usuariosSistema: any[] = [];
-  categoriasAdmin: any[] = []; // AHORA GUARDAMOS LAS CATEGORÍAS, NO LOS TRÁMITES SUELTOS
-  registroAccesos: any[] = [];
+  categoriasAdmin: any[] = []; 
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2 };
+  
+  // -- VARIABLES DE ACCESOS --
+  registroAccesos: any[] = [];
+  fechaAccesos: string = '';
+  textoBusquedaAccesos: string = '';
+  cargandoAccesos: boolean = false;
 
   // --- VARIABLES SISTEMA DE PETICIONES (TICKETS Y NOTIFICACIONES) ---
   mostrarModalPeticion: boolean = false;
@@ -476,8 +481,35 @@ export class App implements OnInit {
     this.http.get('http://localhost:5076/api/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
   }
 
+  // METODO NUEVO: Lógica de carga de accesos con filtros y loaders
   cargarAccesosAdmin() {
-    this.http.get('http://localhost:5076/api/Usuarios/Accesos').subscribe({ next: (res: any) => { this.registroAccesos = res; this.cdr.detectChanges(); } });
+    this.cargandoAccesos = true;
+    let url = 'http://localhost:5076/api/Usuarios/Accesos';
+    const params = [];
+    if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) {
+      params.push(`busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`);
+    } else if (this.fechaAccesos) {
+      params.push(`fecha=${this.fechaAccesos}`);
+    }
+    if (params.length > 0) { url += '?' + params.join('&'); }
+    
+    this.http.get(url).subscribe({ 
+      next: (res: any) => { 
+          this.registroAccesos = res; 
+          this.cargandoAccesos = false;
+          this.cdr.detectChanges(); 
+      },
+      error: () => {
+          this.abrirAlerta('Error', 'No se pudo cargar el registro de accesos.', 'error');
+          this.cargandoAccesos = false;
+          this.cdr.detectChanges(); 
+      }
+    });
+  }
+
+  limpiarBusquedaAccesos() {
+    this.textoBusquedaAccesos = '';
+    this.cargarAccesosAdmin();
   }
 
   crearUsuario() {
@@ -503,11 +535,9 @@ export class App implements OnInit {
     });
   }
 
-  // LÓGICA DE CARGA DE CATEGORÍAS (ANTES TRAMITES) EN ADMIN
   cargarTramitesAdmin() {
     this.http.get('http://localhost:5076/api/Tramites/Admin').subscribe({
       next: (res: any) => { 
-        // AHORA MAPEAMOS A LAS CATEGORÍAS EN VEZ DE A LOS TRÁMITES
         this.categoriasAdmin = res.map((cat: any) => {
           const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {};
           return {
@@ -529,7 +559,7 @@ export class App implements OnInit {
     this.http.put(`http://localhost:5076/api/Tramites/Categoria/${cat.idCategoria}`, payload).subscribe({
       next: (res: any) => {
           this.abrirAlerta('Guardado', res.mensaje, 'success');
-          this.cargarTramites(); // Refresca en segundo plano para el ciudadano
+          this.cargarTramites(); 
       },
       error: () => this.abrirAlerta('Error', 'No se pudo guardar la configuración.', 'error')
     });
