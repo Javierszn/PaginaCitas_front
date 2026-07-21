@@ -4,8 +4,13 @@
   <header class="bg-white sticky-top shadow-sm">
     <div class="container d-flex justify-content-between align-items-center py-2">
       <div class="d-flex align-items-center">
-        <!-- Logo Oficial -->
-        <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-verde.png" alt="Gobierno del Estado SLP" style="height: 3.5rem; object-fit: contain;">
+        <!-- Flecha para regresar a la página principal del Registro Civil -->
+        <a href="https://registrocivil.slp.gob.mx/" class="btn btn-light rounded-circle me-3 d-flex justify-content-center align-items-center shadow-sm" style="width: 40px; height: 40px; border: 1px solid #eaeaea;" title="Regresar al Portal Oficial">
+          <i class="fa-solid fa-arrow-left text-dark"></i>
+        </a>
+
+        <!-- Logo Oficial (Clickeable para ir al inicio del sistema local) -->
+        <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-verde.png" alt="Gobierno del Estado SLP" style="height: 3.5rem; object-fit: contain; cursor: pointer;" (click)="regresarPaso1()" title="Ir al Inicio de Citas">
       </div>
       
       <button class="btn rounded-pill fw-semibold px-4" style="color: #232323; border: 1px solid #232323; background: transparent; font-size: 0.85rem;" (click)="irABuscarCita()">
@@ -332,7 +337,6 @@
             </div>
           </div>
           
-          <!-- BOTÓN ACTUALIZADO PARA BLOQUEAR EL DOBLE CLIC Y MOSTRAR SPINNER -->
           <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" style="font-size: 0.9rem;"
                   (click)="confirmarCita()" 
                   [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios || procesandoCita">
@@ -841,8 +845,8 @@
                         <tr>
                           <td class="fw-semibold text-dark">{{ usr.nombreCompleto }}</td>
                           <td>{{ usr.username }}</td>
-                         <td>
-                            <!-- CAMBIAMOS (change) POR (ngModelChange) Y QUITAMOS EL $event -->
+                          <td>
+                            <!-- USAMOS [(ngModel)] y [ngValue] PARA QUE EL HTML SELECCIONE LA SEDE CORRECTA -->
                             <select class="form-select form-select-sm" style="max-width: 250px;" [(ngModel)]="usr.idSede" (ngModelChange)="cambiarSedeUsuario(usr)">
                               @for (s of sedes; track s.idSede) {
                                 <option [ngValue]="s.idSede">{{ s.nombre }}</option>
@@ -935,7 +939,7 @@
             </div>
           </div>
 
-          <!-- REGISTRO DE ACCESOS (CON PAGINACIÓN) -->
+          <!-- REGISTRO DE ACCESOS -->
           <div class="col-lg-12">
             <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
               <div class="card-header bg-white p-4 border-bottom">
@@ -944,7 +948,6 @@
               </div>
               <div class="card-body p-4">
                 
-                <!-- NUEVO: FILTROS DE BÚSQUEDA PARA ACCESOS -->
                 <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
                   <div class="col-md-3 mb-3 mb-md-0">
                     <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
@@ -1035,6 +1038,7 @@
         </div>
       </div>
     }
+
     <!-- PANTALLA 12: CENTRO DE SOPORTE EXCLUSIVO PARA SUPER ADMIN -->
     @if (pasoActual === 12) {
       <div class="container mt-4">
@@ -1314,7 +1318,7 @@
       <div class="row justify-content-start">
         
         <div class="col-12 col-sm-6 col-lg-3 mb-4 text-center text-sm-start">
-          <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-blanco.png" alt="Gobierno del Estado SLP" class="img-fluid" style="max-height: 4.4rem; object-fit: contain;">
+          <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-blanco.png" alt="Gobierno del Estado SLP" class="img-fluid" style="max-height: 4.4rem; object-fit: contain; cursor: pointer;" (click)="regresarPaso1()" title="Ir al Inicio de Citas">
           <ul class="list mt-4" style="font-size: 0.9rem;">
              <li style="font-weight: bold;">
                  <i class="fa-solid fa-calendar-days me-2"></i>Fecha de Actualización: 17/02/2026
