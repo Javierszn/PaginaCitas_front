@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
+import { environment } from '../environments/environment';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +12,8 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
+  apiUrl = environment.apiUrl; // <-- VARIABLE DE ENTORNO CORRECTAMENTE CONFIGURADA
+
   pasoActual: number = 1;
   sedes: any[] = [];
   categorias: any[] = [];
@@ -135,7 +138,7 @@ export class App implements OnInit {
 
   cargarAvisoGlobal() {
     if (this.usuarioSesion) return;
-    this.http.get('http://localhost:5076/api/Avisos/Activo').subscribe({
+    this.http.get(this.apiUrl + '/Avisos/Activo').subscribe({
       next: (res: any) => { if (res && res.titulo) { this.avisoGlobal = res; this.mostrarAvisoGlobal = true; this.cdr.detectChanges(); } }
     });
   }
@@ -179,8 +182,8 @@ export class App implements OnInit {
     this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false;
   }
 
-  cargarSedes() { this.http.get('http://localhost:5076/api/Sedes').subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
-  cargarTramites() { this.http.get('http://localhost:5076/api/Tramites').subscribe({ next: (datos: any) => { this.categorias = datos; this.cdr.detectChanges(); } }); }
+  cargarSedes() { this.http.get(this.apiUrl + '/Sedes').subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
+  cargarTramites() { this.http.get(this.apiUrl + '/Tramites').subscribe({ next: (datos: any) => { this.categorias = datos; this.cdr.detectChanges(); } }); }
 
   toggleCategoria(idCategoria: number) { this.categoriaExpandida = (this.categoriaExpandida === idCategoria) ? null : idCategoria; this.cdr.detectChanges(); }
 
@@ -225,7 +228,7 @@ export class App implements OnInit {
 
   buscarHorariosBackend() {
     this.cargandoHorarios = true; 
-    this.http.get<string[]>(`http://localhost:5076/api/Citas/Horarios?idSede=${this.sedeSeleccionada.idSede}&idTramite=${this.tramiteSeleccionado.idTramite}&fecha=${this.fechaSeleccionada}`)
+    this.http.get<string[]>(`${this.apiUrl}/Citas/Horarios?idSede=${this.sedeSeleccionada.idSede}&idTramite=${this.tramiteSeleccionado.idTramite}&fecha=${this.fechaSeleccionada}`)
       .subscribe({
         next: (horas) => { this.horariosDisponibles = horas; this.cargandoHorarios = false; this.cdr.detectChanges(); },
         error: () => { this.abrirAlerta('Error', 'No se pudieron cargar los horarios.', 'error'); this.cargandoHorarios = false; this.cdr.detectChanges(); }
@@ -253,7 +256,7 @@ export class App implements OnInit {
 
     if (this.modoReagendar) {
       const payload = { nuevaFechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00` };
-      this.http.put(`http://localhost:5076/api/Citas/${this.folioReagendar}/reagendar`, payload).subscribe({
+      this.http.put(`${this.apiUrl}/Citas/${this.folioReagendar}/reagendar`, payload).subscribe({
           next: (res: any) => {
               this.folioExito = this.folioReagendar;
               this.modoReagendar = false;
@@ -277,7 +280,7 @@ export class App implements OnInit {
         fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`,
         navegador: navInfo.browser, sistemaOperativo: navInfo.os
       };
-      this.http.post('http://localhost:5076/api/Citas', solicitud).subscribe({
+      this.http.post(this.apiUrl + '/Citas', solicitud).subscribe({
         next: (res: any) => { 
             this.folioExito = res.folio; 
             this.pasoActual = 5; 
@@ -298,7 +301,7 @@ export class App implements OnInit {
   buscarCitaPorFolio() {
     if (!this.folioBusqueda || this.folioBusqueda.length < 8) return;
     this.cargandoConsulta = true;
-    this.http.get(`http://localhost:5076/api/Citas/${this.folioBusqueda.toUpperCase()}`).subscribe({
+    this.http.get(`${this.apiUrl}/Citas/${this.folioBusqueda.toUpperCase()}`).subscribe({
       next: (res: any) => { this.citaConsultada = res; this.pasoActual = 7; this.cargandoConsulta = false; history.pushState({ paso: 7 }, '', ''); this.cdr.detectChanges(); },
       error: (err) => { this.abrirAlerta('Folio no encontrado', err.error.mensaje || "Verifique el folio e intente de nuevo.", 'warning'); this.cargandoConsulta = false; this.cdr.detectChanges(); }
     });
@@ -318,7 +321,7 @@ export class App implements OnInit {
 
   cancelarCita() {
     this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario, liberará el espacio y tendrá que generar un folio nuevo.', () => {
-        this.http.put(`http://localhost:5076/api/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
+        this.http.put(`${this.apiUrl}/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
           next: (res: any) => { this.abrirAlerta('Cita Cancelada', res.mensaje, 'success'); this.citaConsultada.estatus = 'CANCELADA'; this.cdr.detectChanges(); },
           error: (err) => { this.abrirAlerta('Error', err.error.mensaje || "Error al cancelar la cita", 'error'); }
         });
@@ -330,7 +333,7 @@ export class App implements OnInit {
   iniciarSesion() {
     if (!this.credenciales.username || !this.credenciales.password) { this.abrirAlerta('Atención', 'Por favor, ingrese su usuario y contraseña.', 'warning'); return; }
     this.cargandoLogin = true;
-    this.http.post('http://localhost:5076/api/Auth/login', this.credenciales).subscribe({
+    this.http.post(this.apiUrl + '/Auth/login', this.credenciales).subscribe({
       next: (res: any) => {
         this.cargandoLogin = false; 
         this.usuarioSesion = res;
@@ -350,7 +353,7 @@ export class App implements OnInit {
     if (this.nuevaPassword.length < 5) { this.abrirAlerta('Atención', 'La contraseña debe tener al menos 5 caracteres.', 'warning'); return; }
     if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; }
 
-    this.http.put(`http://localhost:5076/api/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({
+    this.http.put(`${this.apiUrl}/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({
         next: (res: any) => {
             this.mostrarForzarPassword = false;
             this.abrirAlerta('Éxito', 'Su contraseña fue actualizada. Bienvenido al sistema.', 'success');
@@ -379,14 +382,14 @@ export class App implements OnInit {
 
   cerrarSesion() { 
     if(this.usuarioSesion?.idAcceso) {
-        this.http.post(`http://localhost:5076/api/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe();
+        this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe();
     }
     this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); 
   }
 
   // --- DASHBOARD EMPLEADOS ---
   cargarCitasDashboard() {
-    let url = `http://localhost:5076/api/Citas/PorSede/${this.usuarioSesion.idSede}`;
+    let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`;
     if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; } else { url += `?fecha=${this.fechaDashboard}`; }
     this.http.get(url).subscribe({ next: (res: any) => { this.citasDia = res; this.cdr.detectChanges(); }, error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error') });
   }
@@ -394,7 +397,7 @@ export class App implements OnInit {
   limpiarBusqueda() { this.textoBusquedaDashboard = ''; this.cargarCitasDashboard(); }
 
   actualizarEstatusCita(folio: string, nuevoEstatus: string) {
-    this.http.put(`http://localhost:5076/api/Citas/${folio}/actualizarEstatus`, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({
+    this.http.put(`${this.apiUrl}/Citas/${folio}/actualizarEstatus`, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({
         next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.cargarCitasDashboard(); },
         error: () => this.abrirAlerta('Error', 'No se pudo actualizar la cita.', 'error')
     });
@@ -413,7 +416,7 @@ export class App implements OnInit {
   }
 
   cargarBitacora() {
-    this.cargandoBitacora = true; let url = 'http://localhost:5076/api/Bitacora'; const params = [];
+    this.cargandoBitacora = true; let url = this.apiUrl + '/Bitacora'; const params = [];
     if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) { params.push(`busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`); } else if (this.fechaBitacora) { params.push(`fecha=${this.fechaBitacora}`); }
     if (params.length > 0) { url += '?' + params.join('&'); }
     this.http.get(url).subscribe({
@@ -425,7 +428,7 @@ export class App implements OnInit {
 
   deshacerAccion(idBitacora: number) {
     this.abrirConfirmacion('¿Deshacer este movimiento?', '¿Está completamente seguro de revertir este cambio a su estado anterior?', () => {
-        this.http.post(`http://localhost:5076/api/Bitacora/Deshacer/${idBitacora}`, this.usuarioSesion.idUsuario).subscribe({
+        this.http.post(`${this.apiUrl}/Bitacora/Deshacer/${idBitacora}`, this.usuarioSesion.idUsuario).subscribe({
           next: (res: any) => { this.abrirAlerta('Restaurado', res.mensaje, 'success'); this.cargarBitacora(); },
           error: (err) => { this.abrirAlerta('Error', err.error.mensaje || 'No se pudo deshacer la acción.', 'error'); }
         });
@@ -434,14 +437,14 @@ export class App implements OnInit {
 
   // --- MÉTODOS DE PETICIONES ---
   cargarUsuariosSoporte() {
-    this.http.get('http://localhost:5076/api/Usuarios/Soporte').subscribe({
+    this.http.get(this.apiUrl + '/Usuarios/Soporte').subscribe({
       next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); }
     });
   }
 
   cargarMisPeticiones() {
     if (!this.usuarioSesion) return;
-    this.http.get('http://localhost:5076/api/Peticiones/MisPeticiones/' + this.usuarioSesion.username).subscribe({
+    this.http.get(this.apiUrl + '/Peticiones/MisPeticiones/' + this.usuarioSesion.username).subscribe({
       next: (res: any) => { 
           this.misPeticiones = res; 
           this.notificacionesNuevas = this.misPeticiones.filter((p: any) => p.estatus === 'RESUELTA' && p.leido === false).length;
@@ -452,11 +455,11 @@ export class App implements OnInit {
 
   abrirBandeja() {
     if (this.usuarioSesion?.rol === 'Super Administrador') {
-        this.http.put('http://localhost:5076/api/Peticiones/MarcarLeidasAdmin', {}).subscribe();
+        this.http.put(this.apiUrl + '/Peticiones/MarcarLeidasAdmin', {}).subscribe();
         this.irACentroSoporte(); 
     } else {
         this.mostrarBandeja = true; 
-        this.http.put(`http://localhost:5076/api/Peticiones/MarcarLeidasUsuario/${this.usuarioSesion.username}`, {}).subscribe();
+        this.http.put(`${this.apiUrl}/Peticiones/MarcarLeidasUsuario/${this.usuarioSesion.username}`, {}).subscribe();
         this.notificacionesNuevas = 0; 
         this.cdr.detectChanges();
     }
@@ -479,7 +482,7 @@ export class App implements OnInit {
     if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) {
       this.abrirAlerta('Atención', 'Por favor, llene todos los campos requeridos.', 'warning'); return;
     }
-    this.http.post('http://localhost:5076/api/Peticiones', this.nuevaPeticion).subscribe({
+    this.http.post(this.apiUrl + '/Peticiones', this.nuevaPeticion).subscribe({
       next: (res: any) => {
         this.cerrarModalPeticion(); this.abrirAlerta('Solicitud Enviada', res.mensaje, 'success');
         if (this.usuarioSesion?.rol === 'Super Administrador') {
@@ -493,7 +496,7 @@ export class App implements OnInit {
   }
 
   cargarPeticionesAdmin() {
-    this.http.get('http://localhost:5076/api/Peticiones').subscribe({
+    this.http.get(this.apiUrl + '/Peticiones').subscribe({
       next: (res: any) => { 
           this.peticionesSistema = res; 
           this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE' && p.leido === false).length;
@@ -504,7 +507,7 @@ export class App implements OnInit {
 
   resolverPeticion(id: number) {
     this.abrirInput('Responder Ticket', 'Escriba un mensaje de resolución o soporte para el empleado:', () => {
-      this.http.put(`http://localhost:5076/api/Peticiones/${id}/resolver`, { respuesta: this.inputTemporal }).subscribe({
+      this.http.put(`${this.apiUrl}/Peticiones/${id}/resolver`, { respuesta: this.inputTemporal }).subscribe({
         next: (res: any) => { this.abrirAlerta('Resuelto', res.mensaje, 'success'); this.cargarPeticionesAdmin(); },
         error: () => this.abrirAlerta('Error', 'No se pudo actualizar el ticket.', 'error')
       });
@@ -525,12 +528,12 @@ export class App implements OnInit {
   }
 
   cargarUsuariosAdmin() {
-    this.http.get('http://localhost:5076/api/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
+    this.http.get(this.apiUrl + '/Usuarios').subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } });
   }
 
   cargarAccesosAdmin(paginaSolicitada: number = 1) {
     this.cargandoAccesos = true;
-    let url = `http://localhost:5076/api/Usuarios/Accesos?page=${paginaSolicitada}&pageSize=10`;
+    let url = `${this.apiUrl}/Usuarios/Accesos?page=${paginaSolicitada}&pageSize=10`;
     
     if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) {
       url += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`;
@@ -561,14 +564,14 @@ export class App implements OnInit {
   }
 
   crearUsuario() {
-    this.http.post('http://localhost:5076/api/Usuarios', this.nuevoUsuario).subscribe({
+    this.http.post(this.apiUrl + '/Usuarios', this.nuevoUsuario).subscribe({
       next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 }; this.cargarUsuariosAdmin(); },
       error: (err) => this.abrirAlerta('Error', err.error?.mensaje || 'Error al crear usuario.', 'error')
     });
   }
 
   toggleEstadoUsuario(id: number) {
-    this.http.put(`http://localhost:5076/api/Usuarios/${id}/estado`, {}).subscribe({
+    this.http.put(`${this.apiUrl}/Usuarios/${id}/estado`, {}).subscribe({
       next: () => this.cargarUsuariosAdmin(), error: () => this.abrirAlerta('Error', 'No se pudo cambiar el estado.', 'error')
     });
   }
@@ -576,23 +579,20 @@ export class App implements OnInit {
   cambiarPasswordUsuario(id: number) {
     this.abrirInput('Restablecer Contraseña', 'Asigne una contraseña temporal. El usuario deberá cambiarla al iniciar sesión:', () => {
       if (this.inputTemporal.length < 5) { this.abrirAlerta('Error', 'La contraseña debe ser mayor a 5 caracteres.', 'error'); return; }
-      this.http.put(`http://localhost:5076/api/Usuarios/${id}/password`, { password: this.inputTemporal }).subscribe({
+      this.http.put(`${this.apiUrl}/Usuarios/${id}/password`, { password: this.inputTemporal }).subscribe({
         next: (res: any) => this.abrirAlerta('Actualizado', res.mensaje, 'success'),
         error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error')
       });
     });
   }
   
- // NUEVO: CAMBIAR LA SEDE DEL EMPLEADO (CORREGIDO PARA EVITAR EL BUG DEL EVENT.TARGET)
   cambiarSedeUsuario(usr: any) {
-    // Como usamos [(ngModel)], 'usr.idSede' YA TIENE el número correcto. No usamos event.
     const idSedeNueva = usr.idSede;
     
-    this.http.put(`http://localhost:5076/api/Usuarios/${usr.idUsuario}/sede`, { idSede: idSedeNueva }).subscribe({
+    this.http.put(`${this.apiUrl}/Usuarios/${usr.idUsuario}/sede`, { idSede: idSedeNueva }).subscribe({
       next: (res: any) => { 
         this.abrirAlerta('Actualizado', res.mensaje, 'success');
         
-        // Si el usuario editado es el mismo que tiene la sesión iniciada
         if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) {
             this.usuarioSesion.idSede = idSedeNueva;
             
@@ -605,14 +605,13 @@ export class App implements OnInit {
         }
       },
       error: () => {
-        // Si falla en el servidor, recargamos la tabla para que el select regrese a como estaba
         this.cargarUsuariosAdmin();
         this.abrirAlerta('Error', 'No se pudo actualizar la sede del usuario.', 'error');
       }
     });
   }
   cargarTramitesAdmin() {
-    this.http.get('http://localhost:5076/api/Tramites/Admin').subscribe({
+    this.http.get(this.apiUrl + '/Tramites/Admin').subscribe({
       next: (res: any) => { 
         this.categoriasAdmin = res.map((cat: any) => {
           const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {};
@@ -632,7 +631,7 @@ export class App implements OnInit {
 
   actualizarCategoria(cat: any) {
     const payload = { duracionMinutos: cat.duracionMinutos, costo: cat.costo, activo: cat.activo, limiteDiario: cat.limiteDiarioSede };
-    this.http.put(`http://localhost:5076/api/Tramites/Categoria/${cat.idCategoria}`, payload).subscribe({
+    this.http.put(`${this.apiUrl}/Tramites/Categoria/${cat.idCategoria}`, payload).subscribe({
       next: (res: any) => {
           this.abrirAlerta('Guardado', res.mensaje, 'success');
           this.cargarTramites(); 
