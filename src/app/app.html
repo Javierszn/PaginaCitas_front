@@ -199,6 +199,15 @@
           <div class="card shadow-sm border-0 rounded-4 p-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
             <p class="mb-4 fw-bold" style="color: #E60064 !important; font-size: 0.75rem;">* Campos obligatorios</p>
 
+            <!-- AVISOS IMPORTANTES PARA EL CIUDADANO -->
+            <div class="alert alert-warning" style="border-left: 5px solid #ffc107; background-color: #fff9e6; color: #856404; padding: 15px; margin-bottom: 20px;">
+              <h5 style="margin-bottom: 10px;"><strong>⚠️ AVISO IMPORTANTE</strong></h5>
+              <ul style="margin-bottom: 0;">
+                <li><strong>El trámite es estrictamente personal.</strong> Deberá presentar una Identificación Oficial (ID) el día de su cita.</li>
+                <li>En caso de no poder asistir, usted puede <strong>cancelar o reprogramar</strong> su cita en este mismo portal hasta <strong>2 horas antes</strong> del horario agendado.</li>
+              </ul>
+            </div>
+
             <div class="row">
               @if (esOtrosEstados) {
                 <div class="col-md-6 mb-3">
@@ -231,15 +240,26 @@
                 </div>
               }
             </div>
-
-            <div class="mb-3">
-              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">NOMBRE COMPLETO *</label>
-              <input type="text" class="form-control rounded-3" [(ngModel)]="ciudadano.nombre" style="font-size: 0.9rem;">
-            </div>
             
             <div class="mb-3">
-              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CURP (18 CARACTERES)</label>
-              <input type="text" class="form-control rounded-3 text-uppercase" [(ngModel)]="ciudadano.curp" maxlength="18" style="font-size: 0.9rem;">
+              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CURP (Opcional si ingresa Nombre)</label>
+              <input type="text" class="form-control rounded-3 text-uppercase" 
+                     maxlength="18" 
+                     [(ngModel)]="ciudadano.curp" 
+                     (ngModelChange)="validarFormatoCURP()" 
+                     placeholder="Ingrese los 18 caracteres"
+                     style="font-size: 0.9rem;">
+              <small *ngIf="!curpValida && ciudadano.curp.length > 0" style="color: red;">El formato de la CURP es incorrecto.</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">NOMBRE COMPLETO (Opcional si ingresa CURP)</label>
+              <input type="text" class="form-control rounded-3" 
+                     (keypress)="soloLetras($event)" 
+                     [(ngModel)]="ciudadano.nombre" 
+                     placeholder="Ej. Juan Pérez"
+                     style="font-size: 0.9rem;">
+              <small style="color: gray;">No se permiten números ni caracteres especiales.</small>
             </div>
             
             <div class="row">
@@ -249,13 +269,18 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">TELÉFONO *</label>
-                <input type="tel" class="form-control rounded-3" [(ngModel)]="ciudadano.telefono" style="font-size: 0.9rem;">
+                <input type="tel" class="form-control rounded-3" 
+                       maxlength="10" 
+                       (keypress)="soloNumeros($event)" 
+                       [(ngModel)]="ciudadano.telefono" 
+                       placeholder="10 dígitos"
+                       style="font-size: 0.9rem;">
               </div>
             </div>
             
             <button class="btn btn-success w-100 py-3 mt-3 rounded-pill fw-bold shadow-sm" style="font-size: 0.9rem;"
-                    (click)="irAPaso4()" 
-                    [disabled]="!ciudadano.nombre || !ciudadano.correo || !ciudadano.telefono || !ciudadano.municipioRegistro || (esOtrosEstados && !ciudadano.estadoRegistro)">
+                    (click)="validarPasoDatos()" 
+                    [disabled]="!ciudadano.correo || !ciudadano.telefono || !ciudadano.municipioRegistro || (esOtrosEstados && !ciudadano.estadoRegistro)">
               CONTINUAR A FECHA Y HORA <i class="fa-solid fa-calendar-days ms-2"></i>
             </button>
           </div>
@@ -629,7 +654,7 @@
                         <small class="text-muted">{{ cita.fechaStr }}</small>
                       </td>
                       <td><span class="text-secondary fw-semibold">{{ cita.folio }}</span></td>
-                      <td class="fw-semibold text-dark">{{ cita.ciudadano }}</td>
+                      <td class="fw-semibold text-dark">{{ cita.nombreCiudadano || cita.ciudadano || cita.curpCiudadano || cita.curp }}</td>
                       <td class="text-secondary">
                         {{ cita.tramite }}<br>
                         @if (usuarioSesion?.rol === 'Super Administrador' && cita.ip) {

@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
-  apiUrl = environment.apiUrl; // <-- VARIABLE DE ENTORNO CORRECTAMENTE CONFIGURADA
+  apiUrl = environment.apiUrl; 
 
   pasoActual: number = 1;
   sedes: any[] = [];
@@ -35,10 +35,9 @@ export class App implements OnInit {
   citaConsultada: any = null;
   cargandoConsulta: boolean = false;
 
-  // --- VARIABLES REAGENDAR Y ANTI-DUPLICADOS ---
   modoReagendar: boolean = false;
   folioReagendar: string = '';
-  procesandoCita: boolean = false; // <-- BLOQUEO ANTI DOBLE CLIC
+  procesandoCita: boolean = false; 
 
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
@@ -67,12 +66,10 @@ export class App implements OnInit {
   fechaBitacora: string = ''; 
   textoBusquedaBitacora: string = '';
 
-  // --- VARIABLES SUPER ADMIN ---
   usuariosSistema: any[] = [];
   categoriasAdmin: any[] = []; 
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
   
-  // -- VARIABLES DE ACCESOS --
   registroAccesos: any[] = [];
   fechaAccesos: string = '';
   textoBusquedaAccesos: string = '';
@@ -81,7 +78,6 @@ export class App implements OnInit {
   totalPaginasAccesos: number = 1;
   arregloPaginas: number[] = [];
 
-  // --- VARIABLES SISTEMA DE PETICIONES (TICKETS Y NOTIFICACIONES) ---
   mostrarModalPeticion: boolean = false;
   mostrarBandeja: boolean = false; 
   peticionDesdeLogin: boolean = false;
@@ -96,6 +92,10 @@ export class App implements OnInit {
   todosLosMunicipiosSLP: string[] = [ 'Ahualulco', 'Alaquines', 'Aquismón', 'Armadillo de los Infante', 'Axtla de Terrazas', 'Cárdenas', 'Catorce', 'Cedral', 'Cerritos', 'Cerro de San Pedro', 'Charcas', 'Ciudad del Maíz', 'Ciudad Fernández', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Guadalcázar', 'Huehuetlán', 'Lagunillas', 'Matehuala', 'Matlapa', 'Mexquitic de Carmona', 'Moctezuma', 'Rayón', 'Rioverde', 'Salinas', 'San Antonio', 'San Ciro de Acosta', 'San Luis Potosí', 'San Martín Chalchicuautla', 'San Nicolás Tolentino', 'San Vicente Tancuayalab', 'Santa Catarina', 'Santa María del Río', 'Santo Domingo', 'Soledad de Graciano Sánchez', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Tierra Nueva', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Arriaga', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa de Reyes', 'Villa Hidalgo', 'Villa Juárez', 'Xilitla', 'Zaragoza', 'Villa de Pozos (Municipio 59)' ].sort();
 
   ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
+
+  // --- NUEVAS VARIABLES PARA VALIDACIONES ---
+  curpValida: boolean = true;
+  mostrarMensajesAyuda: boolean = false;
 
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
@@ -135,6 +135,61 @@ export class App implements OnInit {
     if (this.pasoActual === 4) this.generarCalendario();
     this.cdr.detectChanges();
   }
+
+  // --- NUEVOS MÉTODOS DE VALIDACIÓN ---
+  soloNumeros(event: any) {
+    const charCode = (event.which) ? event.which : event.keyCode;
+    if (charCode < 48 || charCode > 57) {
+      event.preventDefault();
+    }
+  }
+
+  soloLetras(event: any) {
+    const charCode = (event.which) ? event.which : event.keyCode;
+    if ((charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || charCode === 32 || charCode === 241 || charCode === 209) {
+      return true;
+    }
+    event.preventDefault();
+    return false;
+  }
+
+  validarFormatoCURP() {
+    if (this.ciudadano.curp) {
+      this.ciudadano.curp = this.ciudadano.curp.toUpperCase();
+    }
+    if (!this.ciudadano.curp || this.ciudadano.curp.length === 0) {
+      this.curpValida = true;
+      return;
+    }
+    const regexCURP = /^[A-Z]{4}\d{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9]\d$/;
+    this.curpValida = regexCURP.test(this.ciudadano.curp);
+  }
+
+  validarPasoDatos() {
+    this.mostrarMensajesAyuda = true; 
+    
+    const tieneCurp = this.ciudadano.curp && this.ciudadano.curp.length === 18 && this.curpValida;
+    const tieneNombre = this.ciudadano.nombre && this.ciudadano.nombre.trim().length > 0;
+
+    if (!tieneCurp && !tieneNombre) {
+      this.abrirAlerta('Faltan Datos', 'Debe ingresar al menos su CURP o su Nombre Completo para continuar.', 'warning');
+      return;
+    }
+
+    if (this.ciudadano.curp && this.ciudadano.curp.length > 0 && !this.curpValida) {
+      this.abrirAlerta('CURP Inválida', 'La CURP ingresada no tiene un formato válido.', 'warning');
+      return;
+    }
+
+    if (this.ciudadano.telefono && this.ciudadano.telefono.length !== 10) {
+      this.abrirAlerta('Teléfono Inválido', 'El número de teléfono debe ser exactamente de 10 dígitos.', 'warning');
+      return;
+    }
+
+    this.irAPaso4();
+  }
+
+  // --- FIN MÉTODOS DE VALIDACIÓN ---
 
   cargarAvisoGlobal() {
     if (this.usuarioSesion) return;
@@ -180,6 +235,7 @@ export class App implements OnInit {
     this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
     this.diasMes.forEach(d => d.seleccionado = false); this.folioBusqueda = ''; this.categoriaExpandida = null;
     this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false;
+    this.curpValida = true; this.mostrarMensajesAyuda = false;
   }
 
   cargarSedes() { this.http.get(this.apiUrl + '/Sedes').subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
@@ -202,7 +258,9 @@ export class App implements OnInit {
   }
 
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
+  
   irAPaso4() { this.pasoActual = 4; this.generarCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); }
+  
   cambiarMes(delta: number) { this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + delta, 1); this.generarCalendario(); }
 
   generarCalendario() {
@@ -252,7 +310,7 @@ export class App implements OnInit {
   }
 
   confirmarCita() {
-    this.procesandoCita = true; // <-- BLOQUEO ACTIVADO
+    this.procesandoCita = true; 
 
     if (this.modoReagendar) {
       const payload = { nuevaFechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00` };
@@ -267,7 +325,7 @@ export class App implements OnInit {
               this.cdr.detectChanges();
           },
           error: (err) => {
-              this.procesandoCita = false; // <-- LIBERA EL BOTÓN SI HAY ERROR
+              this.procesandoCita = false; 
               this.abrirAlerta('Error', err.error.mensaje || 'No se pudo reagendar.', 'error');
           }
       });
@@ -289,7 +347,7 @@ export class App implements OnInit {
             this.cdr.detectChanges(); 
         },
         error: (err) => { 
-            this.procesandoCita = false; // <-- LIBERA EL BOTÓN SI HAY ERROR
+            this.procesandoCita = false; 
             this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning'); 
         }
       });
@@ -387,7 +445,6 @@ export class App implements OnInit {
     this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); 
   }
 
-  // --- DASHBOARD EMPLEADOS ---
   cargarCitasDashboard() {
     let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`;
     if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; } else { url += `?fecha=${this.fechaDashboard}`; }
@@ -403,7 +460,6 @@ export class App implements OnInit {
     });
   }
 
-  // --- BITÁCORA (ADMIN / SUPER ADMIN) ---
   irABitacora() { this.pasoActual = 10; sessionStorage.setItem('pasoRC', '10'); this.cargarBitacora(); history.pushState({ paso: 10 }, '', ''); this.cdr.detectChanges(); }
   regresarADashboard() { 
       this.pasoActual = 9; 
@@ -435,7 +491,6 @@ export class App implements OnInit {
     });
   }
 
-  // --- MÉTODOS DE PETICIONES ---
   cargarUsuariosSoporte() {
     this.http.get(this.apiUrl + '/Usuarios/Soporte').subscribe({
       next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); }
@@ -514,7 +569,6 @@ export class App implements OnInit {
     });
   }
 
-  // --- CONFIGURACIÓN DEL SISTEMA (SUPER ADMIN) ---
   irASuperAdmin() { 
     this.pasoActual = 11; sessionStorage.setItem('pasoRC', '11'); 
     this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin();
@@ -640,7 +694,6 @@ export class App implements OnInit {
     });
   }
 
-  // --- NAVEGACIÓN GENERAL ---
   regresarPaso1() { 
     this.pasoActual = 1; this.sedeSeleccionada = null; this.categorias = []; this.limpiarFormulario();
     sessionStorage.removeItem('pasoRC'); history.pushState({ paso: 1 }, '', ''); 
