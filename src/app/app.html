@@ -199,11 +199,13 @@
           <div class="card shadow-sm border-0 rounded-4 p-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
             <p class="mb-4 fw-bold" style="color: #E60064 !important; font-size: 0.75rem;">* Campos obligatorios</p>
 
+
             <div class="alert alert-warning" style="border-left: 5px solid #ffc107; background-color: #fff9e6; color: #856404; padding: 15px; margin-bottom: 20px;">
-              <h5 style="margin-bottom: 10px;"><strong>⚠️ AVISO IMPORTANTE</strong></h5>
+              <h5 style="margin-bottom: 10px;"><strong> AVISO IMPORTANTE Y PENALIZACIÓN</strong></h5>
               <ul style="margin-bottom: 0;">
-                <li><strong>El trámite es estrictamente personal.</strong> Deberá presentar una Identificación Oficial (ID) el día de su cita.</li>
-                <li>En caso de no poder asistir, usted puede <strong>cancelar o reprogramar</strong> su cita en este mismo portal hasta <strong>2 horas antes</strong> del horario agendado.</li>
+                <li><strong>El trámite es estrictamente personal.</strong> Deberá presentar Identificación Oficial (ID) vigente en ventanilla.</li>
+                <li><strong>PENALIZACIÓN:</strong> Si agenda y no asiste a su cita, el sistema lo bloqueará impidiendo nuevos trámites durante <strong>1 semana</strong>.</li>
+                <li>En caso de imprevistos, cancele o reprograme su cita en este portal hasta <strong>2 horas antes</strong>. Liberar su espacio evita la sanción.</li>
               </ul>
             </div>
 
@@ -388,7 +390,14 @@
             <h2 class="display-6 fw-bold text-dark mb-0">{{ folioExito }}</h2>
           </div>
           
-          <button class="btn rounded-pill px-5 py-3 fw-bold text-white" (click)="regresarPaso1()" style="background-color: #2b2727; border: none; font-size: 0.9rem;">
+          <!-- BOTÓN DE DESCARGA PDF EN PANTALLA DE ÉXITO -->
+          <div class="mb-4">
+             <button class="btn rounded-pill fw-bold text-white shadow-sm w-100 py-3" style="background-color: #E60064; border: none; font-size: 0.9rem;" (click)="descargarAcuseOficial()">
+               <i class="fa-solid fa-file-pdf me-2"></i> Descargar Acuse Oficial
+             </button>
+          </div>
+
+          <button class="btn rounded-pill px-5 py-3 fw-bold text-white w-100" (click)="regresarPaso1()" style="background-color: #2b2727; border: none; font-size: 0.9rem;">
             FINALIZAR
           </button>
         </div>
@@ -452,7 +461,12 @@
                 <small class="text-muted fw-bold" style="font-size: 0.75rem;">COSTO DEL TRÁMITE</small>
               </div>
             </div>
-
+<!-- NUEVO BOTÓN DE DESCARGA PDF DE ACUSE -->
+            <div class="px-4 pt-3 pb-0 text-end">
+              <button class="btn rounded-pill fw-bold text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="descargarAcuseOficial()">
+                <i class="fa-solid fa-file-pdf me-2"></i> Descargar Acuse Oficial
+              </button>
+            </div>
             <div class="p-4">
               <div class="row mb-4">
                 <div class="col-md-6 mb-3">

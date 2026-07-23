@@ -732,7 +732,102 @@ export class App implements OnInit {
     // Guardar el archivo
     doc.save(`${tituloReporte.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
   }
+// --- FUNCIÓN PARA DESCARGAR EL ACUSE OFICIAL ---
+  descargarAcuseOficial() {
+    if (!this.citaConsultada) {
+        console.error("Error: No hay datos cargados para generar el PDF.");
+        return;
+    }
 
+    try {
+        const doc = new jsPDF();
+        
+        // 1. DIBUJAR BANNER SUPERIOR INSTITUCIONAL (Color Verde)
+        doc.setFillColor(5, 90, 28);
+        doc.rect(0, 0, 210, 30, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("Poder Ejecutivo del Estado de San Luis Potosí", 105, 12, { align: "center" });
+        
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.text("Dirección del Registro Civil", 105, 20, { align: "center" });
+        
+        // 2. TÍTULO DEL DOCUMENTO
+        let startY = 35;
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.text("Acuse Oficial de Cita Agendada", 105, startY + 7, { align: "center" });
+
+        // 3. CAJA DE DATOS PRINCIPALES
+        doc.setDrawColor(5, 90, 28);
+        doc.setLineWidth(0.5);
+        doc.rect(15, startY + 15, 180, 50);
+
+        // Lógica de Identificador (Nombre + CURP)
+        let identificador = "";
+        if (this.citaConsultada.ciudadano && this.citaConsultada.curp && !this.citaConsultada.curp.includes('ENM')) {
+            identificador = `${this.citaConsultada.ciudadano} (CURP: ${this.citaConsultada.curp})`;
+        } else if (this.citaConsultada.ciudadano) {
+            identificador = this.citaConsultada.ciudadano;
+        } else {
+            identificador = `CURP: ${this.citaConsultada.curp}`;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(5, 90, 28);
+        doc.text(`Folio: ${this.citaConsultada.folio}`, 20, startY + 25);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(50, 50, 50);
+        doc.text(`Ciudadano/a: ${identificador}`, 20, startY + 35);
+        doc.text(`Trámite: ${this.citaConsultada.tramite}`, 20, startY + 45);
+        doc.text(`Fecha y Hora: ${this.citaConsultada.fecha} a las ${this.citaConsultada.hora} hrs`, 20, startY + 55);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text(`Costo del Servicio: $${this.citaConsultada.costo}`, 130, startY + 55);
+
+        // 4. SECCIÓN DE REQUISITOS
+        doc.setFontSize(12);
+        doc.setTextColor(5, 90, 28);
+        doc.text("Requisitos del Trámite:", 15, startY + 80);
+
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(50, 50, 50);
+        const reqFormateados = this.citaConsultada.requisitos ? this.citaConsultada.requisitos.replace(/•/g, '- ') : 'Consulte requisitos en ventanilla.';
+        const reqText = doc.splitTextToSize(reqFormateados, 180);
+        doc.text(reqText, 15, startY + 90);
+
+        let nextY = startY + 90 + (reqText.length * 5) + 15;
+
+        // 5. AVISOS Y PENALIZACIÓN
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(230, 0, 100); 
+        doc.text("Avisos Importantes y Penalización:", 15, nextY);
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        const avisosText = doc.splitTextToSize(
+        "- El trámite es estrictamente personal. Es obligatorio presentar Identificación Oficial (ID) vigente.\n" +
+        "- SISTEMA DE PENALIZACIÓN: Si usted agenda su cita y NO asiste, el sistema lo bloqueará automáticamente, impidiéndole agendar un nuevo trámite durante 1 semana completa.\n" +
+        "- Si no puede asistir, por favor cancele o reprograme en el portal web hasta 2 horas antes de su horario. Liberar su espacio evita sanciones.", 180);
+        doc.text(avisosText, 15, nextY + 10);
+
+        // 6. GENERAR Y DESCARGAR ARCHIVO
+        doc.save(`Acuse_Cita_${this.citaConsultada.folio}.pdf`);
+        
+    } catch (error) {
+        console.error("Error al generar PDF: ", error);
+        alert("Error crítico al generar el PDF. Verifica que ejecutaste 'npm install jspdf jspdf-autotable'.");
+    }
+  }
   actualizarCategoria(cat: any) {
     const payload = { duracionMinutos: cat.duracionMinutos, costo: cat.costo, activo: cat.activo, limiteDiario: cat.limiteDiarioSede };
     this.http.put(`${this.apiUrl}/Tramites/Categoria/${cat.idCategoria}`, payload).subscribe({
