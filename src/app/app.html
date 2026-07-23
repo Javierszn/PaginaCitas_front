@@ -199,7 +199,6 @@
           <div class="card shadow-sm border-0 rounded-4 p-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
             <p class="mb-4 fw-bold" style="color: #E60064 !important; font-size: 0.75rem;">* Campos obligatorios</p>
 
-            <!-- AVISOS IMPORTANTES PARA EL CIUDADANO -->
             <div class="alert alert-warning" style="border-left: 5px solid #ffc107; background-color: #fff9e6; color: #856404; padding: 15px; margin-bottom: 20px;">
               <h5 style="margin-bottom: 10px;"><strong>⚠️ AVISO IMPORTANTE</strong></h5>
               <ul style="margin-bottom: 0;">
@@ -576,7 +575,7 @@
       </div>
     }
 
-    <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
+   <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
     @if (pasoActual === 9) {
       <div class="container mt-4">
         
@@ -626,8 +625,9 @@
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
                   <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
                   @if(textoBusquedaDashboard) {
-                    <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
                 <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
@@ -635,7 +635,7 @@
             </div>
 
             <div class="table-responsive">
-              <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+              <table id="tablaCitas" class="table table-hover align-middle" style="font-size: 0.85rem;">
                 <thead style="background-color: #fdfdfd;">
                   <tr>
                     <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
@@ -654,7 +654,19 @@
                         <small class="text-muted">{{ cita.fechaStr }}</small>
                       </td>
                       <td><span class="text-secondary fw-semibold">{{ cita.folio }}</span></td>
-                      <td class="fw-semibold text-dark">{{ cita.nombreCiudadano || cita.ciudadano || cita.curpCiudadano || cita.curp }}</td>
+                      
+                      <td>
+                        @if (cita.ciudadano && cita.ciudadano.trim() !== '') {
+                          <span class="d-block fw-semibold text-dark">{{ cita.ciudadano }}</span>
+                        }
+                        
+                        @if (cita.curp && !cita.curp.includes('ENM')) {
+                          <span class="badge bg-light text-dark border mt-1" style="font-size: 0.75rem;">
+                            <i class="fa-regular fa-id-card text-muted me-1"></i> {{ cita.curp }}
+                          </span>
+                        }
+                      </td>
+
                       <td class="text-secondary">
                         {{ cita.tramite }}<br>
                         @if (usuarioSesion?.rol === 'Super Administrador' && cita.ip) {
@@ -712,7 +724,6 @@
         </div>
       </div>
     }
-
     <!-- PANTALLA 10: BITÁCORA DE AUDITORÍA -->
     @if (pasoActual === 10) {
       <div class="container mt-4">
@@ -734,8 +745,9 @@
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
                   <button class="btn btn-success fw-bold" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaBitacora', 'Bitácora de Auditoría de Sistemas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
                   @if(textoBusquedaBitacora) {
-                    <button class="btn btn-outline-secondary" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
                 <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
@@ -749,7 +761,7 @@
               </div>
             } @else {
               <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle" style="font-size: 0.8rem;">
+                <table id="tablaBitacora" class="table table-bordered table-hover align-middle" style="font-size: 0.8rem;">
                   <thead style="background-color: #fdfdfd;">
                     <tr>
                       <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
@@ -983,8 +995,9 @@
                     <div class="input-group">
                       <input type="text" class="form-control" placeholder="Escriba el nombre de usuario y presione Enter..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin()">
                       <button class="btn text-white fw-bold" style="background-color: #E60064; border-color: #E60064;" (click)="cargarAccesosAdmin()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                      <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #055A1C; border: none;" (click)="exportarPDF('tablaAccesos', 'Registro Histórico de Accesos')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
                       @if(textoBusquedaAccesos) {
-                        <button class="btn btn-outline-secondary" (click)="limpiarBusquedaAccesos()"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaAccesos()"><i class="fa-solid fa-xmark"></i></button>
                       }
                     </div>
                     <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
@@ -998,7 +1011,7 @@
                   </div>
                 } @else {
                   <div class="table-responsive">
-                    <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                    <table id="tablaAccesos" class="table table-hover align-middle" style="font-size: 0.85rem;">
                       <thead style="background-color: #fdfdfd;">
                         <tr>
                           <th class="py-3 text-secondary">ID Sesión</th>

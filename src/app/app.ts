@@ -3,6 +3,8 @@ import { environment } from '../environments/environment';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-root',
@@ -243,20 +245,37 @@ export class App implements OnInit {
 
   toggleCategoria(idCategoria: number) { this.categoriaExpandida = (this.categoriaExpandida === idCategoria) ? null : idCategoria; this.cdr.detectChanges(); }
 
-  seleccionarSede(sede: any) {
-    this.sedeSeleccionada = sede; const nombreSede = sede.nombre.toLowerCase();
+ seleccionarSede(sede: any) {
+    this.sedeSeleccionada = sede; 
+    const nombreSede = sede.nombre.toLowerCase();
     this.esOtrosEstados = nombreSede.includes('otros');
-    this.ciudadano.estadoRegistro = ''; this.ciudadano.municipioRegistro = '';
+    this.ciudadano.estadoRegistro = ''; 
+    this.ciudadano.municipioRegistro = '';
     
-    if (nombreSede.includes('centro') || nombreSede.includes('potos')) { this.municipiosRegistro = ['Ahualulco', 'Armadillo de los Infante', 'Cerro de San Pedro', 'Mexquitic de Carmona', 'San Luis Potosí', 'Santa María del Río', 'Soledad de Graciano Sánchez', 'Tierra Nueva', 'Villa de Arriaga', 'Villa de Reyes', 'Villa de Zaragoza', 'Villa de Pozos (Municipio 59)'].sort(); } 
-    else if (nombreSede.includes('altiplano') || nombreSede.includes('matehuala')) { this.municipiosRegistro = ['Catorce', 'Cedral', 'Charcas', 'Guadalcázar', 'Matehuala', 'Moctezuma', 'Salinas', 'Santo Domingo', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa Hidalgo'].sort(); } 
-    else if (nombreSede.includes('huasteca') || nombreSede.includes('valles')) { this.municipiosRegistro = ['Aquismón', 'Axtla de Terrazas', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Huehuetlán', 'Matlapa', 'San Antonio', 'San Martín Chalchicuautla', 'San Vicente Tancuayalab', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Xilitla'].sort(); } 
-    else if (nombreSede.includes('media') || nombreSede.includes('rioverde')) { this.municipiosRegistro = ['Alaquines', 'Cárdenas', 'Cerritos', 'Ciudad del Maíz', 'Ciudad Fernández', 'Lagunillas', 'Rayón', 'Rioverde', 'San Ciro de Acosta', 'San Nicolás Tolentino', 'Santa Catarina', 'Villa Juárez'].sort(); } 
-    else if (this.esOtrosEstados) { this.municipiosRegistro = [...this.todosLosMunicipiosSLP]; } else { this.municipiosRegistro = []; }
+    // ZONA CENTRO (Sede Dirección)
+    if (nombreSede.includes('centro') || nombreSede.includes('direcci')) { 
+        this.municipiosRegistro = ['Ahualulco', 'Armadillo de los Infante', 'Cerro de San Pedro', 'Mexquitic de Carmona', 'San Luis Potosí', 'Santa María del Río', 'Soledad de Graciano Sánchez', 'Tierra Nueva', 'Villa de Arriaga', 'Villa de Reyes', 'Villa de Zaragoza', 'Villa de Pozos (Municipio 59)'].sort(); 
+    } 
+    // ZONA ALTIPLANO (Sede Charcas)
+    else if (nombreSede.includes('altiplano') || nombreSede.includes('charcas')) { 
+        this.municipiosRegistro = ['Catorce', 'Cedral', 'Charcas', 'Guadalcázar', 'Matehuala', 'Moctezuma', 'Salinas', 'Santo Domingo', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa Hidalgo'].sort(); 
+    } 
+    // ZONA HUASTECA (Sede Valles y Sede Tamazunchale)
+    else if (nombreSede.includes('huasteca') || nombreSede.includes('valles') || nombreSede.includes('tamazunchale')) { 
+        this.municipiosRegistro = ['Aquismón', 'Axtla de Terrazas', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Huehuetlán', 'Matlapa', 'San Antonio', 'San Martín Chalchicuautla', 'San Vicente Tancuayalab', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Xilitla'].sort(); 
+    } 
+    // OTROS ESTADOS
+    else if (this.esOtrosEstados) { 
+        this.municipiosRegistro = [...this.todosLosMunicipiosSLP]; 
+    } 
+    else { 
+        this.municipiosRegistro = []; 
+    }
 
-    this.pasoActual = 2; this.cargarTramites(); history.pushState({ paso: 2 }, '', '');
+    this.pasoActual = 2; 
+    this.cargarTramites(); 
+    history.pushState({ paso: 2 }, '', '');
   }
-
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
   
   irAPaso4() { this.pasoActual = 4; this.generarCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); }
@@ -681,6 +700,37 @@ export class App implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+  // --- FUNCIÓN PARA EXPORTAR TABLAS A PDF ---
+  exportarPDF(idTabla: string, tituloReporte: string) {
+    const doc = new jsPDF();
+    
+    // Título del documento
+    doc.setFontSize(16);
+    doc.setTextColor(5, 90, 28); // Verde institucional
+    doc.text('Registro Civil del Estado de San Luis Potosí', 14, 15);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(tituloReporte, 14, 22);
+    
+    // Fecha de generación
+    doc.setFontSize(9);
+    const fechaImpresion = new Date().toLocaleString();
+    doc.text(`Generado el: ${fechaImpresion} por ${this.usuarioSesion?.username}`, 14, 28);
+
+    // Generar la tabla leyendo el HTML
+    autoTable(doc, {
+      html: `#${idTabla}`,
+      startY: 32,
+      theme: 'grid',
+      headStyles: { fillColor: [5, 90, 28], textColor: 255 }, // Encabezado verde
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      styles: { fontSize: 8, cellPadding: 3 }
+    });
+
+    // Guardar el archivo
+    doc.save(`${tituloReporte.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
   }
 
   actualizarCategoria(cat: any) {
