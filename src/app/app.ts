@@ -55,6 +55,8 @@ export class App implements OnInit {
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
   usuarioSesion: any = null;
+  intervaloSesion: any; // CONTROLADOR DEL LATIDO DE SEGURIDAD
+
   citasDia: any[] = [];
   fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
@@ -94,8 +96,6 @@ export class App implements OnInit {
   todosLosMunicipiosSLP: string[] = [ 'Ahualulco', 'Alaquines', 'Aquismón', 'Armadillo de los Infante', 'Axtla de Terrazas', 'Cárdenas', 'Catorce', 'Cedral', 'Cerritos', 'Cerro de San Pedro', 'Charcas', 'Ciudad del Maíz', 'Ciudad Fernández', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Guadalcázar', 'Huehuetlán', 'Lagunillas', 'Matehuala', 'Matlapa', 'Mexquitic de Carmona', 'Moctezuma', 'Rayón', 'Rioverde', 'Salinas', 'San Antonio', 'San Ciro de Acosta', 'San Luis Potosí', 'San Martín Chalchicuautla', 'San Nicolás Tolentino', 'San Vicente Tancuayalab', 'Santa Catarina', 'Santa María del Río', 'Santo Domingo', 'Soledad de Graciano Sánchez', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Tierra Nueva', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Arriaga', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa de Reyes', 'Villa Hidalgo', 'Villa Juárez', 'Xilitla', 'Zaragoza', 'Villa de Pozos (Municipio 59)' ].sort();
 
   ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
-
-  // --- NUEVAS VARIABLES PARA VALIDACIONES ---
   curpValida: boolean = true;
   mostrarMensajesAyuda: boolean = false;
 
@@ -111,6 +111,9 @@ export class App implements OnInit {
     if (sessionUser && sessionPaso) {
       this.usuarioSesion = JSON.parse(sessionUser);
       this.pasoActual = parseInt(sessionPaso, 10);
+      
+      this.iniciarMonitoreoSesion(); // Inicia el monitoreo si ya había sesión
+
       if (this.pasoActual === 9) { 
         this.cargarCitasDashboard(); 
         if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin();
@@ -138,7 +141,32 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // --- NUEVOS MÉTODOS DE VALIDACIÓN ---
+  // =================================================================
+  // --- LATIDO DE SEGURIDAD (EXPULSIÓN EN TIEMPO REAL) ---
+  // =================================================================
+  iniciarMonitoreoSesion() {
+    if (this.intervaloSesion) clearInterval(this.intervaloSesion);
+    
+    this.intervaloSesion = setInterval(() => {
+      if (this.usuarioSesion && this.usuarioSesion.username) {
+        this.http.get(`${this.apiUrl}/Usuarios/EstadoSesion/${this.usuarioSesion.username}`).subscribe({
+          next: (res: any) => {
+            if (res.activa === false) {
+              clearInterval(this.intervaloSesion);
+              this.usuarioSesion = null;
+              sessionStorage.removeItem('usuarioRC');
+              sessionStorage.removeItem('pasoRC');
+              this.pasoActual = 8; 
+              history.pushState({ paso: 8 }, '', '');
+              this.abrirAlerta('Sesión Terminada', 'Tu sesión ha sido cerrada remotamente por un Administrador.', 'warning');
+              this.cdr.detectChanges();
+            }
+          }
+        });
+      }
+    }, 5000); 
+  }
+
   soloNumeros(event: any) {
     const charCode = (event.which) ? event.which : event.keyCode;
     if (charCode < 48 || charCode > 57) {
@@ -190,8 +218,6 @@ export class App implements OnInit {
 
     this.irAPaso4();
   }
-
-  // --- FIN MÉTODOS DE VALIDACIÓN ---
 
   cargarAvisoGlobal() {
     if (this.usuarioSesion) return;
@@ -245,26 +271,22 @@ export class App implements OnInit {
 
   toggleCategoria(idCategoria: number) { this.categoriaExpandida = (this.categoriaExpandida === idCategoria) ? null : idCategoria; this.cdr.detectChanges(); }
 
- seleccionarSede(sede: any) {
+  seleccionarSede(sede: any) {
     this.sedeSeleccionada = sede; 
     const nombreSede = sede.nombre.toLowerCase();
     this.esOtrosEstados = nombreSede.includes('otros');
     this.ciudadano.estadoRegistro = ''; 
     this.ciudadano.municipioRegistro = '';
     
-    // ZONA CENTRO (Sede Dirección)
     if (nombreSede.includes('centro') || nombreSede.includes('direcci')) { 
         this.municipiosRegistro = ['Ahualulco', 'Armadillo de los Infante', 'Cerro de San Pedro', 'Mexquitic de Carmona', 'San Luis Potosí', 'Santa María del Río', 'Soledad de Graciano Sánchez', 'Tierra Nueva', 'Villa de Arriaga', 'Villa de Reyes', 'Villa de Zaragoza', 'Villa de Pozos (Municipio 59)'].sort(); 
     } 
-    // ZONA ALTIPLANO (Sede Charcas)
     else if (nombreSede.includes('altiplano') || nombreSede.includes('charcas')) { 
         this.municipiosRegistro = ['Catorce', 'Cedral', 'Charcas', 'Guadalcázar', 'Matehuala', 'Moctezuma', 'Salinas', 'Santo Domingo', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa Hidalgo'].sort(); 
     } 
-    // ZONA HUASTECA (Sede Valles y Sede Tamazunchale)
     else if (nombreSede.includes('huasteca') || nombreSede.includes('valles') || nombreSede.includes('tamazunchale')) { 
         this.municipiosRegistro = ['Aquismón', 'Axtla de Terrazas', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Huehuetlán', 'Matlapa', 'San Antonio', 'San Martín Chalchicuautla', 'San Vicente Tancuayalab', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Xilitla'].sort(); 
     } 
-    // OTROS ESTADOS
     else if (this.esOtrosEstados) { 
         this.municipiosRegistro = [...this.todosLosMunicipiosSLP]; 
     } 
@@ -276,6 +298,7 @@ export class App implements OnInit {
     this.cargarTramites(); 
     history.pushState({ paso: 2 }, '', '');
   }
+  
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
   
   irAPaso4() { this.pasoActual = 4; this.generarCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); }
@@ -330,17 +353,32 @@ export class App implements OnInit {
 
   confirmarCita() {
     this.procesandoCita = true; 
+    this.citaConsultada = null; 
 
     if (this.modoReagendar) {
       const payload = { nuevaFechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00` };
       this.http.put(`${this.apiUrl}/Citas/${this.folioReagendar}/reagendar`, payload).subscribe({
           next: (res: any) => {
               this.folioExito = this.folioReagendar;
+              
+              this.citaConsultada = {
+                  folio: this.folioExito,
+                  tramite: this.tramiteSeleccionado?.nombreTramite || 'Trámite',
+                  costo: this.tramiteSeleccionado?.costo || 0,
+                  fecha: this.fechaSeleccionada,
+                  hora: this.horaSeleccionada,
+                  sede: this.sedeSeleccionada?.nombre || '',
+                  ciudadano: this.ciudadano.nombre,
+                  curp: this.ciudadano.curp,
+                  requisitos: this.tramiteSeleccionado?.requisitos || ''
+              };
+
               this.modoReagendar = false;
               this.folioReagendar = '';
               this.pasoActual = 5;
               history.pushState({ paso: 5 }, '', '');
               this.limpiarFormulario();
+              this.procesandoCita = false;
               this.cdr.detectChanges();
           },
           error: (err) => {
@@ -360,9 +398,26 @@ export class App implements OnInit {
       this.http.post(this.apiUrl + '/Citas', solicitud).subscribe({
         next: (res: any) => { 
             this.folioExito = res.folio; 
+
+            this.citaConsultada = {
+                folio: this.folioExito,
+                tramite: this.tramiteSeleccionado.nombreTramite,
+                costo: this.tramiteSeleccionado.costo,
+                fecha: this.fechaSeleccionada,
+                hora: this.horaSeleccionada,
+                sede: this.sedeSeleccionada.nombre,
+                ciudadano: this.ciudadano.nombre,
+                curp: this.ciudadano.curp,
+                requisitos: this.tramiteSeleccionado.requisitos
+            };
+
             this.pasoActual = 5; 
             history.pushState({ paso: 5 }, '', ''); 
-            this.limpiarFormulario(); 
+            this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
+            this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
+            this.diasMes.forEach(d => d.seleccionado = false); this.folioBusqueda = ''; this.categoriaExpandida = null;
+            this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false;
+            this.curpValida = true; this.mostrarMensajesAyuda = false;
             this.cdr.detectChanges(); 
         },
         error: (err) => { 
@@ -371,6 +426,253 @@ export class App implements OnInit {
         }
       });
     }
+  }
+
+  // =================================================================
+  // --- FUNCIONES PARA CREACIÓN Y EXPORTACIÓN DE PDF ---
+  // =================================================================
+
+  exportarPDF(idTabla: string, tituloReporte: string) {
+    const doc = new jsPDF();
+    const img = new Image();
+    img.src = 'images/Sin_titulo.png';
+
+    img.onload = () => {
+        doc.addImage(img, 'PNG', 15, 10, 180, 25);
+        this.generarContenidoReporte(doc, idTabla, tituloReporte, 45);
+    };
+    img.onerror = () => {
+        doc.setFontSize(16);
+        doc.setTextColor(5, 90, 28);
+        doc.text('Registro Civil del Estado de San Luis Potosí', 14, 15);
+        this.generarContenidoReporte(doc, idTabla, tituloReporte, 25);
+    };
+  }
+
+  generarContenidoReporte(doc: any, idTabla: string, tituloReporte: string, startY: number) {
+    doc.setFontSize(13);
+    doc.setTextColor(5, 90, 28); 
+    doc.setFont("helvetica", "bold");
+    doc.text(tituloReporte, 14, startY);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    
+    let y = startY + 6;
+    doc.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username || 'Sistema'}`, 14, y);
+    y += 5;
+    doc.text(`Sede Operativa: ${this.usuarioSesion?.sede || 'Global'}`, 14, y);
+    y += 5;
+
+    let filtroExtra = 'Mostrando todos los registros';
+    if (idTabla === 'tablaCitas' && this.fechaDashboard) filtroExtra = `Filtrado por fecha: ${this.fechaDashboard}`;
+    if (idTabla === 'tablaBitacora' && this.fechaBitacora) filtroExtra = `Filtrado por fecha: ${this.fechaBitacora}`;
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(`Filtros aplicados: ${filtroExtra}`, 14, y);
+    y += 8;
+
+    autoTable(doc, {
+      html: `#${idTabla}`,
+      startY: y,
+      theme: 'grid',
+      headStyles: { fillColor: [5, 90, 28], textColor: 255 },
+      alternateRowStyles: { fillColor: [255, 255, 255] }, 
+      styles: { fontSize: 7, cellPadding: 1, textColor: [0, 0, 0], lineColor: [200, 200, 200] },
+      didParseCell: (data: any) => {
+          if (data.section === 'body' && data.cell.text && data.cell.text.length > 0) {
+              for (let i = 0; i < data.cell.text.length; i++) {
+                  data.cell.text[i] = data.cell.text[i].replace(/(\d{2}:\d{2})(\d{2}\/\d{2}\/\d{4})/, '$1\n$2');
+              }
+          }
+      }
+    });
+
+    doc.save(`${tituloReporte.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
+  }
+
+  descargarAcuseOficial() {
+    if (!this.citaConsultada) {
+        this.abrirAlerta('Error', 'No hay datos cargados para generar el PDF.', 'error');
+        return;
+    }
+
+    try {
+        const doc = new jsPDF();
+        const img = new Image();
+        img.src = 'images/Sin_titulo.png'; 
+        
+        img.onload = () => {
+            doc.addImage(img, 'PNG', 15, 10, 180, 25);
+            this.generarContenidoAcuse(doc, 45); 
+        };
+        img.onerror = () => {
+            doc.setFillColor(5, 90, 28);
+            doc.rect(0, 0, 210, 30, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Poder Ejecutivo del Estado de San Luis Potosí", 105, 12, { align: "center" });
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.text("Dirección del Registro Civil", 105, 20, { align: "center" });
+            this.generarContenidoAcuse(doc, 35);
+        };
+    } catch (error) {
+        console.error(error);
+        this.abrirAlerta('Error', 'No se pudo generar el PDF.', 'error');
+    }
+  }
+
+  generarContenidoAcuse(doc: any, startY: number) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Acuse Oficial de Cita Agendada", 105, startY, { align: "center" });
+
+    doc.setDrawColor(5, 90, 28);
+    doc.setLineWidth(0.5);
+    doc.rect(15, startY + 10, 180, 50);
+
+    let identificador = "";
+    if (this.citaConsultada.ciudadano && this.citaConsultada.ciudadano.trim() !== '') {
+        identificador = this.citaConsultada.ciudadano;
+    } else {
+        identificador = `CURP: ${this.citaConsultada.curp}`;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(5, 90, 28);
+    doc.text(`Folio: ${this.citaConsultada.folio}`, 20, startY + 20);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50, 50, 50);
+    doc.text(`Ciudadano/a: ${identificador}`, 20, startY + 30);
+    doc.text(`Trámite: ${this.citaConsultada.tramite}`, 20, startY + 40);
+    doc.text(`Fecha y Hora: ${this.citaConsultada.fecha} a las ${this.citaConsultada.hora} hrs`, 20, startY + 50);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Costo del Servicio: $${this.citaConsultada.costo}`, 130, startY + 50);
+
+    doc.setFontSize(12);
+    doc.setTextColor(5, 90, 28);
+    doc.text("Requisitos del Trámite:", 15, startY + 75);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50, 50, 50);
+    const reqFormateados = this.citaConsultada.requisitos ? this.citaConsultada.requisitos.replace(/•/g, '- ') : 'Consulte requisitos en ventanilla.';
+    const reqText = doc.splitTextToSize(reqFormateados, 180);
+    doc.text(reqText, 15, startY + 85);
+
+    let nextY = startY + 85 + (reqText.length * 5) + 15;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(230, 0, 100); 
+    doc.text("Avisos Importantes y Penalización:", 15, nextY);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 0, 0);
+    const avisosText = doc.splitTextToSize(
+      "- El trámite es estrictamente personal. Es obligatorio presentar Identificación Oficial (ID) vigente.\n" +
+      "- SISTEMA DE PENALIZACIÓN: Si usted agenda su cita y NO asiste, el sistema lo bloqueará automáticamente, impidiéndole agendar un nuevo trámite durante 1 semana.\n" +
+      "- Si no puede asistir, por favor cancele o reprograme en el portal web hasta 2 horas antes de su horario. Liberar su espacio evita sanciones.", 180);
+    doc.text(avisosText, 15, nextY + 10);
+
+    doc.save(`Acuse_Cita_${this.citaConsultada.folio}.pdf`);
+  }
+
+  descargarPDFAccesos() {
+    let url = `${this.apiUrl}/Usuarios/Accesos?page=1&pageSize=10000`;
+    if (this.fechaAccesos) url += `&fecha=${this.fechaAccesos}`;
+    if (this.textoBusquedaAccesos) url += `&busqueda=${this.textoBusquedaAccesos}`;
+
+    this.http.get(url).subscribe({
+        next: (res: any) => {
+            const datos = res.datos || res.Datos;
+            if (!datos || datos.length === 0) {
+                this.abrirAlerta('Aviso', 'No hay registros para exportar.', 'warning');
+                return;
+            }
+
+            const doc = new jsPDF();
+            const img = new Image();
+            img.src = 'images/Sin_titulo.png';
+
+            const generarTabla = (documento: any, startY: number) => {
+                documento.setFontSize(13);
+                documento.setTextColor(5, 90, 28);
+                documento.setFont("helvetica", "bold");
+                documento.text("Registro Histórico de Accesos", 14, startY);
+
+                documento.setFontSize(9);
+                documento.setFont("helvetica", "normal");
+                documento.setTextColor(80, 80, 80);
+                
+                let y = startY + 6;
+                documento.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username}`, 14, y);
+                y += 5;
+                documento.text(`Sede Operativa: ${this.usuarioSesion?.sede || 'Global'}`, 14, y);
+                y += 5;
+                let filtro = this.fechaAccesos ? `Filtrado por fecha: ${this.fechaAccesos}` : 'Mostrando todos los registros históricos';
+                documento.setFont("helvetica", "bold");
+                documento.text(`Filtros aplicados: ${filtro}`, 14, y);
+                y += 8;
+
+                const body = datos.map((a: any) => {
+                    const fInicio = new Date(a.fechaLogin).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+                    const fFin = a.fechaLogout ? new Date(a.fechaLogout).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : 'EN LÍNEA';
+                    return [a.idAcceso, a.username, fInicio, fFin];
+                });
+
+                autoTable(documento, {
+                    head: [['ID Sesión', 'Usuario', 'Fecha y Hora Inicio', 'Fecha y Hora Cierre']],
+                    body: body, 
+                    startY: y,
+                    theme: 'grid',
+                    headStyles: { fillColor: [5, 90, 28], textColor: 255 },
+                    alternateRowStyles: { fillColor: [255, 255, 255] },
+                    styles: { fontSize: 8, cellPadding: 2, textColor: [0, 0, 0], lineColor: [200, 200, 200] }
+                });
+
+                documento.save(`Reporte_Accesos_${new Date().getTime()}.pdf`);
+            };
+
+            img.onload = () => {
+                doc.addImage(img, 'PNG', 15, 10, 180, 25);
+                generarTabla(doc, 45);
+            };
+            img.onerror = () => {
+                doc.setFontSize(16);
+                doc.setTextColor(5, 90, 28);
+                doc.text('Registro Civil del Estado de San Luis Potosí', 14, 15);
+                generarTabla(doc, 25);
+            };
+        },
+        error: () => this.abrirAlerta('Error', 'No se pudieron obtener los datos para el PDF.', 'error')
+    });
+  }
+
+  // =================================================================
+  // --- MÉTODOS GENERALES DEL SISTEMA ---
+  // =================================================================
+
+  cerrarSesionRemota(idAcceso: number) {
+    this.abrirConfirmacion(
+        'Forzar Cierre de Sesión', 
+        '¿Está seguro de que desea cerrar la sesión seleccionada? El usuario tendrá que volver a ingresar sus credenciales.', 
+        () => {
+            this.http.put(`${this.apiUrl}/Usuarios/Accesos/${idAcceso}/cerrar`, {}).subscribe({
+                next: (res: any) => {
+                    this.abrirAlerta('Éxito', res.mensaje, 'success');
+                    this.cargarAccesosAdmin(this.paginaActualAccesos); 
+                },
+                error: (err) => {
+                    this.abrirAlerta('Error', err.error?.mensaje || 'No se pudo cerrar la sesión.', 'error');
+                }
+            });
+        }
+    );
   }
 
   irABuscarCita() { this.pasoActual = 6; this.limpiarFormulario(); this.citaConsultada = null; history.pushState({ paso: 6 }, '', ''); this.cdr.detectChanges(); }
@@ -387,15 +689,33 @@ export class App implements OnInit {
   prepararReagendar() {
     this.modoReagendar = true;
     this.folioReagendar = this.citaConsultada.folio;
-    this.sedeSeleccionada = { idSede: this.citaConsultada.idSede, nombre: this.citaConsultada.sede };
-    this.tramiteSeleccionado = { idTramite: this.citaConsultada.idTramite, nombreTramite: this.citaConsultada.tramite };
-    this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
+    
+    // Recuperamos la Sede
+    this.sedeSeleccionada = { 
+        idSede: this.citaConsultada.idSede, 
+        nombre: this.citaConsultada.sede 
+    };
+
+    // CORRECCIÓN: Rescatamos el Costo y los Requisitos para el PDF
+    this.tramiteSeleccionado = { 
+        idTramite: this.citaConsultada.idTramite, 
+        nombreTramite: this.citaConsultada.tramite,
+        costo: this.citaConsultada.costo,
+        requisitos: this.citaConsultada.requisitos
+    };
+
+    // CORRECCIÓN: Rescatamos la información del ciudadano para el PDF
+    this.ciudadano.nombre = this.citaConsultada.ciudadano;
+    this.ciudadano.curp = this.citaConsultada.curp;
+
+    this.fechaSeleccionada = ''; 
+    this.horaSeleccionada = ''; 
+    this.horariosDisponibles = [];
     this.pasoActual = 4;
     this.generarCalendario();
     history.pushState({ paso: 4 }, '', '');
     this.cdr.detectChanges();
   }
-
   cancelarCita() {
     this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario, liberará el espacio y tendrá que generar un folio nuevo.', () => {
         this.http.put(`${this.apiUrl}/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
@@ -445,6 +765,9 @@ export class App implements OnInit {
     sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion));
     sessionStorage.setItem('pasoRC', '9');
     this.pasoActual = 9; 
+    
+    this.iniciarMonitoreoSesion(); // Prende el latido de la sesión
+
     this.cargarCitasDashboard(); 
     
     if (this.usuarioSesion?.rol === 'Super Administrador') {
@@ -461,6 +784,8 @@ export class App implements OnInit {
     if(this.usuarioSesion?.idAcceso) {
         this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe();
     }
+    if (this.intervaloSesion) clearInterval(this.intervaloSesion); // Apaga el latido al salir
+    
     this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); 
   }
 
@@ -701,133 +1026,8 @@ export class App implements OnInit {
       }
     });
   }
-  // --- FUNCIÓN PARA EXPORTAR TABLAS A PDF ---
-  exportarPDF(idTabla: string, tituloReporte: string) {
-    const doc = new jsPDF();
-    
-    // Título del documento
-    doc.setFontSize(16);
-    doc.setTextColor(5, 90, 28); // Verde institucional
-    doc.text('Registro Civil del Estado de San Luis Potosí', 14, 15);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(100, 100, 100);
-    doc.text(tituloReporte, 14, 22);
-    
-    // Fecha de generación
-    doc.setFontSize(9);
-    const fechaImpresion = new Date().toLocaleString();
-    doc.text(`Generado el: ${fechaImpresion} por ${this.usuarioSesion?.username}`, 14, 28);
+  
 
-    // Generar la tabla leyendo el HTML
-    autoTable(doc, {
-      html: `#${idTabla}`,
-      startY: 32,
-      theme: 'grid',
-      headStyles: { fillColor: [5, 90, 28], textColor: 255 }, // Encabezado verde
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      styles: { fontSize: 8, cellPadding: 3 }
-    });
-
-    // Guardar el archivo
-    doc.save(`${tituloReporte.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
-  }
-// --- FUNCIÓN PARA DESCARGAR EL ACUSE OFICIAL ---
-  descargarAcuseOficial() {
-    if (!this.citaConsultada) {
-        console.error("Error: No hay datos cargados para generar el PDF.");
-        return;
-    }
-
-    try {
-        const doc = new jsPDF();
-        
-        // 1. DIBUJAR BANNER SUPERIOR INSTITUCIONAL (Color Verde)
-        doc.setFillColor(5, 90, 28);
-        doc.rect(0, 0, 210, 30, 'F');
-        
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.text("Poder Ejecutivo del Estado de San Luis Potosí", 105, 12, { align: "center" });
-        
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "normal");
-        doc.text("Dirección del Registro Civil", 105, 20, { align: "center" });
-        
-        // 2. TÍTULO DEL DOCUMENTO
-        let startY = 35;
-        doc.setFontSize(14);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont("helvetica", "bold");
-        doc.text("Acuse Oficial de Cita Agendada", 105, startY + 7, { align: "center" });
-
-        // 3. CAJA DE DATOS PRINCIPALES
-        doc.setDrawColor(5, 90, 28);
-        doc.setLineWidth(0.5);
-        doc.rect(15, startY + 15, 180, 50);
-
-        // Lógica de Identificador (Nombre + CURP)
-        let identificador = "";
-        if (this.citaConsultada.ciudadano && this.citaConsultada.curp && !this.citaConsultada.curp.includes('ENM')) {
-            identificador = `${this.citaConsultada.ciudadano} (CURP: ${this.citaConsultada.curp})`;
-        } else if (this.citaConsultada.ciudadano) {
-            identificador = this.citaConsultada.ciudadano;
-        } else {
-            identificador = `CURP: ${this.citaConsultada.curp}`;
-        }
-
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(5, 90, 28);
-        doc.text(`Folio: ${this.citaConsultada.folio}`, 20, startY + 25);
-        
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(50, 50, 50);
-        doc.text(`Ciudadano/a: ${identificador}`, 20, startY + 35);
-        doc.text(`Trámite: ${this.citaConsultada.tramite}`, 20, startY + 45);
-        doc.text(`Fecha y Hora: ${this.citaConsultada.fecha} a las ${this.citaConsultada.hora} hrs`, 20, startY + 55);
-        
-        doc.setFont("helvetica", "bold");
-        doc.text(`Costo del Servicio: $${this.citaConsultada.costo}`, 130, startY + 55);
-
-        // 4. SECCIÓN DE REQUISITOS
-        doc.setFontSize(12);
-        doc.setTextColor(5, 90, 28);
-        doc.text("Requisitos del Trámite:", 15, startY + 80);
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(50, 50, 50);
-        const reqFormateados = this.citaConsultada.requisitos ? this.citaConsultada.requisitos.replace(/•/g, '- ') : 'Consulte requisitos en ventanilla.';
-        const reqText = doc.splitTextToSize(reqFormateados, 180);
-        doc.text(reqText, 15, startY + 90);
-
-        let nextY = startY + 90 + (reqText.length * 5) + 15;
-
-        // 5. AVISOS Y PENALIZACIÓN
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(230, 0, 100); 
-        doc.text("Avisos Importantes y Penalización:", 15, nextY);
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0, 0, 0);
-        const avisosText = doc.splitTextToSize(
-        "- El trámite es estrictamente personal. Es obligatorio presentar Identificación Oficial (ID) vigente.\n" +
-        "- SISTEMA DE PENALIZACIÓN: Si usted agenda su cita y NO asiste, el sistema lo bloqueará automáticamente, impidiéndole agendar un nuevo trámite durante 1 semana completa.\n" +
-        "- Si no puede asistir, por favor cancele o reprograme en el portal web hasta 2 horas antes de su horario. Liberar su espacio evita sanciones.", 180);
-        doc.text(avisosText, 15, nextY + 10);
-
-        // 6. GENERAR Y DESCARGAR ARCHIVO
-        doc.save(`Acuse_Cita_${this.citaConsultada.folio}.pdf`);
-        
-    } catch (error) {
-        console.error("Error al generar PDF: ", error);
-        alert("Error crítico al generar el PDF. Verifica que ejecutaste 'npm install jspdf jspdf-autotable'.");
-    }
-  }
   actualizarCategoria(cat: any) {
     const payload = { duracionMinutos: cat.duracionMinutos, costo: cat.costo, activo: cat.activo, limiteDiario: cat.limiteDiarioSede };
     this.http.put(`${this.apiUrl}/Tramites/Categoria/${cat.idCategoria}`, payload).subscribe({

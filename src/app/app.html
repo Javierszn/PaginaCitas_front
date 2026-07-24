@@ -831,7 +831,7 @@
       </div>
     }
 
-    <!-- PANTALLA 11: CONFIGURACIÓN SUPER ADMIN (USUARIOS Y TRÁMITES) -->
+  <!-- PANTALLA 11: CONFIGURACIÓN SUPER ADMIN (USUARIOS Y TRÁMITES) -->
     @if (pasoActual === 11) {
       <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1009,7 +1009,7 @@
                     <div class="input-group">
                       <input type="text" class="form-control" placeholder="Escriba el nombre de usuario y presione Enter..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin()">
                       <button class="btn text-white fw-bold" style="background-color: #E60064; border-color: #E60064;" (click)="cargarAccesosAdmin()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                      <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #055A1C; border: none;" (click)="exportarPDF('tablaAccesos', 'Registro Histórico de Accesos')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                      <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #055A1C; border: none;" (click)="descargarPDFAccesos()"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
                       @if(textoBusquedaAccesos) {
                         <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaAccesos()"><i class="fa-solid fa-xmark"></i></button>
                       }
@@ -1044,7 +1044,12 @@
                               @if (acc.fechaLogout) {
                                   <span class="text-secondary"><i class="fa-solid fa-right-from-bracket me-2"></i>{{ acc.fechaLogout | date:'medium' }}</span>
                               } @else {
-                                  <span class="badge bg-info">En línea</span>
+                                  <div class="d-flex align-items-center">
+                                      <span class="badge bg-info me-3">En línea</span>
+                                      <button class="btn btn-sm btn-outline-danger fw-bold shadow-sm" title="Forzar Cierre de Sesión" (click)="cerrarSesionRemota(acc.idAcceso)">
+                                          <i class="fa-solid fa-power-off me-1"></i> Cerrar
+                                      </button>
+                                  </div>
                               }
                             </td>
                           </tr>
