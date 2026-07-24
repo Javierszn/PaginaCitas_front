@@ -630,21 +630,35 @@
             <h6 class="fw-bold mb-4 text-dark">Gestión de Citas</h6>
             
             <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
-              <div class="col-md-3 mb-3 mb-md-0">
+              <div class="col-md-2 mb-3 mb-md-0">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
                 <input type="date" class="form-control" [(ngModel)]="fechaDashboard" (change)="limpiarBusqueda()">
               </div>
-              <div class="col-md-9">
+              <div class="col-md-4 mb-3 mb-md-0">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR TRÁMITE</label>
+                <select class="form-select" [(ngModel)]="filtroTramite" (change)="aplicarFiltroTramite()">
+                  <option value="">Todos los trámites</option>
+                  @for (tramite of tramitesUnicos; track tramite) {
+                    <option [value]="tramite">{{ tramite }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, NOMBRE O CURP)</label>
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
                   <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
-                  @if(textoBusquedaDashboard) {
+                  
+                  <!-- BOTÓN PDF OCULTO PARA VENTANILLA -->
+                  @if (usuarioSesion?.rol === 'Super Administrador' || usuarioSesion?.rol === 'Administrador') {
+                    <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                  }
+
+                  @if(textoBusquedaDashboard || filtroTramite) {
                     <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
-                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
+                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora filtros de fecha y trámite.</small>
               </div>
             </div>
 
@@ -1209,15 +1223,24 @@
     @if (mostrarForzarPassword) {
       <div class="modal-backdrop fade show" style="z-index: 1070; background-color: rgba(5, 90, 28, 0.9);"></div>
       
-      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1075; margin-top: 15vh;">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1075; margin-top: 5vh;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease; max-height: 90vh; overflow-y: auto;">
             <div class="modal-body p-5">
               <div class="mb-4">
                   <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #055A1C;"></i>
               </div>
               <h4 class="fw-bold text-dark mb-2">Seguridad de la Cuenta</h4>
               <p class="text-secondary fs-6 mb-4">Para proteger su cuenta, es obligatorio crear una contraseña personal nueva en su primer inicio de sesión.</p>
+
+              <!-- NUEVO CUADRO DE REQUISITOS DE CONTRASEÑA -->
+              <div class="alert alert-info text-start mb-4" style="font-size: 0.75rem;">
+                 <strong>Requisitos obligatorios:</strong><br>
+                 • Mínimo 6 caracteres en total.<br>
+                 • Al menos una letra mayúscula.<br>
+                 • Al menos un número.<br>
+                 • Al menos un carácter especial (ej. @, $, !, %, *, ?, &).
+              </div>
 
               <input type="password" class="form-control mb-3 text-center" [(ngModel)]="nuevaPassword" placeholder="Nueva Contraseña">
               <input type="password" class="form-control mb-4 text-center" [(ngModel)]="confirmarPassword" placeholder="Confirmar Contraseña">
@@ -1228,7 +1251,6 @@
         </div>
       </div>
     }
-
     <!-- MODAL DE ALERTAS (AHORA SIEMPRE AL FRENTE z-index: 9999) -->
     @if (mostrarAlerta) {
       <div class="modal-backdrop fade show" style="z-index: 9990; background-color: rgba(0,0,0,0.6);"></div>

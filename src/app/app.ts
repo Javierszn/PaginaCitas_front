@@ -55,9 +55,13 @@ export class App implements OnInit {
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
   usuarioSesion: any = null;
-  intervaloSesion: any; // CONTROLADOR DEL LATIDO DE SEGURIDAD
+  intervaloSesion: any; 
 
-  citasDia: any[] = [];
+  // VARIABLES PARA EL DASHBOARD DE CITAS
+  citasDiaOriginales: any[] = []; // Guarda las citas reales de la BD
+  citasDia: any[] = []; // Muestra las citas filtradas en pantalla
+  tramitesUnicos: string[] = []; // Llena el dropdown de trámites
+  filtroTramite: string = '';
   fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
   
@@ -112,7 +116,7 @@ export class App implements OnInit {
       this.usuarioSesion = JSON.parse(sessionUser);
       this.pasoActual = parseInt(sessionPaso, 10);
       
-      this.iniciarMonitoreoSesion(); // Inicia el monitoreo si ya había sesión
+      this.iniciarMonitoreoSesion(); 
 
       if (this.pasoActual === 9) { 
         this.cargarCitasDashboard(); 
@@ -141,9 +145,6 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // =================================================================
-  // --- LATIDO DE SEGURIDAD (EXPULSIÓN EN TIEMPO REAL) ---
-  // =================================================================
   iniciarMonitoreoSesion() {
     if (this.intervaloSesion) clearInterval(this.intervaloSesion);
     
@@ -467,6 +468,7 @@ export class App implements OnInit {
 
     let filtroExtra = 'Mostrando todos los registros';
     if (idTabla === 'tablaCitas' && this.fechaDashboard) filtroExtra = `Filtrado por fecha: ${this.fechaDashboard}`;
+    if (idTabla === 'tablaCitas' && this.filtroTramite) filtroExtra = `Filtrado por trámite: ${this.filtroTramite}`;
     if (idTabla === 'tablaBitacora' && this.fechaBitacora) filtroExtra = `Filtrado por fecha: ${this.fechaBitacora}`;
     
     doc.setFont("helvetica", "bold");
@@ -689,33 +691,16 @@ export class App implements OnInit {
   prepararReagendar() {
     this.modoReagendar = true;
     this.folioReagendar = this.citaConsultada.folio;
-    
-    // Recuperamos la Sede
-    this.sedeSeleccionada = { 
-        idSede: this.citaConsultada.idSede, 
-        nombre: this.citaConsultada.sede 
-    };
-
-    // CORRECCIÓN: Rescatamos el Costo y los Requisitos para el PDF
-    this.tramiteSeleccionado = { 
-        idTramite: this.citaConsultada.idTramite, 
-        nombreTramite: this.citaConsultada.tramite,
-        costo: this.citaConsultada.costo,
-        requisitos: this.citaConsultada.requisitos
-    };
-
-    // CORRECCIÓN: Rescatamos la información del ciudadano para el PDF
-    this.ciudadano.nombre = this.citaConsultada.ciudadano;
-    this.ciudadano.curp = this.citaConsultada.curp;
-
-    this.fechaSeleccionada = ''; 
-    this.horaSeleccionada = ''; 
-    this.horariosDisponibles = [];
+    this.sedeSeleccionada = { idSede: this.citaConsultada.idSede, nombre: this.citaConsultada.sede };
+    this.tramiteSeleccionado = { idTramite: this.citaConsultada.idTramite, nombreTramite: this.citaConsultada.tramite, costo: this.citaConsultada.costo, requisitos: this.citaConsultada.requisitos };
+    this.ciudadano.nombre = this.citaConsultada.ciudadano; this.ciudadano.curp = this.citaConsultada.curp;
+    this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = [];
     this.pasoActual = 4;
     this.generarCalendario();
     history.pushState({ paso: 4 }, '', '');
     this.cdr.detectChanges();
   }
+
   cancelarCita() {
     this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario, liberará el espacio y tendrá que generar un folio nuevo.', () => {
         this.http.put(`${this.apiUrl}/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({
@@ -747,7 +732,11 @@ export class App implements OnInit {
   }
 
   guardarNuevaPasswordForzada() {
-    if (this.nuevaPassword.length < 5) { this.abrirAlerta('Atención', 'La contraseña debe tener al menos 5 caracteres.', 'warning'); return; }
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+    if (!passwordRegex.test(this.nuevaPassword)) { 
+        this.abrirAlerta('Contraseña Débil', 'La contraseña no cumple con los requisitos mínimos de seguridad.', 'warning'); 
+        return; 
+    }
     if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; }
 
     this.http.put(`${this.apiUrl}/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({
@@ -766,7 +755,7 @@ export class App implements OnInit {
     sessionStorage.setItem('pasoRC', '9');
     this.pasoActual = 9; 
     
-    this.iniciarMonitoreoSesion(); // Prende el latido de la sesión
+    this.iniciarMonitoreoSesion(); 
 
     this.cargarCitasDashboard(); 
     
@@ -784,7 +773,7 @@ export class App implements OnInit {
     if(this.usuarioSesion?.idAcceso) {
         this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe();
     }
-    if (this.intervaloSesion) clearInterval(this.intervaloSesion); // Apaga el latido al salir
+    if (this.intervaloSesion) clearInterval(this.intervaloSesion); 
     
     this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); 
   }
@@ -792,10 +781,30 @@ export class App implements OnInit {
   cargarCitasDashboard() {
     let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`;
     if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; } else { url += `?fecha=${this.fechaDashboard}`; }
-    this.http.get(url).subscribe({ next: (res: any) => { this.citasDia = res; this.cdr.detectChanges(); }, error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error') });
+    this.http.get(url).subscribe({ 
+        next: (res: any) => { 
+            this.citasDiaOriginales = res; 
+            this.tramitesUnicos = [...new Set(res.map((c: any) => c.tramite))] as string[];
+            this.aplicarFiltroTramite();
+            this.cdr.detectChanges(); 
+        }, 
+        error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error') 
+    });
   }
 
-  limpiarBusqueda() { this.textoBusquedaDashboard = ''; this.cargarCitasDashboard(); }
+  aplicarFiltroTramite() {
+    if (this.filtroTramite) {
+        this.citasDia = this.citasDiaOriginales.filter(c => c.tramite === this.filtroTramite);
+    } else {
+        this.citasDia = [...this.citasDiaOriginales];
+    }
+  }
+
+  limpiarBusqueda() { 
+    this.textoBusquedaDashboard = ''; 
+    this.filtroTramite = ''; 
+    this.cargarCitasDashboard(); 
+  }
 
   actualizarEstatusCita(folio: string, nuevoEstatus: string) {
     this.http.put(`${this.apiUrl}/Citas/${folio}/actualizarEstatus`, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({
@@ -975,8 +984,12 @@ export class App implements OnInit {
   }
 
   cambiarPasswordUsuario(id: number) {
-    this.abrirInput('Restablecer Contraseña', 'Asigne una contraseña temporal. El usuario deberá cambiarla al iniciar sesión:', () => {
-      if (this.inputTemporal.length < 5) { this.abrirAlerta('Error', 'La contraseña debe ser mayor a 5 caracteres.', 'error'); return; }
+    this.abrirInput('Restablecer Contraseña', 'Asigne una contraseña temporal. El usuario deberá cambiarla al iniciar sesión.\nRequisitos: Mín. 6 caracteres, 1 mayúscula, 1 número y 1 carácter especial.', () => {
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+      if (!passwordRegex.test(this.inputTemporal)) { 
+          this.abrirAlerta('Error', 'La contraseña no cumple con los requisitos de seguridad.', 'error'); 
+          return; 
+      }
       this.http.put(`${this.apiUrl}/Usuarios/${id}/password`, { password: this.inputTemporal }).subscribe({
         next: (res: any) => this.abrirAlerta('Actualizado', res.mensaje, 'success'),
         error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error')
@@ -1008,6 +1021,7 @@ export class App implements OnInit {
       }
     });
   }
+
   cargarTramitesAdmin() {
     this.http.get(this.apiUrl + '/Tramites/Admin').subscribe({
       next: (res: any) => { 
@@ -1026,7 +1040,6 @@ export class App implements OnInit {
       }
     });
   }
-  
 
   actualizarCategoria(cat: any) {
     const payload = { duracionMinutos: cat.duracionMinutos, costo: cat.costo, activo: cat.activo, limiteDiario: cat.limiteDiarioSede };
