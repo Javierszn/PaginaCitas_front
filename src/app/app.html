@@ -806,7 +806,10 @@
                   <tbody>
                     @for (log of bitacoraLogs; track log.idBitacora) {
                       <tr>
-                        <td class="text-nowrap text-secondary">{{ log.fecha | date:'short' }}</td>
+                        <td>
+  <span class="d-block fw-bold text-dark">{{ log.fecha | date:'HH:mm' }}</span>
+  <small class="text-muted">{{ log.fecha | date:'dd/MM/yyyy' }}</small>
+</td>
                         <td class="fw-semibold text-dark">{{ log.empleado }}</td>
                         <td class="text-center">
                           <span class="badge" 

@@ -66,7 +66,6 @@ export class App implements OnInit {
   credenciales = { username: '', password: '' };
   cargandoLogin: boolean = false;
   usuarioSesion: any = null;
-  intervaloSesion: any; 
 
   citasDiaOriginales: any[] = []; 
   citasDia: any[] = []; 
@@ -126,8 +125,6 @@ export class App implements OnInit {
     if (sessionUser && sessionPaso) {
       this.usuarioSesion = JSON.parse(sessionUser);
       this.pasoActual = parseInt(sessionPaso, 10);
-      
-      this.iniciarMonitoreoSesion(); 
 
       if (this.pasoActual === 9) { 
         this.cargarCitasDashboard(); 
@@ -152,7 +149,13 @@ export class App implements OnInit {
       }
     } else { this.pasoActual = 1; }
     if (this.pasoActual === 2 && this.categorias.length === 0) this.cargarTramites();
-    if (this.pasoActual === 4) this.generarCalendario();
+    if (this.pasoActual === 4) {
+      this.generarCalendario();
+      this.renderCaptchaAgendar();
+    }
+    if (this.pasoActual === 6) {
+      this.renderCaptchaBuscar();
+    }
     this.cdr.detectChanges();
   }
 
@@ -186,26 +189,6 @@ export class App implements OnInit {
         next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.cargarReglasCalendario(); },
         error: () => this.abrirAlerta('Error', 'No se pudo eliminar.', 'error')
     });
-  }
-
-  iniciarMonitoreoSesion() {
-    if (this.intervaloSesion) clearInterval(this.intervaloSesion);
-    this.intervaloSesion = setInterval(() => {
-      if (this.usuarioSesion && this.usuarioSesion.username) {
-        this.http.get(`${this.apiUrl}/Usuarios/EstadoSesion/${this.usuarioSesion.username}`).subscribe({
-          next: (res: any) => {
-            if (res.activa === false) {
-              clearInterval(this.intervaloSesion);
-              this.usuarioSesion = null;
-              sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC');
-              this.pasoActual = 8; history.pushState({ paso: 8 }, '', '');
-              this.abrirAlerta('Sesión Terminada', 'Tu sesión ha sido cerrada remotamente por un Administrador.', 'warning');
-              this.cdr.detectChanges();
-            }
-          }
-        });
-      }
-    }, 5000); 
   }
 
   soloNumeros(event: any) { const charCode = (event.which) ? event.which : event.keyCode; if (charCode < 48 || charCode > 57) { event.preventDefault(); } }
@@ -272,13 +255,7 @@ export class App implements OnInit {
   
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
   
-  irAPaso4() { 
-      this.pasoActual = 4; 
-      this.cargarReglasCalendario(); 
-      history.pushState({ paso: 4 }, '', ''); 
-      this.cdr.detectChanges(); 
-
-      // Renderizar el CAPTCHA de Google para Agendar
+  renderCaptchaAgendar() {
       setTimeout(() => {
           if (typeof grecaptcha !== 'undefined') {
               const el = document.getElementById('captcha-agendar');
@@ -290,6 +267,28 @@ export class App implements OnInit {
               }
           }
       }, 150);
+  }
+
+  renderCaptchaBuscar() {
+      setTimeout(() => {
+          if (typeof grecaptcha !== 'undefined') {
+              const el = document.getElementById('captcha-buscar');
+              if (el) {
+                  el.innerHTML = '';
+                  this.widgetIdBuscar = grecaptcha.render('captcha-buscar', { 
+                      'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' 
+                  });
+              }
+          }
+      }, 150);
+  }
+
+  irAPaso4() { 
+      this.pasoActual = 4; 
+      this.cargarReglasCalendario(); 
+      history.pushState({ paso: 4 }, '', ''); 
+      this.cdr.detectChanges(); 
+      this.renderCaptchaAgendar();
   }
   
   cambiarMes(delta: number) { this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + delta, 1); this.generarCalendario(); }
@@ -330,7 +329,6 @@ export class App implements OnInit {
       .subscribe({
         next: (horas) => { 
             this.horariosDisponibles = horas; 
-            // Eliminamos la alerta molesta que salía aquí
             this.cargandoHorarios = false; 
             this.cdr.detectChanges(); 
         },
@@ -355,10 +353,10 @@ export class App implements OnInit {
   }
 
   confirmarCita() {
-    // CANDADO ANTI-DOBLE CLIC: Si ya está trabajando, ignora clics extra
+    // CANDADO ANTI-DOBLE CLIC
     if (this.procesandoCita) return;
 
-    // 1. VALIDACIÓN RECAPTCHA GOOGLE
+    // VALIDACIÓN RECAPTCHA GOOGLE
     const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse(this.widgetIdAgendar) : null;
     if (!token) {
         this.abrirAlerta('Seguridad', 'Por favor, marque la casilla "No soy un robot".', 'warning');
@@ -466,19 +464,7 @@ export class App implements OnInit {
       this.citaConsultada = null; 
       history.pushState({ paso: 6 }, '', ''); 
       this.cdr.detectChanges(); 
-      
-      // Renderizar el CAPTCHA de Google para Buscar
-      setTimeout(() => {
-          if (typeof grecaptcha !== 'undefined') {
-              const el = document.getElementById('captcha-buscar');
-              if (el) {
-                  el.innerHTML = '';
-                  this.widgetIdBuscar = grecaptcha.render('captcha-buscar', { 
-                      'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' 
-                  });
-              }
-          }
-      }, 150);
+      this.renderCaptchaBuscar();
   }
 
   buscarCitaPorFolio() {
@@ -493,25 +479,15 @@ export class App implements OnInit {
     });
   }
 
-  prepararReagendar() { this.modoReagendar = true; this.folioReagendar = this.citaConsultada.folio; this.sedeSeleccionada = { idSede: this.citaConsultada.idSede, nombre: this.citaConsultada.sede }; this.tramiteSeleccionado = { idTramite: this.citaConsultada.idTramite, nombreTramite: this.citaConsultada.tramite, costo: this.citaConsultada.costo, requisitos: this.citaConsultada.requisitos }; this.ciudadano.nombre = this.citaConsultada.ciudadano; this.ciudadano.curp = this.citaConsultada.curp; this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.pasoActual = 4; this.cargarReglasCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); 
-      setTimeout(() => {
-          if (typeof grecaptcha !== 'undefined') {
-              const el = document.getElementById('captcha-agendar');
-              if (el) {
-                  el.innerHTML = '';
-                  this.widgetIdAgendar = grecaptcha.render('captcha-agendar', { 'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' });
-              }
-          }
-      }, 150);
-  }
+  prepararReagendar() { this.modoReagendar = true; this.folioReagendar = this.citaConsultada.folio; this.sedeSeleccionada = { idSede: this.citaConsultada.idSede, nombre: this.citaConsultada.sede }; this.tramiteSeleccionado = { idTramite: this.citaConsultada.idTramite, nombreTramite: this.citaConsultada.tramite, costo: this.citaConsultada.costo, requisitos: this.citaConsultada.requisitos }; this.ciudadano.nombre = this.citaConsultada.ciudadano; this.ciudadano.curp = this.citaConsultada.curp; this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.pasoActual = 4; this.cargarReglasCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); this.renderCaptchaAgendar(); }
 
   cancelarCita() { this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario y liberará el espacio.', () => { this.http.put(`${this.apiUrl}/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({ next: (res: any) => { this.abrirAlerta('Cita Cancelada', res.mensaje, 'success'); this.citaConsultada.estatus = 'CANCELADA'; this.cdr.detectChanges(); }, error: (err) => { this.abrirAlerta('Error', err.error.mensaje || "Error al cancelar", 'error'); } }); }); }
 
   irALogin() { this.pasoActual = 8; this.credenciales = { username: '', password: '' }; history.pushState({ paso: 8 }, '', ''); this.cdr.detectChanges(); }
   iniciarSesion() { if (!this.credenciales.username || !this.credenciales.password) { this.abrirAlerta('Atención', 'Por favor, ingrese usuario y contraseña.', 'warning'); return; } this.cargandoLogin = true; this.http.post(this.apiUrl + '/Auth/login', this.credenciales).subscribe({ next: (res: any) => { this.cargandoLogin = false; this.usuarioSesion = res; if (this.usuarioSesion.requiereCambioPassword) { this.mostrarForzarPassword = true; this.cdr.detectChanges(); return; } this.procesarAccesoCorrecto(); }, error: (err) => { this.cargandoLogin = false; this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Credenciales incorrectas.', 'error'); this.cdr.detectChanges(); } }); }
   guardarNuevaPasswordForzada() { const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; if (!passwordRegex.test(this.nuevaPassword)) { this.abrirAlerta('Contraseña Débil', 'La contraseña no cumple con los requisitos mínimos de seguridad.', 'warning'); return; } if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; } this.http.put(`${this.apiUrl}/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({ next: (res: any) => { this.mostrarForzarPassword = false; this.abrirAlerta('Éxito', 'Contraseña actualizada.', 'success'); this.usuarioSesion.requiereCambioPassword = false; this.procesarAccesoCorrecto(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
-  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.iniciarMonitoreoSesion(); this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
-  cerrarSesion() { if(this.usuarioSesion?.idAcceso) { this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe(); } if (this.intervaloSesion) clearInterval(this.intervaloSesion); this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); }
+  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
+  cerrarSesion() { if(this.usuarioSesion?.idAcceso) { this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe(); } this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); }
 
   cargarCitasDashboard() { let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`; if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; } else { url += `?fecha=${this.fechaDashboard}`; } this.http.get(url).subscribe({ next: (res: any) => { this.citasDiaOriginales = res; this.tramitesUnicos = [...new Set(res.map((c: any) => c.tramite))] as string[]; this.aplicarFiltroTramite(); this.cdr.detectChanges(); }, error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error') }); }
   aplicarFiltroTramite() { if (this.filtroTramite) { this.citasDia = this.citasDiaOriginales.filter(c => c.tramite === this.filtroTramite); } else { this.citasDia = [...this.citasDiaOriginales]; } }
