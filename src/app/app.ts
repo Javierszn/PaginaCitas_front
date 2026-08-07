@@ -52,6 +52,9 @@ export class App implements OnInit {
   folioReagendar: string = '';
   procesandoCita: boolean = false; 
 
+  // CANDADO PARA EL BUCLE INFINITO
+  evitarBucleCitas: boolean = false;
+
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
   alertaMensaje: string = '';
@@ -260,7 +263,7 @@ export class App implements OnInit {
           if (typeof grecaptcha !== 'undefined') {
               const el = document.getElementById('captcha-agendar');
               if (el) {
-                  el.innerHTML = ''; // Limpiamos por si ya existía
+                  el.innerHTML = ''; 
                   this.widgetIdAgendar = grecaptcha.render('captcha-agendar', { 
                       'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' 
                   });
@@ -353,10 +356,7 @@ export class App implements OnInit {
   }
 
   confirmarCita() {
-    // CANDADO ANTI-DOBLE CLIC
     if (this.procesandoCita) return;
-
-    // VALIDACIÓN RECAPTCHA GOOGLE
     const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse(this.widgetIdAgendar) : null;
     if (!token) {
         this.abrirAlerta('Seguridad', 'Por favor, marque la casilla "No soy un robot".', 'warning');
@@ -484,12 +484,89 @@ export class App implements OnInit {
   cancelarCita() { this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario y liberará el espacio.', () => { this.http.put(`${this.apiUrl}/Citas/${this.citaConsultada.folio}/cancelar`, {}).subscribe({ next: (res: any) => { this.abrirAlerta('Cita Cancelada', res.mensaje, 'success'); this.citaConsultada.estatus = 'CANCELADA'; this.cdr.detectChanges(); }, error: (err) => { this.abrirAlerta('Error', err.error.mensaje || "Error al cancelar", 'error'); } }); }); }
 
   irALogin() { this.pasoActual = 8; this.credenciales = { username: '', password: '' }; history.pushState({ paso: 8 }, '', ''); this.cdr.detectChanges(); }
-  iniciarSesion() { if (!this.credenciales.username || !this.credenciales.password) { this.abrirAlerta('Atención', 'Por favor, ingrese usuario y contraseña.', 'warning'); return; } this.cargandoLogin = true; this.http.post(this.apiUrl + '/Auth/login', this.credenciales).subscribe({ next: (res: any) => { this.cargandoLogin = false; this.usuarioSesion = res; if (this.usuarioSesion.requiereCambioPassword) { this.mostrarForzarPassword = true; this.cdr.detectChanges(); return; } this.procesarAccesoCorrecto(); }, error: (err) => { this.cargandoLogin = false; this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Credenciales incorrectas.', 'error'); this.cdr.detectChanges(); } }); }
-  guardarNuevaPasswordForzada() { const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; if (!passwordRegex.test(this.nuevaPassword)) { this.abrirAlerta('Contraseña Débil', 'La contraseña no cumple con los requisitos mínimos de seguridad.', 'warning'); return; } if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; } this.http.put(`${this.apiUrl}/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({ next: (res: any) => { this.mostrarForzarPassword = false; this.abrirAlerta('Éxito', 'Contraseña actualizada.', 'success'); this.usuarioSesion.requiereCambioPassword = false; this.procesarAccesoCorrecto(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
-  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
-  cerrarSesion() { if(this.usuarioSesion?.idAcceso) { this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe(); } this.usuarioSesion = null; sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.regresarPaso1(); }
+  
+  iniciarSesion() { 
+    if (!this.credenciales.username || !this.credenciales.password) { 
+      this.abrirAlerta('Atención', 'Por favor, ingrese usuario y contraseña.', 'warning'); 
+      return; 
+    } 
+    this.cargandoLogin = true; 
+    this.http.post(this.apiUrl + '/Auth/login', this.credenciales).subscribe({ 
+      next: (res: any) => { 
+        this.cargandoLogin = false; 
+        this.usuarioSesion = res; 
 
-  cargarCitasDashboard() { let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`; if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; } else { url += `?fecha=${this.fechaDashboard}`; } this.http.get(url).subscribe({ next: (res: any) => { this.citasDiaOriginales = res; this.tramitesUnicos = [...new Set(res.map((c: any) => c.tramite))] as string[]; this.aplicarFiltroTramite(); this.cdr.detectChanges(); }, error: () => this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error') }); }
+        // CORRECCIÓN 1: GUARDAR EL TOKEN EN LOCALSTORAGE AL INICIAR SESIÓN
+        if (res.token) {
+          localStorage.setItem('token', res.token);
+        }
+
+        if (this.usuarioSesion.requiereCambioPassword) { 
+          this.mostrarForzarPassword = true; 
+          this.cdr.detectChanges(); 
+          return; 
+        } 
+        this.procesarAccesoCorrecto(); 
+      }, 
+      error: (err) => { 
+        this.cargandoLogin = false; 
+        this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Credenciales incorrectas.', 'error'); 
+        this.cdr.detectChanges(); 
+      } 
+    }); 
+  }
+
+  guardarNuevaPasswordForzada() { const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; if (!passwordRegex.test(this.nuevaPassword)) { this.abrirAlerta('Contraseña Débil', 'La contraseña no cumple con los requisitos mínimos de seguridad.', 'warning'); return; } if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; } this.http.put(`${this.apiUrl}/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({ next: (res: any) => { this.mostrarForzarPassword = false; this.abrirAlerta('Éxito', 'Contraseña actualizada.', 'success'); this.usuarioSesion.requiereCambioPassword = false; this.procesarAccesoCorrecto(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
+  
+  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
+  
+  cerrarSesion() { 
+    if(this.usuarioSesion?.idAcceso) { 
+      this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe(); 
+    } 
+    this.usuarioSesion = null; 
+    sessionStorage.removeItem('usuarioRC'); 
+    sessionStorage.removeItem('pasoRC'); 
+    // CORRECCIÓN 1.1: LIMPIAR EL TOKEN AL CERRAR SESIÓN
+    localStorage.removeItem('token');
+    this.regresarPaso1(); 
+  }
+
+  cargarCitasDashboard() { 
+  // CANDADO REFORZADO
+  if (this.evitarBucleCitas) return;
+  this.evitarBucleCitas = true;
+
+  let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`; 
+  if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { 
+    url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; 
+  } else { 
+    url += `?fecha=${this.fechaDashboard}`; 
+  } 
+  
+  this.http.get(url).subscribe({ 
+    next: (res: any) => { 
+      // Almacenamos temporalmente para no alertar al detector de Angular de inmediato
+      const data = res; 
+      const tramites = [...new Set(res.map((c: any) => c.tramite))] as string[];
+      
+      // Actualizamos las variables
+      this.citasDiaOriginales = data; 
+      this.tramitesUnicos = tramites; 
+      this.aplicarFiltroTramite(); 
+
+      // Rompemos el ciclo de detección de cambios con un setTimeout mínimo
+      setTimeout(() => {
+        this.evitarBucleCitas = false; 
+        this.cdr.detectChanges(); 
+      }, 50);
+    }, 
+    error: () => {
+      this.evitarBucleCitas = false; 
+      this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error');
+    } 
+  }); 
+}
   aplicarFiltroTramite() { if (this.filtroTramite) { this.citasDia = this.citasDiaOriginales.filter(c => c.tramite === this.filtroTramite); } else { this.citasDia = [...this.citasDiaOriginales]; } }
   limpiarBusqueda() { this.textoBusquedaDashboard = ''; this.filtroTramite = ''; this.cargarCitasDashboard(); }
   actualizarEstatusCita(folio: string, nuevoEstatus: string) { this.http.put(`${this.apiUrl}/Citas/${folio}/actualizarEstatus`, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({ next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.cargarCitasDashboard(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
