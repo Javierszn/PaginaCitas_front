@@ -17,7 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      // AQUÍ ESTÁ EL CAMBIO: Excluimos la ruta de login para que el app.ts maneje el error con tu diseño
+      
       if (error.status === 401 && !req.url.includes('/Auth/login')) {
         sessionStorage.removeItem('usuarioRC');
         sessionStorage.removeItem('pasoRC');

@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-declare var grecaptcha: any; // DECLARACIÓN DE GOOGLE RECAPTCHA
+declare var grecaptcha: any; 
 
 @Component({
   selector: 'app-root',
@@ -30,12 +30,12 @@ export class App implements OnInit {
   diasMes: any[] = [];
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   
-  // VARIABLES PARA DÍAS INHÁBILES
+ 
   diasBloqueados: string[] = [];
   diasInhabilesAdmin: any[] = [];
   nuevoDiaInhabil: any = { fecha: '', motivo: '' };
 
-  // VARIABLES PARA RENDERIZAR GOOGLE RECAPTCHA
+  
   widgetIdAgendar: any;
   widgetIdBuscar: any;
 
@@ -52,7 +52,7 @@ export class App implements OnInit {
   folioReagendar: string = '';
   procesandoCita: boolean = false; 
 
-  // CANDADO PARA EL BUCLE INFINITO
+  
   evitarBucleCitas: boolean = false;
 
   mostrarAlerta: boolean = false;
@@ -120,7 +120,7 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.cargarSedes();
-    this.cargarUsuariosSoporte();
+    //this.cargarUsuariosSoporte();
     this.cargarReglasCalendario();
 
     const sessionUser = sessionStorage.getItem('usuarioRC');
@@ -519,18 +519,26 @@ export class App implements OnInit {
   
   cerrarSesion() { 
     if(this.usuarioSesion?.idAcceso) { 
-      this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe(); 
-    } 
+      // 1. Hacemos la petición al backend PRIMERO
+      this.http.post(`${this.apiUrl}/Auth/logout/${this.usuarioSesion.idAcceso}`, {}).subscribe({
+        next: () => this.limpiarRastrosDeSesion(), 
+        error: () => this.limpiarRastrosDeSesion() 
+      }); 
+    } else {
+      this.limpiarRastrosDeSesion();
+    }
+  }
+
+  
+  limpiarRastrosDeSesion() {
     this.usuarioSesion = null; 
     sessionStorage.removeItem('usuarioRC'); 
     sessionStorage.removeItem('pasoRC'); 
-    
-    
+    localStorage.removeItem('token'); 
     this.regresarPaso1(); 
   }
-
   cargarCitasDashboard() { 
-  // CANDADO REFORZADO
+  
   if (this.evitarBucleCitas) return;
   this.evitarBucleCitas = true;
 
@@ -543,16 +551,16 @@ export class App implements OnInit {
   
   this.http.get(url).subscribe({ 
     next: (res: any) => { 
-      // Almacenamos temporalmente para no alertar al detector de Angular de inmediato
+     
       const data = res; 
       const tramites = [...new Set(res.map((c: any) => c.tramite))] as string[];
       
-      // Actualizamos las variables
+     
       this.citasDiaOriginales = data; 
       this.tramitesUnicos = tramites; 
       this.aplicarFiltroTramite(); 
 
-      // Rompemos el ciclo de detección de cambios con un setTimeout mínimo
+      
       setTimeout(() => {
         this.evitarBucleCitas = false; 
         this.cdr.detectChanges(); 
