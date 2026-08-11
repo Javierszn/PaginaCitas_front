@@ -496,10 +496,7 @@ export class App implements OnInit {
         this.cargandoLogin = false; 
         this.usuarioSesion = res; 
 
-        // CORRECCIÓN 1: GUARDAR EL TOKEN EN LOCALSTORAGE AL INICIAR SESIÓN
-        if (res.token) {
-          localStorage.setItem('token', res.token);
-        }
+        
 
         if (this.usuarioSesion.requiereCambioPassword) { 
           this.mostrarForzarPassword = true; 
@@ -527,8 +524,8 @@ export class App implements OnInit {
     this.usuarioSesion = null; 
     sessionStorage.removeItem('usuarioRC'); 
     sessionStorage.removeItem('pasoRC'); 
-    // CORRECCIÓN 1.1: LIMPIAR EL TOKEN AL CERRAR SESIÓN
-    localStorage.removeItem('token');
+    
+    
     this.regresarPaso1(); 
   }
 
@@ -575,7 +572,14 @@ export class App implements OnInit {
   regresarADashboard() { this.pasoActual = 9; sessionStorage.setItem('pasoRC', '9'); history.pushState({ paso: 9 }, '', ''); this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin(); else this.cargarMisPeticiones(); this.cdr.detectChanges(); }
   cargarBitacora() { this.cargandoBitacora = true; let url = this.apiUrl + '/Bitacora'; const params = []; if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) { params.push(`busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`); } else if (this.fechaBitacora) { params.push(`fecha=${this.fechaBitacora}`); } if (params.length > 0) { url += '?' + params.join('&'); } this.http.get(url).subscribe({ next: (res: any) => { this.bitacoraLogs = res; this.cargandoBitacora = false; this.cdr.detectChanges(); }, error: () => { this.abrirAlerta('Error', 'No se pudo cargar la bitácora.', 'error'); this.cargandoBitacora = false; this.cdr.detectChanges(); } }); }
   limpiarBusquedaBitacora() { this.textoBusquedaBitacora = ''; this.cargarBitacora(); }
-  deshacerAccion(idBitacora: number) { this.abrirConfirmacion('¿Deshacer?', '¿Revertir este cambio?', () => { this.http.post(`${this.apiUrl}/Bitacora/Deshacer/${idBitacora}`, this.usuarioSesion.idUsuario).subscribe({ next: (res: any) => { this.abrirAlerta('Restaurado', res.mensaje, 'success'); this.cargarBitacora(); }, error: (err) => { this.abrirAlerta('Error', err.error.mensaje || 'Error al deshacer.', 'error'); } }); }); }
+ deshacerAccion(idBitacora: number) {
+  this.abrirConfirmacion('¿Deshacer?', '¿Revertir este cambio?', () => {
+    this.http.post(`${this.apiUrl}/Bitacora/Deshacer/${idBitacora}`, {}).subscribe({
+      next: (res: any) => { this.abrirAlerta('Restaurado', res.mensaje, 'success'); this.cargarBitacora(); },
+      error: (err) => { this.abrirAlerta('Error', err.error.mensaje || 'Error al deshacer.', 'error'); }
+    });
+  });
+}
 
   cargarUsuariosSoporte() { this.http.get(this.apiUrl + '/Usuarios/Soporte').subscribe({ next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); } }); }
   cargarMisPeticiones() { if (!this.usuarioSesion) return; this.http.get(this.apiUrl + '/Peticiones/MisPeticiones/' + this.usuarioSesion.username).subscribe({ next: (res: any) => { this.misPeticiones = res; this.notificacionesNuevas = this.misPeticiones.filter((p: any) => p.estatus === 'RESUELTA' && p.leido === false).length; this.cdr.detectChanges(); } }); }
