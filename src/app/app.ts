@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { ApiService } from './api.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -10,11 +11,13 @@ declare var grecaptcha: any;
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
+  
+  // === VARIABLES CIUDADANOS (AGENDAR CITA) ===
   pasoActual: number = 1;
   sedes: any[] = [];
   categorias: any[] = [];
@@ -26,7 +29,6 @@ export class App implements OnInit {
   mesActual: Date = new Date();
   diasMes: any[] = [];
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  
   diasBloqueados: string[] = [];
   diasInhabilesAdmin: any[] = [];
   nuevoDiaInhabil: any = { fecha: '', motivo: '' };
@@ -47,8 +49,7 @@ export class App implements OnInit {
   folioReagendar: string = '';
   procesandoCita: boolean = false; 
 
-  evitarBucleCitas: boolean = false;
-
+  // === VARIABLES MODALES GLOBALES ===
   mostrarAlerta: boolean = false;
   alertaTitulo: string = '';
   alertaMensaje: string = '';
@@ -60,32 +61,8 @@ export class App implements OnInit {
   avisoGlobal: any = null;
   mostrarAvisoGlobal: boolean = false;
 
-  credenciales = { username: '', password: '' };
-  cargandoLogin: boolean = false;
+  // === VARIABLES SUPER ADMIN Y SOPORTE ===
   usuarioSesion: any = null;
-
-  citasDiaOriginales: any[] = []; 
-  citasDia: any[] = []; 
-  tramitesUnicos: string[] = []; 
-  filtroTramite: string = '';
-  fechaDashboard: string = new Date().toISOString().split('T')[0];
-  textoBusquedaDashboard: string = '';
-  
-  paginaActualCitas: number = 1;
-  totalPaginasCitas: number = 1;
-  
-  mostrarForzarPassword: boolean = false;
-  nuevaPassword = '';
-  confirmarPassword = '';
-
-  bitacoraLogs: any[] = [];
-  cargandoBitacora: boolean = false;
-  fechaBitacora: string = ''; 
-  textoBusquedaBitacora: string = '';
-
-  paginaActualBitacora: number = 1;
-  totalPaginasBitacora: number = 1;
-
   usuariosSistema: any[] = [];
   categoriasAdmin: any[] = []; 
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
@@ -115,8 +92,15 @@ export class App implements OnInit {
   curpValida: boolean = true;
   mostrarMensajesAyuda: boolean = false;
 
+  // === INYECCIÓN DE DEPENDENCIAS ===
   api = inject(ApiService);
   cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
+
+  // DETECTOR DEL TRUCO SENIOR
+  esRutaRaiz(): boolean {
+    return this.router.url === '/';
+  }
 
   ngOnInit() {
     this.cargarSedes();
@@ -128,12 +112,7 @@ export class App implements OnInit {
       this.usuarioSesion = JSON.parse(sessionUser);
       this.pasoActual = parseInt(sessionPaso, 10);
 
-      if (this.pasoActual === 9) { 
-        this.cargarCitasDashboard(1); 
-        if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin();
-        else this.cargarMisPeticiones(); 
-      }
-      if (this.pasoActual === 10) this.cargarBitacora(1);
+      // Compatibilidad con tu sistema de pasos anterior:
       if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin(); }
       if (this.pasoActual === 12) this.cargarPeticionesAdmin();
     } else {
@@ -146,7 +125,7 @@ export class App implements OnInit {
   onPopState(event: any) {
     if (event.state && event.state.paso) {
       this.pasoActual = event.state.paso;
-      if ([9, 10, 11, 12].includes(this.pasoActual)) {
+      if ([11, 12].includes(this.pasoActual)) {
         sessionStorage.setItem('pasoRC', this.pasoActual.toString());
       }
     } else { this.pasoActual = 1; }
@@ -161,6 +140,7 @@ export class App implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // === LÓGICA DE CIUDADANOS (AGENDAR Y BUSCAR CITA) ===
   cargarReglasCalendario() {
     this.api.getReglasCalendario().subscribe({
       next: (res: any) => {
@@ -398,27 +378,6 @@ export class App implements OnInit {
     }
   }
 
-  exportarPDF(idTabla: string, tituloReporte: string) {
-    const doc = new jsPDF(); const img = new Image(); img.src = 'images/Sin_titulo.png';
-    img.onload = () => { doc.addImage(img, 'PNG', 15, 10, 180, 25); this.generarContenidoReporte(doc, idTabla, tituloReporte, 45); };
-    img.onerror = () => { doc.setFontSize(16); doc.setTextColor(5, 90, 28); doc.text('Registro Civil del Estado de San Luis Potosí', 14, 15); this.generarContenidoReporte(doc, idTabla, tituloReporte, 25); };
-  }
-
-  generarContenidoReporte(doc: any, idTabla: string, tituloReporte: string, startY: number) {
-    doc.setFontSize(13); doc.setTextColor(5, 90, 28); doc.setFont("helvetica", "bold"); doc.text(tituloReporte, 14, startY);
-    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(80, 80, 80);
-    let y = startY + 6; doc.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username || 'Sistema'}`, 14, y); y += 5; doc.text(`Sede Operativa: ${this.usuarioSesion?.sede || 'Global'}`, 14, y); y += 5;
-    let filtroExtra = 'Mostrando todos los registros';
-    if (idTabla === 'tablaCitas' && this.fechaDashboard) filtroExtra = `Filtrado por fecha: ${this.fechaDashboard}`;
-    if (idTabla === 'tablaCitas' && this.filtroTramite) filtroExtra = `Filtrado por trámite: ${this.filtroTramite}`;
-    if (idTabla === 'tablaBitacora' && this.fechaBitacora) filtroExtra = `Filtrado por fecha: ${this.fechaBitacora}`;
-    doc.setFont("helvetica", "bold"); doc.text(`Filtros aplicados: ${filtroExtra}`, 14, y); y += 8;
-    autoTable(doc, { html: `#${idTabla}`, startY: y, theme: 'grid', headStyles: { fillColor: [5, 90, 28], textColor: 255 }, alternateRowStyles: { fillColor: [255, 255, 255] }, styles: { fontSize: 7, cellPadding: 1, textColor: [0, 0, 0], lineColor: [200, 200, 200] },
-      didParseCell: (data: any) => { if (data.section === 'body' && data.cell.text && data.cell.text.length > 0) { for (let i = 0; i < data.cell.text.length; i++) { data.cell.text[i] = data.cell.text[i].replace(/(\d{2}:\d{2})(\d{2}\/\d{2}\/\d{4})/, '$1\n$2'); } } }
-    });
-    doc.save(`${tituloReporte.replace(/ /g, '_')}_${new Date().getTime()}.pdf`);
-  }
-
   descargarAcuseOficial() {
     if (!this.citaConsultada) { this.abrirAlerta('Error', 'No hay datos cargados para generar el PDF.', 'error'); return; }
     try {
@@ -484,135 +443,7 @@ export class App implements OnInit {
 
   cancelarCita() { this.abrirConfirmacion('¿Cancelar Cita?', 'Si cancela perderá este horario y liberará el espacio.', () => { this.api.cancelarCita(this.citaConsultada.folio).subscribe({ next: (res: any) => { this.abrirAlerta('Cita Cancelada', res.mensaje, 'success'); this.citaConsultada.estatus = 'CANCELADA'; this.cdr.detectChanges(); }, error: (err: any) => { this.abrirAlerta('Error', err.error.mensaje || "Error al cancelar", 'error'); } }); }); }
 
-  irALogin() { this.pasoActual = 8; this.credenciales = { username: '', password: '' }; history.pushState({ paso: 8 }, '', ''); this.cdr.detectChanges(); }
-  
-  iniciarSesion() { 
-    if (!this.credenciales.username || !this.credenciales.password) { 
-      this.abrirAlerta('Atención', 'Por favor, ingrese usuario y contraseña.', 'warning'); 
-      return; 
-    } 
-    this.cargandoLogin = true; 
-    this.api.login(this.credenciales).subscribe({ 
-      next: (res: any) => { 
-        this.cargandoLogin = false; 
-        this.usuarioSesion = res; 
-
-        if (this.usuarioSesion.requiereCambioPassword) { 
-          this.mostrarForzarPassword = true; 
-          this.cdr.detectChanges(); 
-          return; 
-        } 
-        this.procesarAccesoCorrecto(); 
-      }, 
-      error: (err: any) => { 
-        this.cargandoLogin = false; 
-        this.abrirAlerta('Acceso Denegado', err.error.mensaje || 'Credenciales incorrectas.', 'error'); 
-        this.cdr.detectChanges(); 
-      } 
-    }); 
-  }
-
-  guardarNuevaPasswordForzada() { const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; if (!passwordRegex.test(this.nuevaPassword)) { this.abrirAlerta('Contraseña Débil', 'La contraseña no cumple con los requisitos mínimos de seguridad.', 'warning'); return; } if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; } this.api.cambiarPasswordUsuario(this.usuarioSesion.idUsuario, { password: this.nuevaPassword }).subscribe({ next: (res: any) => { this.mostrarForzarPassword = false; this.abrirAlerta('Éxito', 'Contraseña actualizada.', 'success'); this.usuarioSesion.requiereCambioPassword = false; this.procesarAccesoCorrecto(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
-  
-  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.cargarCitasDashboard(1); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
-  
-  cerrarSesion() { 
-    if(this.usuarioSesion?.idAcceso) { 
-      this.api.logout(this.usuarioSesion.idAcceso).subscribe({
-        next: () => this.limpiarRastrosDeSesion(), 
-        error: () => this.limpiarRastrosDeSesion() 
-      }); 
-    } else {
-      this.limpiarRastrosDeSesion();
-    }
-  }
-  
-  limpiarRastrosDeSesion() {
-    this.usuarioSesion = null; 
-    sessionStorage.removeItem('usuarioRC'); 
-    sessionStorage.removeItem('pasoRC'); 
-    localStorage.removeItem('token'); 
-    this.regresarPaso1(); 
-  }
-
-  cargarCitasDashboard(paginaSolicitada: number = 1) { 
-    if (this.evitarBucleCitas) return;
-    this.evitarBucleCitas = true;
-
-    let queryParams = `?pagina=${paginaSolicitada}&registrosPorPagina=50`; 
-    if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { 
-      queryParams += `&busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; 
-    } else { 
-      queryParams += `&fecha=${this.fechaDashboard}`; 
-    } 
-    
-    this.api.getCitasPorSede(this.usuarioSesion.idSede, queryParams).subscribe({ 
-      next: (res: any) => { 
-        const data = res.datos || []; 
-        this.paginaActualCitas = res.paginaActual || 1;
-        this.totalPaginasCitas = res.totalPaginas || 1;
-
-        const tramites = [...new Set(data.map((c: any) => c.tramite))] as string[];
-        
-        this.citasDiaOriginales = data; 
-        this.tramitesUnicos = tramites; 
-        this.aplicarFiltroTramite(); 
-
-        setTimeout(() => {
-          this.evitarBucleCitas = false; 
-          this.cdr.detectChanges(); 
-        }, 50);
-      }, 
-      error: () => {
-        this.evitarBucleCitas = false; 
-        this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error');
-      } 
-    }); 
-  }
-
-  aplicarFiltroTramite() { if (this.filtroTramite) { this.citasDia = this.citasDiaOriginales.filter(c => c.tramite === this.filtroTramite); } else { this.citasDia = [...this.citasDiaOriginales]; } }
-  limpiarBusqueda() { this.textoBusquedaDashboard = ''; this.filtroTramite = ''; this.cargarCitasDashboard(1); }
-  actualizarEstatusCita(folio: string, nuevoEstatus: string) { this.api.actualizarEstatusCita(folio, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({ next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.cargarCitasDashboard(this.paginaActualCitas); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
-
-  irABitacora() { this.pasoActual = 10; sessionStorage.setItem('pasoRC', '10'); this.cargarBitacora(1); history.pushState({ paso: 10 }, '', ''); this.cdr.detectChanges(); }
-  regresarADashboard() { this.pasoActual = 9; sessionStorage.setItem('pasoRC', '9'); history.pushState({ paso: 9 }, '', ''); this.cargarCitasDashboard(this.paginaActualCitas); if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin(); else this.cargarMisPeticiones(); this.cdr.detectChanges(); }
-  
-  cargarBitacora(paginaSolicitada: number = 1) { 
-    this.cargandoBitacora = true; 
-    let queryParams = `?pagina=${paginaSolicitada}&registrosPorPagina=50`; 
-    const args = []; 
-    if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) { 
-      args.push(`busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`); 
-    } else if (this.fechaBitacora) { 
-      args.push(`fecha=${this.fechaBitacora}`); 
-    } 
-    if (args.length > 0) { queryParams += '&' + args.join('&'); } 
-    
-    this.api.getBitacora(queryParams).subscribe({ 
-      next: (res: any) => { 
-        this.bitacoraLogs = res.datos || []; 
-        this.paginaActualBitacora = res.paginaActual || 1;
-        this.totalPaginasBitacora = res.totalPaginas || 1;
-        this.cargandoBitacora = false; 
-        this.cdr.detectChanges(); 
-      }, 
-      error: () => { 
-        this.abrirAlerta('Error', 'No se pudo cargar la bitácora.', 'error'); 
-        this.cargandoBitacora = false; 
-        this.cdr.detectChanges(); 
-      } 
-    }); 
-  }
-
-  limpiarBusquedaBitacora() { this.textoBusquedaBitacora = ''; this.cargarBitacora(1); }
-  deshacerAccion(idBitacora: number) {
-    this.abrirConfirmacion('¿Deshacer?', '¿Revertir este cambio?', () => {
-      this.api.deshacerBitacora(idBitacora).subscribe({
-        next: (res: any) => { this.abrirAlerta('Restaurado', res.mensaje, 'success'); this.cargarBitacora(this.paginaActualBitacora); },
-        error: (err: any) => { this.abrirAlerta('Error', err.error.mensaje || 'Error al deshacer.', 'error'); }
-      });
-    });
-  }
+  irALogin() { this.router.navigate(['/login']); }
 
   cargarUsuariosSoporte() { this.api.getUsuariosSoporte().subscribe({ next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); } }); }
   cargarMisPeticiones() { if (!this.usuarioSesion) return; this.api.getMisPeticiones(this.usuarioSesion.username).subscribe({ next: (res: any) => { this.misPeticiones = res; this.notificacionesNuevas = this.misPeticiones.filter((p: any) => p.estatus === 'RESUELTA' && p.leido === false).length; this.cdr.detectChanges(); } }); }
@@ -624,8 +455,8 @@ export class App implements OnInit {
   cargarPeticionesAdmin() { this.api.getPeticionesAdmin().subscribe({ next: (res: any) => { this.peticionesSistema = res; this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE' && p.leido === false).length; this.cdr.detectChanges(); } }); }
   resolverPeticion(id: number) { this.abrirInput('Responder', 'Mensaje de resolución:', () => { this.api.resolverPeticion(id, { respuesta: this.inputTemporal }).subscribe({ next: (res: any) => { this.abrirAlerta('Resuelto', res.mensaje, 'success'); this.cargarPeticionesAdmin(); }, error: () => this.abrirAlerta('Error', 'Error al resolver.', 'error') }); }); }
 
-  irASuperAdmin() { this.pasoActual = 11; sessionStorage.setItem('pasoRC', '11'); this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin(); this.cargarReglasCalendario(); history.pushState({ paso: 11 }, '', ''); this.cdr.detectChanges(); }
-  irACentroSoporte() { this.pasoActual = 12; sessionStorage.setItem('pasoRC', '12'); this.cargarPeticionesAdmin(); history.pushState({ paso: 12 }, '', ''); this.cdr.detectChanges(); }
+  irASuperAdmin() { this.router.navigate(['/admin/super']); }
+  irACentroSoporte() { this.router.navigate(['/admin/soporte']); }
 
   cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
   cargarAccesosAdmin(paginaSolicitada: number = 1) { this.cargandoAccesos = true; let urlParams = `?page=${paginaSolicitada}&pageSize=10`; if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) { urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`; } else if (this.fechaAccesos) { urlParams += `&fecha=${this.fechaAccesos}`; } this.api.getAccesos(urlParams).subscribe({ next: (res: any) => { this.registroAccesos = res.datos; this.paginaActualAccesos = res.paginaActual; this.totalPaginasAccesos = res.totalPaginas; this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1); this.cargandoAccesos = false; this.cdr.detectChanges(); }, error: () => { this.abrirAlerta('Error', 'No se pudieron cargar accesos.', 'error'); this.cargandoAccesos = false; this.cdr.detectChanges(); } }); }
@@ -638,8 +469,8 @@ export class App implements OnInit {
   cargarTramitesAdmin() { this.api.getTramitesAdmin().subscribe({ next: (res: any) => { this.categoriasAdmin = res.map((cat: any) => { const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {}; return { idCategoria: cat.idCategoria, nombreCategoria: cat.nombreCategoria, costo: primerServicio.costo || 0, duracionMinutos: primerServicio.duracionMinutos || 30, limiteDiarioSede: primerServicio.limiteDiarioSede || 50, activo: cat.activa, fechaInicio: primerServicio.fechaInicioPermitida ? primerServicio.fechaInicioPermitida.split('T')[0] : '', fechaFin: primerServicio.fechaFinPermitida ? primerServicio.fechaFinPermitida.split('T')[0] : '' }; }); this.cdr.detectChanges(); } }); }
   
   actualizarCategoria(cat: any) { const payload = { duracionMinutos: cat.duracionMinutos, costo: cat.costo, activo: cat.activo, limiteDiario: cat.limiteDiarioSede, fechaInicio: cat.fechaInicio ? cat.fechaInicio : null, fechaFin: cat.fechaFin ? cat.fechaFin : null }; this.api.actualizarCategoria(cat.idCategoria, payload).subscribe({ next: (res: any) => { this.abrirAlerta('Guardado', res.mensaje, 'success'); this.cargarTramites(); }, error: () => this.abrirAlerta('Error', 'No se pudo guardar la configuración.', 'error') }); }
-
-  regresarPaso1() { this.pasoActual = 1; this.sedeSeleccionada = null; this.categorias = []; this.limpiarFormulario(); sessionStorage.removeItem('pasoRC'); history.pushState({ paso: 1 }, '', ''); this.cargarAvisoGlobal(); this.cdr.detectChanges(); }
+regresarADashboard() { this.router.navigate(['/admin/dashboard']); }
+  regresarPaso1() { this.pasoActual = 1; this.sedeSeleccionada = null; this.categorias = []; this.limpiarFormulario(); sessionStorage.removeItem('pasoRC'); this.router.navigate(['/']); this.cargarAvisoGlobal(); this.cdr.detectChanges(); }
   regresarPaso2() { this.pasoActual = 2; this.tramiteSeleccionado = null; history.pushState({ paso: 2 }, '', ''); this.cdr.detectChanges(); }
   regresarPaso3() { this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
 }

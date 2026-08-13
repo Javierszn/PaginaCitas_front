@@ -1,0 +1,162 @@
+ 
+      <div class="container mt-4">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
+          <div class="d-flex align-items-center">
+
+            <!-- CAMPANITA DE NOTIFICACIONES TIPO APP -->
+            <button class="btn position-relative me-3 border-0 bg-transparent" (click)="abrirBandeja()" title="Ver Notificaciones">
+              <i class="fa-solid fa-bell fs-4" [style.color]="notificacionesNuevas > 0 ? '#E60064' : '#9d9d9c'"></i>
+              @if (notificacionesNuevas > 0) {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: #E60064; font-size: 0.65rem;">
+                  {{ notificacionesNuevas }}
+                </span>
+              }
+            </button>
+
+            <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="abrirModalPeticion(false)">
+              <i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda
+            </button>
+
+            @if (usuarioSesion?.rol === 'Super Administrador') {
+              <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #E60064; border: 1px solid #E60064; background: transparent;" (click)="irASuperAdmin()">
+                <i class="fa-solid fa-gear me-2"></i>Ajustes
+              </button>
+            }
+            @if (usuarioSesion?.rol === 'Administrador' || usuarioSesion?.rol === 'Super Administrador') {
+              <button class="btn fw-bold me-3" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="irABitacora()">
+                <i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría
+              </button>
+            }
+            <button class="btn text-white fw-bold" style="font-size: 0.85rem; background-color: #2b2727; border: none;" (click)="cerrarSesion()">Cerrar Sesión</button>
+          </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+          <div class="card-body p-4">
+            <h6 class="fw-bold mb-4 text-dark">Gestión de Citas</h6>
+            
+            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
+              <div class="col-md-2 mb-3 mb-md-0">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaDashboard" (change)="limpiarBusqueda()">
+              </div>
+              <div class="col-md-4 mb-3 mb-md-0">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR TRÁMITE</label>
+                <select class="form-select" [(ngModel)]="filtroTramite" (change)="aplicarFiltroTramite()">
+                  <option value="">Todos los trámites</option>
+                  @for (tramite of tramitesUnicos; track tramite) {
+                    <option [value]="tramite">{{ tramite }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, NOMBRE O CURP)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
+                  <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  
+                  <!-- BOTÓN PDF OCULTO PARA VENTANILLA -->
+                  @if (usuarioSesion?.rol === 'Super Administrador' || usuarioSesion?.rol === 'Administrador') {
+                    <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                  }
+
+                  @if(textoBusquedaDashboard || filtroTramite) {
+                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
+                  }
+                </div>
+                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora filtros de fecha y trámite.</small>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table id="tablaCitas" class="table table-hover align-middle" style="font-size: 0.85rem;">
+                <thead style="background-color: #fdfdfd;">
+                  <tr>
+                    <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
+                    <th class="py-3" style="color: #055A1C;">Folio</th>
+                    <th class="py-3" style="color: #055A1C;">Ciudadano</th>
+                    <th class="py-3" style="color: #055A1C;">Trámite</th>
+                    <th class="py-3" style="color: #055A1C;">Estatus</th>
+                    <th class="py-3 text-center" style="color: #055A1C;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (cita of citasDia; track cita.folio) {
+                    <tr>
+                      <td>
+                        <span class="d-block fw-bold text-dark">{{ cita.hora }}</span>
+                        <small class="text-muted">{{ cita.fechaStr }}</small>
+                      </td>
+                      <td><span class="text-secondary fw-semibold">{{ cita.folio }}</span></td>
+                      
+                      <td>
+                        @if (cita.ciudadano && cita.ciudadano.trim() !== '') {
+                          <span class="d-block fw-semibold text-dark">{{ cita.ciudadano }}</span>
+                        }
+                        
+                        @if (cita.curp && !cita.curp.includes('ENM')) {
+                          <span class="badge bg-light text-dark border mt-1" style="font-size: 0.75rem;">
+                            <i class="fa-regular fa-id-card text-muted me-1"></i> {{ cita.curp }}
+                          </span>
+                        }
+                      </td>
+
+                      <td class="text-secondary">
+                        {{ cita.tramite }}<br>
+                        @if (usuarioSesion?.rol === 'Super Administrador' && cita.ip) {
+                            <small class="text-danger fw-bold d-block mt-1" style="font-size: 0.75rem;">
+                              <i class="fa-solid fa-desktop me-1"></i> 
+                              {{ cita.ip === '::1' || cita.ip === '127.0.0.1' ? 'Localhost' : cita.ip }} | {{ cita.navegador }} | {{ cita.so }}
+                            </small>
+                        }
+                      </td>
+                      <td>
+                        <span class="badge" 
+                              [class.bg-primary]="cita.estatus === 'PROGRAMADA'"
+                              [class.bg-info]="cita.estatus === 'CONFIRMADA'"
+                              [class.bg-success]="cita.estatus === 'ATENDIDA'"
+                              [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
+                              [class.bg-secondary]="cita.estatus === 'REPROGRAMADA'"
+                              [class.bg-danger]="cita.estatus === 'CANCELADA'">
+                          {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus }}
+                        </span>
+                      </td>
+                      <td class="text-center">
+                        @if (cita.estatus === 'PROGRAMADA' || cita.estatus === 'REPROGRAMADA') {
+                          <button class="btn btn-sm btn-primary me-2 fw-semibold" title="Marcar Confirmada"
+                                  (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
+                            <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar
+                          </button>
+                        } @else if (cita.estatus === 'CONFIRMADA') {
+                          <button class="btn btn-sm btn-success me-2 fw-semibold" title="Marcar Atendida"
+                                  (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como ATENDIDA?', () => actualizarEstatusCita(cita.folio, 'ATENDIDA'))">
+                            <i class="fa-solid fa-check me-1"></i> Atendida
+                          </button>
+                          
+                          <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
+                                  (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
+                            <i class="fa-solid fa-xmark me-1"></i> Falta
+                          </button>
+                        } @else {
+                          <span class="text-muted" style="font-size: 0.75rem;">Finalizada</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @if (citasDia.length === 0) {
+                    <tr>
+                      <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-folder-open fs-2 mb-2"></i><br>
+                        No hay citas encontradas para los filtros seleccionados.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    

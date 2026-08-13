@@ -20,7 +20,7 @@
   </header>
 
   <main class="container my-5 flex-grow-1 bg-white">
-
+@if (esRutaRaiz()) {
     @if (pasoActual === 1) {
       <div class="text-center mb-5">
         <h3 class="fw-bold text-dark mt-2 green-line">Agende su Cita en Línea</h3>
@@ -537,318 +537,6 @@
       </div>
     }
 
-    <!-- PANTALLA 8: LOGIN PARA EMPLEADOS -->
-    @if (pasoActual === 8) {
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-          <div class="card shadow-lg border-0 rounded-4 p-5 mt-4 bg-white">
-            <div class="text-center mb-4">
-              <div class="text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: #055A1C;">
-                <i class="fa-solid fa-user-shield"></i>
-              </div>
-              <h4 class="fw-bold text-dark">Acceso Autorizado</h4>
-              <p class="text-secondary" style="font-size: 0.8rem;">Portal exclusivo para personal administrativo y de ventanilla.</p>
-            </div>
-            
-            <form (ngSubmit)="iniciarSesion()">
-              <div class="mb-3">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">USUARIO</label>
-                <div class="input-group">
-                  <span class="input-group-text border-end-0" style="background-color: #f8f8f8;"><i class="fa-solid fa-user text-muted"></i></span>
-                  <input type="text" class="form-control border-start-0" style="background-color: #f8f8f8;" [(ngModel)]="credenciales.username" name="username" placeholder="Ingrese su usuario" required>
-                </div>
-              </div>
-              
-              <div class="mb-4">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CONTRASEÑA</label>
-                <div class="input-group">
-                  <span class="input-group-text border-end-0" style="background-color: #f8f8f8;"><i class="fa-solid fa-lock text-muted"></i></span>
-                  <input type="password" class="form-control border-start-0" style="background-color: #f8f8f8;" [(ngModel)]="credenciales.password" name="password" placeholder="••••••••" required>
-                </div>
-              </div>
-              
-              <button type="submit" class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" style="font-size: 0.9rem;" [disabled]="cargandoLogin || !credenciales.username || !credenciales.password">
-                @if (cargandoLogin) {
-                  <span class="spinner-border spinner-border-sm me-2"></span> Verificando...
-                } @else {
-                  INICIAR SESIÓN <i class="fa-solid fa-right-to-bracket ms-2"></i>
-                }
-              </button>
-            </form>
-
-            <div class="text-center mt-4">
-              <!-- BOTÓN DE OLVIDÉ MI CONTRASEÑA -->
-              <button class="btn btn-link text-secondary text-decoration-none d-block w-100 mb-2" style="font-size: 0.8rem;" (click)="abrirModalPeticion(true)">
-                ¿Olvidó su contraseña o necesita ayuda?
-              </button>
-              
-              <button class="btn btn-link text-secondary text-decoration-none" style="font-size: 0.8rem;" (click)="regresarPaso1()">
-                <i class="fa-solid fa-arrow-left me-1"></i> Regresar al Portal Ciudadano
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-
-   <!-- PANTALLA 9: DASHBOARD DE EMPLEADOS -->
-    @if (pasoActual === 9) {
-      <div class="container mt-4">
-        
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
-          <div class="d-flex align-items-center">
-
-            <!-- CAMPANITA DE NOTIFICACIONES TIPO APP -->
-            <button class="btn position-relative me-3 border-0 bg-transparent" (click)="abrirBandeja()" title="Ver Notificaciones">
-              <i class="fa-solid fa-bell fs-4" [style.color]="notificacionesNuevas > 0 ? '#E60064' : '#9d9d9c'"></i>
-              @if (notificacionesNuevas > 0) {
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: #E60064; font-size: 0.65rem;">
-                  {{ notificacionesNuevas }}
-                </span>
-              }
-            </button>
-
-            <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="abrirModalPeticion(false)">
-              <i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda
-            </button>
-
-            @if (usuarioSesion?.rol === 'Super Administrador') {
-              <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #E60064; border: 1px solid #E60064; background: transparent;" (click)="irASuperAdmin()">
-                <i class="fa-solid fa-gear me-2"></i>Ajustes
-              </button>
-            }
-            @if (usuarioSesion?.rol === 'Administrador' || usuarioSesion?.rol === 'Super Administrador') {
-              <button class="btn fw-bold me-3" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="irABitacora()">
-                <i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría
-              </button>
-            }
-            <button class="btn text-white fw-bold" style="font-size: 0.85rem; background-color: #2b2727; border: none;" (click)="cerrarSesion()">Cerrar Sesión</button>
-          </div>
-        </div>
-
-        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
-          <div class="card-body p-4">
-            <h6 class="fw-bold mb-4 text-dark">Gestión de Citas</h6>
-            
-            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
-              <div class="col-md-2 mb-3 mb-md-0">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
-                <input type="date" class="form-control" [(ngModel)]="fechaDashboard" (change)="limpiarBusqueda()">
-              </div>
-              <div class="col-md-4 mb-3 mb-md-0">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR TRÁMITE</label>
-                <select class="form-select" [(ngModel)]="filtroTramite" (change)="aplicarFiltroTramite()">
-                  <option value="">Todos los trámites</option>
-                  @for (tramite of tramitesUnicos; track tramite) {
-                    <option [value]="tramite">{{ tramite }}</option>
-                  }
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, NOMBRE O CURP)</label>
-                <div class="input-group">
-                  <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
-                  <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                  
-                  <!-- BOTÓN PDF OCULTO PARA VENTANILLA -->
-                  @if (usuarioSesion?.rol === 'Super Administrador' || usuarioSesion?.rol === 'Administrador') {
-                    <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
-                  }
-
-                  @if(textoBusquedaDashboard || filtroTramite) {
-                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
-                  }
-                </div>
-                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora filtros de fecha y trámite.</small>
-              </div>
-            </div>
-
-            <div class="table-responsive">
-              <table id="tablaCitas" class="table table-hover align-middle" style="font-size: 0.85rem;">
-                <thead style="background-color: #fdfdfd;">
-                  <tr>
-                    <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
-                    <th class="py-3" style="color: #055A1C;">Folio</th>
-                    <th class="py-3" style="color: #055A1C;">Ciudadano</th>
-                    <th class="py-3" style="color: #055A1C;">Trámite</th>
-                    <th class="py-3" style="color: #055A1C;">Estatus</th>
-                    <th class="py-3 text-center" style="color: #055A1C;">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (cita of citasDia; track cita.folio) {
-                    <tr>
-                      <td>
-                        <span class="d-block fw-bold text-dark">{{ cita.hora }}</span>
-                        <small class="text-muted">{{ cita.fechaStr }}</small>
-                      </td>
-                      <td><span class="text-secondary fw-semibold">{{ cita.folio }}</span></td>
-                      
-                      <td>
-                        @if (cita.ciudadano && cita.ciudadano.trim() !== '') {
-                          <span class="d-block fw-semibold text-dark">{{ cita.ciudadano }}</span>
-                        }
-                        
-                        @if (cita.curp && !cita.curp.includes('ENM')) {
-                          <span class="badge bg-light text-dark border mt-1" style="font-size: 0.75rem;">
-                            <i class="fa-regular fa-id-card text-muted me-1"></i> {{ cita.curp }}
-                          </span>
-                        }
-                      </td>
-
-                      <td class="text-secondary">
-                        {{ cita.tramite }}<br>
-                        @if (usuarioSesion?.rol === 'Super Administrador' && cita.ip) {
-                            <small class="text-danger fw-bold d-block mt-1" style="font-size: 0.75rem;">
-                              <i class="fa-solid fa-desktop me-1"></i> 
-                              {{ cita.ip === '::1' || cita.ip === '127.0.0.1' ? 'Localhost' : cita.ip }} | {{ cita.navegador }} | {{ cita.so }}
-                            </small>
-                        }
-                      </td>
-                      <td>
-                        <span class="badge" 
-                              [class.bg-primary]="cita.estatus === 'PROGRAMADA'"
-                              [class.bg-info]="cita.estatus === 'CONFIRMADA'"
-                              [class.bg-success]="cita.estatus === 'ATENDIDA'"
-                              [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
-                              [class.bg-secondary]="cita.estatus === 'REPROGRAMADA'"
-                              [class.bg-danger]="cita.estatus === 'CANCELADA'">
-                          {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus }}
-                        </span>
-                      </td>
-                      <td class="text-center">
-                        @if (cita.estatus === 'PROGRAMADA' || cita.estatus === 'REPROGRAMADA') {
-                          <button class="btn btn-sm btn-primary me-2 fw-semibold" title="Marcar Confirmada"
-                                  (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
-                            <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar
-                          </button>
-                        } @else if (cita.estatus === 'CONFIRMADA') {
-                          <button class="btn btn-sm btn-success me-2 fw-semibold" title="Marcar Atendida"
-                                  (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como ATENDIDA?', () => actualizarEstatusCita(cita.folio, 'ATENDIDA'))">
-                            <i class="fa-solid fa-check me-1"></i> Atendida
-                          </button>
-                          
-                          <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
-                                  (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
-                            <i class="fa-solid fa-xmark me-1"></i> Falta
-                          </button>
-                        } @else {
-                          <span class="text-muted" style="font-size: 0.75rem;">Finalizada</span>
-                        }
-                      </td>
-                    </tr>
-                  }
-                  @if (citasDia.length === 0) {
-                    <tr>
-                      <td colspan="6" class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-folder-open fs-2 mb-2"></i><br>
-                        No hay citas encontradas para los filtros seleccionados.
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-    <!-- PANTALLA 10: BITÁCORA DE AUDITORÍA -->
-    @if (pasoActual === 10) {
-      <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-clipboard-list me-2"></i>Bitácora de Movimientos</h4>
-          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
-        </div>
-
-        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
-          <div class="card-body p-4">
-            
-            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
-              <div class="col-md-3 mb-3 mb-md-0">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
-                <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusquedaBitacora()">
-              </div>
-              <div class="col-md-9">
-                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, EMPLEADO, ACCIÓN)</label>
-                <div class="input-group">
-                  <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
-                  <button class="btn btn-success fw-bold" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaBitacora', 'Bitácora de Auditoría de Sistemas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
-                  @if(textoBusquedaBitacora) {
-                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
-                  }
-                </div>
-                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
-              </div>
-            </div>
-
-            @if (cargandoBitacora) {
-              <div class="text-center my-5 text-success">
-                <div class="spinner-border" role="status"></div>
-                <p class="mt-2 fw-bold small">Cargando registros...</p>
-              </div>
-            } @else {
-              <div class="table-responsive">
-                <table id="tablaBitacora" class="table table-bordered table-hover align-middle" style="font-size: 0.8rem;">
-                  <thead style="background-color: #fdfdfd;">
-                    <tr>
-                      <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
-                      <th class="py-3" style="color: #055A1C;">Empleado</th>
-                      <th class="py-3 text-center" style="color: #055A1C;">Acción</th>
-                      <th class="py-3" style="color: #055A1C;">Folio / ID</th>
-                      <th class="py-3" style="color: #055A1C;">Valor Anterior</th>
-                      <th class="py-3" style="color: #055A1C;">Valor Nuevo</th>
-                      <th class="py-3 text-center" style="color: #055A1C;">Restaurar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (log of bitacoraLogs; track log.idBitacora) {
-                      <tr>
-                        <td>
-  <span class="d-block fw-bold text-dark">{{ log.fecha | date:'HH:mm' }}</span>
-  <small class="text-muted">{{ log.fecha | date:'dd/MM/yyyy' }}</small>
-</td>
-                        <td class="fw-semibold text-dark">{{ log.empleado }}</td>
-                        <td class="text-center">
-                          <span class="badge" 
-                                [class.bg-info]="log.accion === 'UPDATE'"
-                                [class.bg-success]="log.accion === 'INSERT'"
-                                [class.bg-danger]="log.accion.includes('RESTAURADO')"
-                                [style.background-color]="log.accion === 'UPDATE' ? '#055A1C' : ''">
-                            {{ log.accion }}
-                          </span>
-                        </td>
-                        <td><span class="font-monospace fw-bold" style="color: #055A1C;">{{ log.registroId }}</span></td>
-                        <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
-                        <td class="fw-bold" style="color: #055A1C;">{{ log.valorNuevo || 'N/A' }}</td>
-                        <td class="text-center">
-                          @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
-                            <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;"
-                                    (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
-                              <i class="fa-solid fa-rotate-left me-1"></i> Deshacer
-                            </button>
-                          } @else {
-                            <i class="fa-solid fa-minus text-muted"></i>
-                          }
-                        </td>
-                      </tr>
-                    }
-                    @if (bitacoraLogs.length === 0) {
-                      <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">No hay movimientos encontrados para su búsqueda.</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-
-          </div>
-        </div>
-      </div>
-    }
 
   <!-- PANTALLA 11: CONFIGURACIÓN SUPER ADMIN (USUARIOS Y TRÁMITES) -->
     @if (pasoActual === 11) {
@@ -1202,6 +890,7 @@
         </div>
       </div>
     }
+  
 
     <!-- MODAL BANDEJA DE NOTIFICACIONES (ESTILO APP MENSAJES PARA EMPLEADOS) -->
     @if (mostrarBandeja) {
@@ -1248,38 +937,7 @@
       </div>
     }
 
-    <!-- MODAL DE CAMBIO DE CONTRASEÑA FORZOSO (PRIMER LOGIN) -->
-    @if (mostrarForzarPassword) {
-      <div class="modal-backdrop fade show" style="z-index: 1070; background-color: rgba(5, 90, 28, 0.9);"></div>
-      
-      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1075; margin-top: 5vh;">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
-          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-body p-5">
-              <div class="mb-4">
-                  <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #055A1C;"></i>
-              </div>
-              <h4 class="fw-bold text-dark mb-2">Seguridad de la Cuenta</h4>
-              <p class="text-secondary fs-6 mb-4">Para proteger su cuenta, es obligatorio crear una contraseña personal nueva en su primer inicio de sesión.</p>
-
-              <!-- NUEVO CUADRO DE REQUISITOS DE CONTRASEÑA -->
-              <div class="alert alert-info text-start mb-4" style="font-size: 0.75rem;">
-                 <strong>Requisitos obligatorios:</strong><br>
-                 • Mínimo 6 caracteres en total.<br>
-                 • Al menos una letra mayúscula.<br>
-                 • Al menos un número.<br>
-                 • Al menos un carácter especial (ej. @, $, !, %, *, ?, &).
-              </div>
-
-              <input type="password" class="form-control mb-3 text-center" [(ngModel)]="nuevaPassword" placeholder="Nueva Contraseña">
-              <input type="password" class="form-control mb-4 text-center" [(ngModel)]="confirmarPassword" placeholder="Confirmar Contraseña">
-
-              <button class="btn btn-success rounded-pill px-5 py-2 fw-bold w-100 shadow-sm" style="font-size: 0.9rem;" (click)="guardarNuevaPasswordForzada()">Guardar e Iniciar Sesión</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
+    
     <!-- MODAL DE ALERTAS (AHORA SIEMPRE AL FRENTE z-index: 9999) -->
     @if (mostrarAlerta) {
       <div class="modal-backdrop fade show" style="z-index: 9990; background-color: rgba(0,0,0,0.6);"></div>
@@ -1417,7 +1075,8 @@
         </div>
       </div>
     }
-
+  }
+  <router-outlet></router-outlet>
   </main>
 
   <!-- PIE DE PÁGINA INSTITUCIONAL CON LOGOS OFICIALES -->
@@ -1472,9 +1131,9 @@
     <nav class="px-3 py-3 slpColors-bg-g1 text-white">
       <div class="container d-flex flex-wrap align-items-center justify-content-between" style="font-size: 0.85rem;">
           <div>v4.1.9 &copy; 2026 Todos los derechos reservados | <a href="#" class="text-white text-decoration-none">Aviso de Privacidad</a> | <a href="#" class="text-white text-decoration-none">Contactar al Web Master</a></div>
-          <button class="btn btn-link p-0 text-white text-decoration-none ms-3" (click)="irALogin()">
-            Acceso Citas <i class="fa-solid fa-chevron-right ms-1"></i>
-          </button>
+         <button class="btn btn-link p-0 text-white text-decoration-none ms-3" routerLink="/login">
+  Acceso Citas <i class="fa-solid fa-chevron-right ms-1"></i>
+</button>
       </div>
     </nav>
   </footer>

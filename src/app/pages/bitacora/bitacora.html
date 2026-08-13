@@ -1,0 +1,94 @@
+
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-clipboard-list me-2"></i>Bitácora de Movimientos</h4>
+          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+          <div class="card-body p-4">
+            
+            <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
+              <div class="col-md-3 mb-3 mb-md-0">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusquedaBitacora()">
+              </div>
+              <div class="col-md-9">
+                <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, EMPLEADO, ACCIÓN)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
+                  <button class="btn btn-success fw-bold" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaBitacora', 'Bitácora de Auditoría de Sistemas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                  @if(textoBusquedaBitacora) {
+                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
+                  }
+                </div>
+                <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
+              </div>
+            </div>
+
+            @if (cargandoBitacora) {
+              <div class="text-center my-5 text-success">
+                <div class="spinner-border" role="status"></div>
+                <p class="mt-2 fw-bold small">Cargando registros...</p>
+              </div>
+            } @else {
+              <div class="table-responsive">
+                <table id="tablaBitacora" class="table table-bordered table-hover align-middle" style="font-size: 0.8rem;">
+                  <thead style="background-color: #fdfdfd;">
+                    <tr>
+                      <th class="py-3" style="color: #055A1C;">Fecha / Hora</th>
+                      <th class="py-3" style="color: #055A1C;">Empleado</th>
+                      <th class="py-3 text-center" style="color: #055A1C;">Acción</th>
+                      <th class="py-3" style="color: #055A1C;">Folio / ID</th>
+                      <th class="py-3" style="color: #055A1C;">Valor Anterior</th>
+                      <th class="py-3" style="color: #055A1C;">Valor Nuevo</th>
+                      <th class="py-3 text-center" style="color: #055A1C;">Restaurar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (log of bitacoraLogs; track log.idBitacora) {
+                      <tr>
+                        <td>
+  <span class="d-block fw-bold text-dark">{{ log.fecha | date:'HH:mm' }}</span>
+  <small class="text-muted">{{ log.fecha | date:'dd/MM/yyyy' }}</small>
+</td>
+                        <td class="fw-semibold text-dark">{{ log.empleado }}</td>
+                        <td class="text-center">
+                          <span class="badge" 
+                                [class.bg-info]="log.accion === 'UPDATE'"
+                                [class.bg-success]="log.accion === 'INSERT'"
+                                [class.bg-danger]="log.accion.includes('RESTAURADO')"
+                                [style.background-color]="log.accion === 'UPDATE' ? '#055A1C' : ''">
+                            {{ log.accion }}
+                          </span>
+                        </td>
+                        <td><span class="font-monospace fw-bold" style="color: #055A1C;">{{ log.registroId }}</span></td>
+                        <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
+                        <td class="fw-bold" style="color: #055A1C;">{{ log.valorNuevo || 'N/A' }}</td>
+                        <td class="text-center">
+                          @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
+                            <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;"
+                                    (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
+                              <i class="fa-solid fa-rotate-left me-1"></i> Deshacer
+                            </button>
+                          } @else {
+                            <i class="fa-solid fa-minus text-muted"></i>
+                          }
+                        </td>
+                      </tr>
+                    }
+                    @if (bitacoraLogs.length === 0) {
+                      <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No hay movimientos encontrados para su búsqueda.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+          </div>
+        </div>
+      </div>
+    

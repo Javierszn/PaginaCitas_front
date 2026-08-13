@@ -1,0 +1,82 @@
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-lg border-0 rounded-4 p-5 mt-4 bg-white">
+      <div class="text-center mb-4">
+        <div class="text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 70px; height: 70px; font-size: 1.8rem; background-color: #055A1C;">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h4 class="fw-bold text-dark">Acceso Autorizado</h4>
+        <p class="text-secondary" style="font-size: 0.8rem;">Portal exclusivo para personal administrativo y de ventanilla.</p>
+      </div>
+      
+      <form (ngSubmit)="iniciarSesion()">
+        <div class="mb-3">
+          <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">USUARIO</label>
+          <div class="input-group">
+            <span class="input-group-text border-end-0" style="background-color: #f8f8f8;"><i class="fa-solid fa-user text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" style="background-color: #f8f8f8;" [(ngModel)]="credenciales.username" name="username" placeholder="Ingrese su usuario" required>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">CONTRASEÑA</label>
+          <div class="input-group">
+            <span class="input-group-text border-end-0" style="background-color: #f8f8f8;"><i class="fa-solid fa-lock text-muted"></i></span>
+            <input type="password" class="form-control border-start-0" style="background-color: #f8f8f8;" [(ngModel)]="credenciales.password" name="password" placeholder="••••••••" required>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm" style="font-size: 0.9rem;" [disabled]="cargandoLogin || !credenciales.username || !credenciales.password">
+          @if (cargandoLogin) {
+            <span class="spinner-border spinner-border-sm me-2"></span> Verificando...
+          } @else {
+            INICIAR SESIÓN <i class="fa-solid fa-right-to-bracket ms-2"></i>
+          }
+        </button>
+      </form>
+
+      <div class="text-center mt-4">
+        <button class="btn btn-link text-secondary text-decoration-none d-block w-100 mb-2" style="font-size: 0.8rem;" onclick="alert('Módulo de recuperación en mantenimiento temporal.')">
+          ¿Olvidó su contraseña o necesita ayuda?
+        </button>
+        
+        <!-- Aquí usamos el Router de Angular en lugar de regresarPaso1() -->
+        <a routerLink="/" class="btn btn-link text-secondary text-decoration-none" style="font-size: 0.8rem;">
+          <i class="fa-solid fa-arrow-left me-1"></i> Regresar al Portal Ciudadano
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- MODAL DE CAMBIO DE CONTRASEÑA FORZOSO (PRIMER LOGIN) -->
+    @if (mostrarForzarPassword) {
+      <div class="modal-backdrop fade show" style="z-index: 1070; background-color: rgba(5, 90, 28, 0.9);"></div>
+      
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1075; margin-top: 5vh;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-body p-5">
+              <div class="mb-4">
+                  <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #055A1C;"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-2">Seguridad de la Cuenta</h4>
+              <p class="text-secondary fs-6 mb-4">Para proteger su cuenta, es obligatorio crear una contraseña personal nueva en su primer inicio de sesión.</p>
+
+              <!-- NUEVO CUADRO DE REQUISITOS DE CONTRASEÑA -->
+              <div class="alert alert-info text-start mb-4" style="font-size: 0.75rem;">
+                 <strong>Requisitos obligatorios:</strong><br>
+                 • Mínimo 6 caracteres en total.<br>
+                 • Al menos una letra mayúscula.<br>
+                 • Al menos un número.<br>
+                 • Al menos un carácter especial (ej. @, $, !, %, *, ?, &).
+              </div>
+
+              <input type="password" class="form-control mb-3 text-center" [(ngModel)]="nuevaPassword" placeholder="Nueva Contraseña">
+              <input type="password" class="form-control mb-4 text-center" [(ngModel)]="confirmarPassword" placeholder="Confirmar Contraseña">
+
+              <button class="btn btn-success rounded-pill px-5 py-2 fw-bold w-100 shadow-sm" style="font-size: 0.9rem;" (click)="guardarNuevaPasswordForzada()">Guardar e Iniciar Sesión</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
