@@ -30,12 +30,10 @@ export class App implements OnInit {
   diasMes: any[] = [];
   diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   
- 
   diasBloqueados: string[] = [];
   diasInhabilesAdmin: any[] = [];
   nuevoDiaInhabil: any = { fecha: '', motivo: '' };
 
-  
   widgetIdAgendar: any;
   widgetIdBuscar: any;
 
@@ -52,7 +50,6 @@ export class App implements OnInit {
   folioReagendar: string = '';
   procesandoCita: boolean = false; 
 
-  
   evitarBucleCitas: boolean = false;
 
   mostrarAlerta: boolean = false;
@@ -77,6 +74,10 @@ export class App implements OnInit {
   fechaDashboard: string = new Date().toISOString().split('T')[0];
   textoBusquedaDashboard: string = '';
   
+  // VARIABLES DE PAGINACIÓN CITAS AGREGADAS
+  paginaActualCitas: number = 1;
+  totalPaginasCitas: number = 1;
+  
   mostrarForzarPassword: boolean = false;
   nuevaPassword = '';
   confirmarPassword = '';
@@ -85,6 +86,10 @@ export class App implements OnInit {
   cargandoBitacora: boolean = false;
   fechaBitacora: string = ''; 
   textoBusquedaBitacora: string = '';
+
+  // VARIABLES DE PAGINACIÓN BITÁCORA AGREGADAS
+  paginaActualBitacora: number = 1;
+  totalPaginasBitacora: number = 1;
 
   usuariosSistema: any[] = [];
   categoriasAdmin: any[] = []; 
@@ -120,7 +125,6 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.cargarSedes();
-    //this.cargarUsuariosSoporte();
     this.cargarReglasCalendario();
 
     const sessionUser = sessionStorage.getItem('usuarioRC');
@@ -130,11 +134,11 @@ export class App implements OnInit {
       this.pasoActual = parseInt(sessionPaso, 10);
 
       if (this.pasoActual === 9) { 
-        this.cargarCitasDashboard(); 
+        this.cargarCitasDashboard(1); 
         if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin();
         else this.cargarMisPeticiones(); 
       }
-      if (this.pasoActual === 10) this.cargarBitacora();
+      if (this.pasoActual === 10) this.cargarBitacora(1);
       if (this.pasoActual === 11) { this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin(); }
       if (this.pasoActual === 12) this.cargarPeticionesAdmin();
     } else {
@@ -496,8 +500,6 @@ export class App implements OnInit {
         this.cargandoLogin = false; 
         this.usuarioSesion = res; 
 
-        
-
         if (this.usuarioSesion.requiereCambioPassword) { 
           this.mostrarForzarPassword = true; 
           this.cdr.detectChanges(); 
@@ -515,7 +517,7 @@ export class App implements OnInit {
 
   guardarNuevaPasswordForzada() { const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; if (!passwordRegex.test(this.nuevaPassword)) { this.abrirAlerta('Contraseña Débil', 'La contraseña no cumple con los requisitos mínimos de seguridad.', 'warning'); return; } if (this.nuevaPassword !== this.confirmarPassword) { this.abrirAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); return; } this.http.put(`${this.apiUrl}/Usuarios/${this.usuarioSesion.idUsuario}/password`, { password: this.nuevaPassword }).subscribe({ next: (res: any) => { this.mostrarForzarPassword = false; this.abrirAlerta('Éxito', 'Contraseña actualizada.', 'success'); this.usuarioSesion.requiereCambioPassword = false; this.procesarAccesoCorrecto(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
   
-  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
+  procesarAccesoCorrecto() { sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); sessionStorage.setItem('pasoRC', '9'); this.pasoActual = 9; this.cargarCitasDashboard(1); if (this.usuarioSesion?.rol === 'Super Administrador') { this.cargarPeticionesAdmin(); } else { this.cargarMisPeticiones(); } history.pushState({ paso: 9 }, '', ''); this.cdr.detectChanges(); }
   
   cerrarSesion() { 
     if(this.usuarioSesion?.idAcceso) { 
@@ -528,7 +530,6 @@ export class App implements OnInit {
       this.limpiarRastrosDeSesion();
     }
   }
-
   
   limpiarRastrosDeSesion() {
     this.usuarioSesion = null; 
@@ -537,57 +538,101 @@ export class App implements OnInit {
     localStorage.removeItem('token'); 
     this.regresarPaso1(); 
   }
-  cargarCitasDashboard() { 
-  
-  if (this.evitarBucleCitas) return;
-  this.evitarBucleCitas = true;
 
-  let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}`; 
-  if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { 
-    url += `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; 
-  } else { 
-    url += `?fecha=${this.fechaDashboard}`; 
-  } 
-  
-  this.http.get(url).subscribe({ 
-    next: (res: any) => { 
-     
-      const data = res; 
-      const tramites = [...new Set(res.map((c: any) => c.tramite))] as string[];
-      
-     
-      this.citasDiaOriginales = data; 
-      this.tramitesUnicos = tramites; 
-      this.aplicarFiltroTramite(); 
+  // MÉTODO CARGAR CITAS REFACTORIZADO
+  cargarCitasDashboard(paginaSolicitada: number = 1) { 
+    if (this.evitarBucleCitas) return;
+    this.evitarBucleCitas = true;
 
-      
-      setTimeout(() => {
-        this.evitarBucleCitas = false; 
-        this.cdr.detectChanges(); 
-      }, 50);
-    }, 
-    error: () => {
-      this.evitarBucleCitas = false; 
-      this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error');
+    // Agregamos la paginación a la URL
+    let url = `${this.apiUrl}/Citas/PorSede/${this.usuarioSesion.idSede}?pagina=${paginaSolicitada}&registrosPorPagina=50`; 
+    if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { 
+      url += `&busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`; 
+    } else { 
+      url += `&fecha=${this.fechaDashboard}`; 
     } 
-  }); 
-}
-  aplicarFiltroTramite() { if (this.filtroTramite) { this.citasDia = this.citasDiaOriginales.filter(c => c.tramite === this.filtroTramite); } else { this.citasDia = [...this.citasDiaOriginales]; } }
-  limpiarBusqueda() { this.textoBusquedaDashboard = ''; this.filtroTramite = ''; this.cargarCitasDashboard(); }
-  actualizarEstatusCita(folio: string, nuevoEstatus: string) { this.http.put(`${this.apiUrl}/Citas/${folio}/actualizarEstatus`, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({ next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.cargarCitasDashboard(); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
+    
+    this.http.get(url).subscribe({ 
+      next: (res: any) => { 
+        // AHORA ABRIMOS LA CAJA CON ".datos"
+        const data = res.datos || []; 
+        
+        // Guardamos los metadatos para futura navegación de botones
+        this.paginaActualCitas = res.paginaActual || 1;
+        this.totalPaginasCitas = res.totalPaginas || 1;
 
-  irABitacora() { this.pasoActual = 10; sessionStorage.setItem('pasoRC', '10'); this.cargarBitacora(); history.pushState({ paso: 10 }, '', ''); this.cdr.detectChanges(); }
-  regresarADashboard() { this.pasoActual = 9; sessionStorage.setItem('pasoRC', '9'); history.pushState({ paso: 9 }, '', ''); this.cargarCitasDashboard(); if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin(); else this.cargarMisPeticiones(); this.cdr.detectChanges(); }
-  cargarBitacora() { this.cargandoBitacora = true; let url = this.apiUrl + '/Bitacora'; const params = []; if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) { params.push(`busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`); } else if (this.fechaBitacora) { params.push(`fecha=${this.fechaBitacora}`); } if (params.length > 0) { url += '?' + params.join('&'); } this.http.get(url).subscribe({ next: (res: any) => { this.bitacoraLogs = res; this.cargandoBitacora = false; this.cdr.detectChanges(); }, error: () => { this.abrirAlerta('Error', 'No se pudo cargar la bitácora.', 'error'); this.cargandoBitacora = false; this.cdr.detectChanges(); } }); }
-  limpiarBusquedaBitacora() { this.textoBusquedaBitacora = ''; this.cargarBitacora(); }
- deshacerAccion(idBitacora: number) {
-  this.abrirConfirmacion('¿Deshacer?', '¿Revertir este cambio?', () => {
-    this.http.post(`${this.apiUrl}/Bitacora/Deshacer/${idBitacora}`, {}).subscribe({
-      next: (res: any) => { this.abrirAlerta('Restaurado', res.mensaje, 'success'); this.cargarBitacora(); },
-      error: (err) => { this.abrirAlerta('Error', err.error.mensaje || 'Error al deshacer.', 'error'); }
+        const tramites = [...new Set(data.map((c: any) => c.tramite))] as string[];
+        
+        this.citasDiaOriginales = data; 
+        this.tramitesUnicos = tramites; 
+        this.aplicarFiltroTramite(); 
+
+        setTimeout(() => {
+          this.evitarBucleCitas = false; 
+          this.cdr.detectChanges(); 
+        }, 50);
+      }, 
+      error: () => {
+        this.evitarBucleCitas = false; 
+        this.abrirAlerta('Error', 'No se pudieron cargar las citas.', 'error');
+      } 
+    }); 
+  }
+
+  aplicarFiltroTramite() { if (this.filtroTramite) { this.citasDia = this.citasDiaOriginales.filter(c => c.tramite === this.filtroTramite); } else { this.citasDia = [...this.citasDiaOriginales]; } }
+  limpiarBusqueda() { this.textoBusquedaDashboard = ''; this.filtroTramite = ''; this.cargarCitasDashboard(1); }
+  actualizarEstatusCita(folio: string, nuevoEstatus: string) { this.http.put(`${this.apiUrl}/Citas/${folio}/actualizarEstatus`, { nuevoEstatus: nuevoEstatus, idUsuarioInterno: this.usuarioSesion.idUsuario }).subscribe({ next: (res: any) => { this.abrirAlerta('Éxito', res.mensaje, 'success'); this.cargarCitasDashboard(this.paginaActualCitas); }, error: () => this.abrirAlerta('Error', 'No se pudo actualizar.', 'error') }); }
+
+  irABitacora() { this.pasoActual = 10; sessionStorage.setItem('pasoRC', '10'); this.cargarBitacora(1); history.pushState({ paso: 10 }, '', ''); this.cdr.detectChanges(); }
+  regresarADashboard() { this.pasoActual = 9; sessionStorage.setItem('pasoRC', '9'); history.pushState({ paso: 9 }, '', ''); this.cargarCitasDashboard(this.paginaActualCitas); if (this.usuarioSesion?.rol === 'Super Administrador') this.cargarPeticionesAdmin(); else this.cargarMisPeticiones(); this.cdr.detectChanges(); }
+  
+  // MÉTODO CARGAR BITACORA REFACTORIZADO
+  cargarBitacora(paginaSolicitada: number = 1) { 
+    this.cargandoBitacora = true; 
+    
+    // Agregamos la paginación a la URL
+    let url = `${this.apiUrl}/Bitacora?pagina=${paginaSolicitada}&registrosPorPagina=50`; 
+    const params = []; 
+    
+    if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) { 
+      params.push(`busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`); 
+    } else if (this.fechaBitacora) { 
+      params.push(`fecha=${this.fechaBitacora}`); 
+    } 
+    
+    if (params.length > 0) { 
+      url += '&' + params.join('&'); 
+    } 
+    
+    this.http.get(url).subscribe({ 
+      next: (res: any) => { 
+        // AHORA ABRIMOS LA CAJA CON ".datos"
+        this.bitacoraLogs = res.datos || []; 
+        
+        // Guardamos los metadatos
+        this.paginaActualBitacora = res.paginaActual || 1;
+        this.totalPaginasBitacora = res.totalPaginas || 1;
+
+        this.cargandoBitacora = false; 
+        this.cdr.detectChanges(); 
+      }, 
+      error: () => { 
+        this.abrirAlerta('Error', 'No se pudo cargar la bitácora.', 'error'); 
+        this.cargandoBitacora = false; 
+        this.cdr.detectChanges(); 
+      } 
+    }); 
+  }
+
+  limpiarBusquedaBitacora() { this.textoBusquedaBitacora = ''; this.cargarBitacora(1); }
+  deshacerAccion(idBitacora: number) {
+    this.abrirConfirmacion('¿Deshacer?', '¿Revertir este cambio?', () => {
+      this.http.post(`${this.apiUrl}/Bitacora/Deshacer/${idBitacora}`, {}).subscribe({
+        next: (res: any) => { this.abrirAlerta('Restaurado', res.mensaje, 'success'); this.cargarBitacora(this.paginaActualBitacora); },
+        error: (err) => { this.abrirAlerta('Error', err.error.mensaje || 'Error al deshacer.', 'error'); }
+      });
     });
-  });
-}
+  }
 
   cargarUsuariosSoporte() { this.http.get(this.apiUrl + '/Usuarios/Soporte').subscribe({ next: (res: any) => { this.usuariosSoporte = res; this.cdr.detectChanges(); } }); }
   cargarMisPeticiones() { if (!this.usuarioSesion) return; this.http.get(this.apiUrl + '/Peticiones/MisPeticiones/' + this.usuarioSesion.username).subscribe({ next: (res: any) => { this.misPeticiones = res; this.notificacionesNuevas = this.misPeticiones.filter((p: any) => p.estatus === 'RESUELTA' && p.leido === false).length; this.cdr.detectChanges(); } }); }
