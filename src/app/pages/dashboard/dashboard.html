@@ -159,4 +159,101 @@
           </div>
         </div>
       </div>
-    
+    <!-- MODAL BANDEJA DE NOTIFICACIONES (ESTILO APP MENSAJES PARA EMPLEADOS) -->
+    @if (mostrarBandeja) {
+      <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.5);"></div>
+      <div class="modal d-block" tabindex="-1" style="z-index: 1065; margin-top: 5vh;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content rounded-4 border-0 shadow-lg">
+            
+            <div class="modal-header bg-light border-0 px-4 py-3">
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-bell me-2" style="color: #055A1C;"></i>Bandeja de Notificaciones</h5>
+              <button type="button" class="btn-close" (click)="cerrarBandeja()"></button>
+            </div>
+            
+            <div class="modal-body p-4 text-start" style="max-height: 60vh; overflow-y: auto; background-color: #ffffff;">
+              @for (mp of misPeticiones; track mp.idPeticion) {
+                <div class="card mb-3 border-0 shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #055A1C !important;">
+                  <div class="card-body">
+                     <div class="d-flex justify-content-between mb-2">
+                       <h6 class="fw-bold text-dark m-0">{{ mp.tipo }}</h6>
+                       <small class="text-muted" style="font-size: 0.75rem;">{{ mp.fecha | date:'short' }}</small>
+                     </div>
+                     <p class="text-secondary small mb-3"><strong>Tú:</strong> {{ mp.descripcion }}</p>
+                     
+                     @if (mp.estatus === 'RESUELTA') {
+                       <div class="p-3 rounded-3" style="background-color: #D9E8D5;">
+                         <p class="text-dark small fw-bold mb-0"><i class="fa-solid fa-reply me-2" style="color: #055A1C;"></i>Sistemas: <span class="fw-normal">{{ mp.respuesta }}</span></p>
+                       </div>
+                     } @else {
+                       <span class="badge bg-secondary"><i class="fa-solid fa-clock me-1"></i> En revisión...</span>
+                     }
+                  </div>
+                </div>
+              }
+              @if (misPeticiones.length === 0) {
+                <div class="text-center my-5 text-muted">
+                  <i class="fa-solid fa-inbox fs-1 mb-3"></i>
+                  <p>No tienes notificaciones ni peticiones recientes.</p>
+                </div>
+              }
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    }
+ <!-- MODAL DE CREACIÓN DE PETICIONES DE SOPORTE -->
+    @if (mostrarModalPeticion) {
+      <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
+      
+      <div class="modal d-block" tabindex="-1" style="z-index: 1055; margin-top: 10vh;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
+            
+            <div class="modal-header bg-light border-0 px-4 py-3">
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-headset me-2" style="color: #055A1C;"></i>Centro de Soporte</h5>
+              <button type="button" class="btn-close" (click)="cerrarModalPeticion()"></button>
+            </div>
+            
+            <div class="modal-body p-4 text-start">
+              <p class="text-secondary small mb-4">Complete este formulario. Un Administrador del sistema revisará su caso y se pondrá en contacto con usted o realizará los ajustes en el sistema.</p>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold small text-secondary">SU USUARIO O NOMBRE COMPLETO</label>
+                <!-- DESDE EL LOGIN ELIGE DEL MENÚ, SI YA INICIÓ SESIÓN SE PONE SOLO -->
+                @if (peticionDesdeLogin) {
+                  <select class="form-select bg-light" [(ngModel)]="nuevaPeticion.username">
+                    <option value="" disabled selected>Elija su cuenta...</option>
+                    @for (u of usuariosSoporte; track u.username) {
+                      <option [value]="u.username">{{ u.nombreCompleto }} ({{ u.username }})</option>
+                    }
+                  </select>
+                } @else {
+                  <input type="text" class="form-control" [value]="usuarioSesion?.nombreCompleto + ' (' + usuarioSesion?.username + ')'" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                }
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold small text-secondary">TIPO DE AYUDA</label>
+                <select class="form-select bg-light" [(ngModel)]="nuevaPeticion.tipo">
+                  <option value="RECUPERAR CONTRASEÑA">Olvidé mi contraseña</option>
+                  <option value="SOPORTE TÉCNICO">Soporte Técnico o Bug</option>
+                  <option value="OTRA PETICIÓN">Otras Peticiones</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold small text-secondary">EXPLIQUE EL PROBLEMA</label>
+                <textarea class="form-control bg-light" rows="4" [(ngModel)]="nuevaPeticion.descripcion" placeholder="Describa a detalle qué es lo que necesita..."></textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer border-0 px-4 py-3 bg-light">
+              <button class="btn btn-outline-secondary rounded-pill px-4 fw-bold" (click)="cerrarModalPeticion()">Cancelar</button>
+              <button class="btn btn-success rounded-pill px-4 fw-bold" (click)="enviarPeticion()">Enviar Solicitud <i class="fa-solid fa-paper-plane ms-1"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }

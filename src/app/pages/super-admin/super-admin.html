@@ -1,1 +1,287 @@
-<p>super-admin works!</p>
+
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold" style="color: #E60064;">Configuración Global (Super Admin)</h4>
+          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+        </div>
+
+        <div class="row">
+          
+          <!-- GESTIÓN DE USUARIOS -->
+          <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users-gear me-2" style="color: #055A1C;"></i>Gestión de Personal</h6>
+              </div>
+              <div class="card-body p-4">
+                <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
+                  <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.85rem;">NUEVO EMPLEADO</h6>
+                  <div class="col-md-2">
+                    <input type="text" class="form-control" placeholder="Nombre Completo" [(ngModel)]="nuevoUsuario.nombreCompleto">
+                  </div>
+                  <div class="col-md-2">
+                    <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="nuevoUsuario.username">
+                  </div>
+                  <div class="col-md-2">
+                    <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoUsuario.password">
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-select" [(ngModel)]="nuevoUsuario.idRol">
+                      <option [value]="2">Ventanilla</option>
+                      <option [value]="1">Administrador</option>
+                      <option [value]="3">Super Admin</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-select" [(ngModel)]="nuevoUsuario.idSede">
+                      @for (s of sedes; track s.idSede) {
+                        <option [value]="s.idSede">{{ s.nombre }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button class="btn btn-success w-100 fw-bold" (click)="crearUsuario()">Crear</button>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                    <thead style="background-color: #fdfdfd;">
+                      <tr>
+                        <th class="py-3 text-secondary">Nombre</th>
+                        <th class="py-3 text-secondary">Usuario</th>
+                        <th class="py-3 text-secondary">Sucursal</th>
+                        <th class="py-3 text-secondary">Rol</th>
+                        <th class="py-3 text-secondary text-center">Estado</th>
+                        <th class="py-3 text-secondary text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (usr of usuariosSistema; track usr.idUsuario) {
+                        <tr>
+                          <td class="fw-semibold text-dark">{{ usr.nombreCompleto }}</td>
+                          <td>{{ usr.username }}</td>
+                          <td>
+                            <select class="form-select form-select-sm" style="max-width: 250px;" [(ngModel)]="usr.idSede" (ngModelChange)="cambiarSedeUsuario(usr)">
+                              @for (s of sedes; track s.idSede) {
+                                <option [ngValue]="s.idSede">{{ s.nombre }}</option>
+                              }
+                            </select>
+                          </td>
+                          <td>{{ usr.rol }}</td>
+                          <td class="text-center">
+                            @if(usr.activo) { <span class="badge bg-success">Activo</span> }
+                            @else { <span class="badge" style="background-color: #E60064;">Bloqueado</span> }
+                          </td>
+                          <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary me-2" title="Cambiar Contraseña" (click)="cambiarPasswordUsuario(usr.idUsuario)">
+                              <i class="fa-solid fa-key"></i>
+                            </button>
+                            <button class="btn btn-sm" [class.btn-outline-danger]="usr.activo" [class.btn-outline-success]="!usr.activo" title="Activar/Desactivar" (click)="toggleEstadoUsuario(usr.idUsuario)">
+                              <i class="fa-solid" [class.fa-ban]="usr.activo" [class.fa-check]="!usr.activo"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONFIGURACIÓN DE TRÁMITES (CON RANGOS POR TRÁMITE) -->
+          <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sliders me-2" style="color: #055A1C;"></i>Configuración de Trámites y Tiempos</h6>
+                <p class="text-muted small mb-0 mt-1">Los minutos, costos e intervalos se aplicarán a todos los servicios de la categoría.</p>
+              </div>
+              <div class="card-body p-4">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                    <thead style="background-color: #fdfdfd;">
+                      <tr>
+                        <th class="py-3 text-secondary">Categoría</th>
+                        <th class="py-3 text-secondary text-center">Intervalo de Fechas Habilitado</th>
+                        <th class="py-3 text-secondary">Precio ($)</th>
+                        <th class="py-3 text-secondary">Duración</th>
+                        <th class="py-3 text-secondary text-center">Límite Diario</th>
+                        <th class="py-3 text-secondary text-center">Activo</th>
+                        <th class="py-3 text-secondary text-center">Guardar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (cat of categoriasAdmin; track cat.idCategoria) {
+                        <tr>
+                          <td class="fw-semibold text-dark">{{ cat.nombreCategoria }}</td>
+                          <td>
+                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                <input type="date" class="form-control form-control-sm" [(ngModel)]="cat.fechaInicio" title="Fecha Inicio" style="max-width: 130px;">
+                                <span class="text-muted">al</span>
+                                <input type="date" class="form-control form-control-sm" [(ngModel)]="cat.fechaFin" title="Fecha Fin" style="max-width: 130px;">
+                            </div>
+                          </td>
+                          <td><input type="number" class="form-control form-control-sm" [(ngModel)]="cat.costo" style="width: 80px;"></td>
+                          <td>
+                            <select class="form-select form-select-sm" [(ngModel)]="cat.duracionMinutos" style="width: 90px;">
+                              <option [value]="15">15 mins</option><option [value]="30">30 mins</option>
+                              <option [value]="45">45 mins</option><option [value]="60">60 mins</option>
+                            </select>
+                          </td>
+                          <td><input type="number" class="form-control form-control-sm mx-auto" [(ngModel)]="cat.limiteDiarioSede" style="width: 70px;"></td>
+                          <td class="text-center"><div class="form-check form-switch d-flex justify-content-center"><input class="form-check-input" type="checkbox" [(ngModel)]="cat.activo"></div></td>
+                          <td class="text-center"><button class="btn btn-sm btn-success" (click)="actualizarCategoria(cat)"><i class="fa-solid fa-floppy-disk"></i></button></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NUEVO: CONFIGURACIÓN DE DÍAS INHÁBILES -->
+          <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-regular fa-calendar-xmark me-2" style="color: #055A1C;"></i>Configuración de Días Inhábiles</h6>
+                <p class="text-muted small mb-0 mt-1">Bloquee de manera global días festivos o sin servicio en el calendario de ciudadanos.</p>
+              </div>
+              <div class="card-body p-4">
+                <div class="row">
+                  <div class="col-md-5 border-end pe-4">
+                    <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.85rem;">BLOQUEAR DÍA ESPECÍFICO</h6>
+                    <div class="mb-3">
+                      <input type="date" class="form-control mb-2" [(ngModel)]="nuevoDiaInhabil.fecha">
+                      <input type="text" class="form-control mb-3" placeholder="Motivo (Ej. Día Festivo)" [(ngModel)]="nuevoDiaInhabil.motivo">
+                      <button class="btn text-white fw-bold shadow-sm w-100" style="background-color: #E60064;" (click)="agregarDiaInhabil()">Bloquear Día en Calendario <i class="fa-solid fa-lock ms-1"></i></button>
+                    </div>
+                  </div>
+                  <div class="col-md-7 ps-4">
+                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                      <table class="table table-sm table-hover align-middle" style="font-size: 0.85rem;">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Fecha Bloqueada</th>
+                            <th>Motivo</th>
+                            <th class="text-center">Liberar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (dia of diasInhabilesAdmin; track dia.id) {
+                            <tr>
+                              <td class="fw-bold text-danger">{{ dia.fecha | date:'dd/MM/yyyy' }}</td>
+                              <td>{{ dia.motivo }}</td>
+                              <td class="text-center">
+                                <button class="btn btn-sm btn-outline-secondary" title="Eliminar bloqueo" (click)="eliminarDiaInhabil(dia.id)"><i class="fa-solid fa-trash-can"></i></button>
+                              </td>
+                            </tr>
+                          }
+                          @if(diasInhabilesAdmin.length === 0) {
+                            <tr><td colspan="3" class="text-center text-muted py-3">No hay días bloqueados actualmente.</td></tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REGISTRO DE ACCESOS -->
+          <div class="col-lg-12">
+            <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+              <div class="card-header bg-white p-4 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-door-open me-2" style="color: #E60064;"></i>Registro Histórico de Accesos</h6>
+              </div>
+              <div class="card-body p-4">
+                
+                <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
+                  <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
+                    <input type="date" class="form-control" [(ngModel)]="fechaAccesos" (change)="limpiarBusquedaAccesos()">
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (USUARIO O ID)</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="Escriba el nombre de usuario y presione Enter..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin()">
+                      <button class="btn text-white fw-bold" style="background-color: #E60064; border-color: #E60064;" (click)="cargarAccesosAdmin()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                      <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #055A1C; border: none;" (click)="descargarPDFAccesos()"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                      @if(textoBusquedaAccesos) {
+                        <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaAccesos()"><i class="fa-solid fa-xmark"></i></button>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                @if (cargandoAccesos) {
+                  <div class="text-center my-5" style="color: #E60064;">
+                    <div class="spinner-border" role="status"></div>
+                  </div>
+                } @else {
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                      <thead style="background-color: #fdfdfd;">
+                        <tr>
+                          <th class="py-3 text-secondary">ID Sesión</th>
+                          <th class="py-3 text-secondary">Usuario</th>
+                          <th class="py-3 text-secondary">Fecha de Inicio</th>
+                          <th class="py-3 text-secondary">Fecha de Cierre</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (acc of registroAccesos; track acc.idAcceso) {
+                          <tr>
+                            <td class="font-monospace text-muted">{{ acc.idAcceso }}</td>
+                            <td class="fw-bold text-dark">{{ acc.username }}</td>
+                            <td class="text-success"><i class="fa-solid fa-right-to-bracket me-2"></i>{{ acc.fechaLogin | date:'medium' }}</td>
+                            <td>
+                              @if (acc.fechaLogout) {
+                                  <span class="text-secondary"><i class="fa-solid fa-right-from-bracket me-2"></i>{{ acc.fechaLogout | date:'medium' }}</span>
+                              } @else {
+                                  <div class="d-flex align-items-center">
+                                      <span class="badge bg-info me-3">En línea</span>
+                                      <button class="btn btn-sm btn-outline-danger fw-bold shadow-sm" title="Forzar Cierre" (click)="cerrarSesionRemota(acc.idAcceso)">
+                                          <i class="fa-solid fa-power-off me-1"></i> Cerrar
+                                      </button>
+                                  </div>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  @if (totalPaginasAccesos > 1) {
+                    <nav class="mt-4">
+                      <ul class="pagination justify-content-center">
+                        <li class="page-item" [class.disabled]="paginaActualAccesos === 1">
+                          <button class="page-link" style="color: #055A1C;" (click)="cargarAccesosAdmin(paginaActualAccesos - 1)">Anterior</button>
+                        </li>
+                        @for (p of arregloPaginas; track p) {
+                          <li class="page-item" [class.active]="p === paginaActualAccesos">
+                            <button class="page-link" 
+                                    [style.background-color]="p === paginaActualAccesos ? '#055A1C' : '#fff'" 
+                                    [style.border-color]="p === paginaActualAccesos ? '#055A1C' : '#dee2e6'" 
+                                    [style.color]="p === paginaActualAccesos ? '#fff' : '#055A1C'"
+                                    (click)="cargarAccesosAdmin(p)">
+                              {{ p }}
+                            </button>
+                          </li>
+                        }
+                        <li class="page-item" [class.disabled]="paginaActualAccesos === totalPaginasAccesos">
+                          <button class="page-link" style="color: #055A1C;" (click)="cargarAccesosAdmin(paginaActualAccesos + 1)">Siguiente</button>
+                        </li>
+                      </ul>
+                    </nav>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    

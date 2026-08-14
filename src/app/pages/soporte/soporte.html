@@ -1,1 +1,62 @@
-<p>soporte works!</p>
+
+      <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-headset me-2"></i>Centro de Soporte y Peticiones</h4>
+          <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
+          <div class="card-body p-4">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" style="font-size: 0.85rem;">
+                <thead style="background-color: #fdfdfd;">
+                  <tr>
+                    <th class="py-3 text-secondary">Fecha</th>
+                    <th class="py-3 text-secondary">Usuario / Empleado</th>
+                    <th class="py-3 text-secondary">Tipo de Petición</th>
+                    <th class="py-3 text-secondary">Descripción</th>
+                    <th class="py-3 text-secondary text-center">Estatus</th>
+                    <th class="py-3 text-secondary">Respuesta</th>
+                    <th class="py-3 text-secondary text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of peticionesSistema; track p.idPeticion) {
+                    <tr>
+                      <td class="text-nowrap">{{ p.fecha | date:'short' }}</td>
+                      <td class="fw-bold text-dark">{{ p.username }}</td>
+                      <td>
+                        <span class="badge" [class.bg-warning]="p.tipo.includes('CONTRASEÑA')" [class.bg-info]="!p.tipo.includes('CONTRASEÑA')">
+                          {{ p.tipo }}
+                        </span>
+                      </td>
+                      <td style="max-width: 250px; white-space: normal;">{{ p.descripcion }}</td>
+                      <td class="text-center">
+                        <span class="badge" [class.bg-success]="p.estatus === 'RESUELTA'" [class.bg-secondary]="p.estatus === 'PENDIENTE'">
+                          {{ p.estatus }}
+                        </span>
+                      </td>
+                      <td style="max-width: 200px; white-space: normal;" class="text-success fw-bold">{{ p.respuesta }}</td>
+                      <td class="text-center">
+                        @if (p.estatus === 'PENDIENTE') {
+                          <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion)">
+                            Responder
+                          </button>
+                        } @else {
+                          <i class="fa-solid fa-check text-success fs-5"></i>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @if (peticionesSistema.length === 0) {
+                    <tr>
+                      <td colspan="7" class="text-center py-4 text-muted">Bandeja de entrada limpia. No hay peticiones.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    
