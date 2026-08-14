@@ -1,5 +1,4 @@
-
-      <div class="container mt-4">
+<div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-clipboard-list me-2"></i>Bitácora de Movimientos</h4>
           <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
@@ -11,16 +10,16 @@
             <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
               <div class="col-md-3 mb-3 mb-md-0">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
-                <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusquedaBitacora()">
+                <input type="date" class="form-control" [(ngModel)]="fechaBitacora" (change)="limpiarBusqueda()">
               </div>
               <div class="col-md-9">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, EMPLEADO, ACCIÓN)</label>
                 <div class="input-group">
                   <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaBitacora" (keyup.enter)="cargarBitacora()">
                   <button class="btn btn-success fw-bold" (click)="cargarBitacora()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaBitacora', 'Bitácora de Auditoría de Sistemas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                  <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="descargarPDF()"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
                   @if(textoBusquedaBitacora) {
-                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusquedaBitacora()"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
                   }
                 </div>
                 <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora el filtro de fecha.</small>
@@ -47,7 +46,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (log of bitacoraLogs; track log.idBitacora) {
+                    @for (log of registrosBitacora; track log.idBitacora) {
                       <tr>
                         <td>
   <span class="d-block fw-bold text-dark">{{ log.fecha | date:'HH:mm' }}</span>
@@ -69,7 +68,7 @@
                         <td class="text-center">
                           @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
                             <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;"
-                                    (click)="deshacerAccion(log.idBitacora)" title="Deshacer Cambio">
+                                    (click)="deshacerCambio(log.idBitacora)" title="Deshacer Cambio">
                               <i class="fa-solid fa-rotate-left me-1"></i> Deshacer
                             </button>
                           } @else {
@@ -78,7 +77,7 @@
                         </td>
                       </tr>
                     }
-                    @if (bitacoraLogs.length === 0) {
+                    @if (registrosBitacora.length === 0) {
                       <tr>
                         <td colspan="7" class="text-center py-5 text-muted">No hay movimientos encontrados para su búsqueda.</td>
                       </tr>
@@ -86,9 +85,32 @@
                   </tbody>
                 </table>
               </div>
+
+              @if (totalPaginas > 1) {
+                <nav class="mt-4">
+                  <ul class="pagination justify-content-center">
+                    <li class="page-item" [class.disabled]="paginaActual === 1">
+                      <button class="page-link" style="color: #055A1C;" (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
+                    </li>
+                    @for (p of arregloPaginas; track p) {
+                      <li class="page-item" [class.active]="p === paginaActual">
+                        <button class="page-link"
+                                [style.background-color]="p === paginaActual ? '#055A1C' : '#fff'"
+                                [style.border-color]="p === paginaActual ? '#055A1C' : '#dee2e6'"
+                                [style.color]="p === paginaActual ? '#fff' : '#055A1C'"
+                                (click)="cambiarPagina(p)">
+                          {{ p }}
+                        </button>
+                      </li>
+                    }
+                    <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+                      <button class="page-link" style="color: #055A1C;" (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
+                    </li>
+                  </ul>
+                </nav>
+              }
             }
 
           </div>
         </div>
       </div>
-    

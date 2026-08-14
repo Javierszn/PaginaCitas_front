@@ -47,6 +47,8 @@ export class ApiService {
   cambiarSedeUsuario(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/sede`, payload); }
   getAccesos(urlParams: string) { return this.http.get(`${this.apiUrl}/Usuarios/Accesos${urlParams}`); }
   cerrarSesionRemota(id: number) { return this.http.put(`${this.apiUrl}/Usuarios/Accesos/${id}/cerrar`, {}); }
+  // NUEVO: permite verificar si la sesión de un usuario sigue activa (usado para el polling de logout remoto)
+  verificarEstadoSesion(username: string) { return this.http.get(`${this.apiUrl}/Usuarios/EstadoSesion/${username}`); }
 
   // === PETICIONES ===
   getMisPeticiones(username: string) { return this.http.get(`${this.apiUrl}/Peticiones/MisPeticiones/${username}`); }
