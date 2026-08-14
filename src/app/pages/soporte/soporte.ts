@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
+import { AlertService } from '../../alert.service'; // <--- NUESTRO MENSAJERO
 
 @Component({
   selector: 'app-soporte',
@@ -19,6 +20,7 @@ export class SoporteComponent implements OnInit {
   private api = inject(ApiService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private alertService = inject(AlertService); // <--- INYECTADO
 
   ngOnInit() {
     const sessionUser = sessionStorage.getItem('usuarioRC');
@@ -42,21 +44,29 @@ export class SoporteComponent implements OnInit {
         this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE' && p.leido === false).length; 
         this.cdr.detectChanges(); 
       },
-      error: () => alert('Error al cargar las peticiones.')
+      error: () => this.alertService.mostrarAlerta('Error', 'No se pudieron cargar las peticiones.', 'error')
     }); 
   }
   
   resolverPeticion(id: number) { 
-    let respuesta = prompt('Mensaje de resolución (Respuesta al empleado):');
-    if(!respuesta) return;
-    
-    this.api.resolverPeticion(id, { respuesta: respuesta }).subscribe({ 
-      next: (res: any) => { 
-        alert(res.mensaje); 
-        this.cargarPeticionesAdmin(); 
-      }, 
-      error: () => alert('Error al resolver la petición.') 
-    }); 
+    this.alertService.mostrarInput(
+      'Resolver Petición',
+      'Escriba el mensaje de resolución para el empleado:',
+      (respuesta?: string) => {
+        if(!respuesta) return;
+        
+        this.api.resolverPeticion(id, { respuesta: respuesta }).subscribe({ 
+          next: (res: any) => { 
+            this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Petición marcada como resuelta.', 'success'); 
+            this.cargarPeticionesAdmin(); 
+          }, 
+          error: (err: any) => {
+            const msj = err.error?.mensaje || 'Error al resolver la petición.';
+            this.alertService.mostrarAlerta('Error', msj, 'error');
+          }
+        }); 
+      }
+    );
   }
 
   regresarADashboard() { 

@@ -33,6 +33,14 @@ export class SuperAdminComponent implements OnInit {
   diasInhabilesAdmin: any[] = [];
   nuevoDiaInhabil: any = { fecha: '', motivo: '' };
 
+  notificacionesNuevas: number = 0; 
+  mostrarBandeja: boolean = false;
+  mostrarModalPeticion: boolean = false;
+  misPeticiones: any[] = [];
+  nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' };
+  peticionDesdeLogin: boolean = false;
+  usuariosSoporte: any[] = [];
+
   private api = inject(ApiService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -52,42 +60,62 @@ export class SuperAdminComponent implements OnInit {
       this.cargarTramitesAdmin(); 
       this.cargarAccesosAdmin(1);
       this.cargarReglasCalendario();
+
+      this.api.getPeticionesAdmin().subscribe({ 
+        next: (res: any) => { 
+          const unicas = res.filter((v:any, i:number, a:any) => a.findIndex((t:any) => t.idPeticion === v.idPeticion) === i);
+          this.notificacionesNuevas = unicas.filter((p: any) => p.estatus === 'PENDIENTE' && !p.leido).length; 
+          this.cdr.detectChanges(); 
+        } 
+      });
+
     } else {
       this.router.navigate(['/login']);
     }
   }
 
+  // === EXTRACCIÓN DE ERRORES DEL BACKEND (EL TRADUCTOR) ===
+  extraerError(err: any, mensajePorDefecto: string): string {
+    if (!err || !err.error) return mensajePorDefecto;
+    if (err.error.mensaje) return err.error.mensaje;
+    // Si ASP.NET rechaza validaciones (como contraseñas o campos vacíos)
+    if (err.error.errors) return Object.values(err.error.errors).flat().join('\n');
+    if (typeof err.error === 'string') return err.error;
+    return mensajePorDefecto;
+  }
+
   regresarADashboard() { this.router.navigate(['/admin/dashboard']); }
+  irABitacora() { this.router.navigate(['/admin/bitacora']); } 
+  irASuperAdmin() { this.router.navigate(['/admin/super']); } 
 
-  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
-  
-  cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
-  
-  // ALIAS PARA QUE FUNCIONE LA PAGINACIÓN SIN IMPORTAR CÓMO SE LLAME EN TU HTML
-  cargarAccesos(pag: number) { this.cargarAccesosAdmin(pag); }
-  cambiarPaginaAccesos(pag: number) { this.cargarAccesosAdmin(pag); }
-
-  cargarAccesosAdmin(paginaSolicitada: number = 1) { 
-    this.cargandoAccesos = true; 
-    let urlParams = `?pagina=${paginaSolicitada}&registrosPorPagina=10`; 
-    if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) { urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`; } else if (this.fechaAccesos) { urlParams += `&fecha=${this.fechaAccesos}`; } 
-    this.api.getAccesos(urlParams).subscribe({ 
-      next: (res: any) => { 
-        this.registroAccesos = res.datos || []; 
-        this.paginaActualAccesos = res.paginaActual || 1; 
-        this.totalPaginasAccesos = res.totalPaginas || 1; 
-        this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1); 
-        this.cargandoAccesos = false; 
-        this.cdr.detectChanges(); 
-      }, 
-      error: () => { this.alertService.mostrarAlerta('Error', 'No se pudieron cargar accesos.', 'error'); this.cargandoAccesos = false; this.cdr.detectChanges(); } 
-    }); 
+  cerrarSesion() {
+    if(this.usuarioSesion?.idAcceso) { 
+      this.api.logout(this.usuarioSesion.idAcceso).subscribe({
+        next: () => this.limpiarRastrosDeSesion(), 
+        error: () => this.limpiarRastrosDeSesion() 
+      }); 
+    } else {
+      this.limpiarRastrosDeSesion();
+    }
   }
   
-  limpiarBusquedaAccesos() { this.textoBusquedaAccesos = ''; this.cargarAccesosAdmin(1); }
+  limpiarRastrosDeSesion() {
+    sessionStorage.removeItem('usuarioRC'); 
+    sessionStorage.removeItem('pasoRC'); 
+    this.router.navigate(['/login']); 
+  }
+
+  // === GESTIÓN DE USUARIOS ===
+  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
+  cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
   
   crearUsuario() { 
-    // CORRECCIÓN: Forzamos a que el Rol y la Sede se envíen como números (Int) y no como texto
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; 
+    if (!passwordRegex.test(this.nuevoUsuario.password)) { 
+      this.alertService.mostrarAlerta('Contraseña Débil', 'La contraseña debe tener al menos 6 caracteres, incluir una mayúscula, un número y un símbolo especial (Ej. Admin.123).', 'warning'); 
+      return; 
+    } 
+
     const payloadSeguro = {
       ...this.nuevoUsuario,
       idRol: Number(this.nuevoUsuario.idRol),
@@ -96,87 +124,94 @@ export class SuperAdminComponent implements OnInit {
 
     this.api.crearUsuario(payloadSeguro).subscribe({ 
       next: (res: any) => { 
-        this.alertService.mostrarAlerta('Éxito', res.mensaje, 'success'); 
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success'); 
         this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 }; 
         this.cargarUsuariosAdmin(); 
       }, 
-      error: (err: any) => this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'Error al crear el usuario.', 'error') 
-    }); 
-  }
-  
-  toggleEstadoUsuario(id: number) { 
-    this.api.toggleEstadoUsuario(id).subscribe({ 
-      next: () => this.cargarUsuariosAdmin(), 
-      error: () => this.alertService.mostrarAlerta('Error', 'No se pudo cambiar el estado.', 'error') 
-    }); 
-  }
-  
-  cambiarPasswordUsuario(id: number) { 
-    this.alertService.mostrarInput(
-      'Restablecer Contraseña', 
-      'Contraseña temporal (Mín. 6 chars, 1 mayúscula, 1 número, 1 especial):', 
-      (pwd?: string) => {
-        if(!pwd) return;
-        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; 
-        if (!passwordRegex.test(pwd)) { 
-          this.alertService.mostrarAlerta('Error', 'La contraseña no cumple con los requisitos de seguridad.', 'warning'); 
-          return; 
-        } 
-        this.api.cambiarPasswordUsuario(id, { password: pwd }).subscribe({ 
-          next: (res: any) => this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'), 
-          error: () => this.alertService.mostrarAlerta('Error', 'No se pudo actualizar la contraseña.', 'error') 
-        }); 
+      error: (err: any) => {
+        const msj = this.extraerError(err, 'Error al crear el usuario.');
+        this.alertService.mostrarAlerta('Error de validación', msj, 'error');
       }
-    );
-  }
-  
-  cambiarSedeUsuario(usr: any) { 
-    const idSedeNueva = Number(usr.idSede); 
-    this.api.cambiarSedeUsuario(usr.idUsuario, { idSede: idSedeNueva }).subscribe({ 
-      next: (res: any) => { 
-        this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'); 
-        if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) { 
-          this.usuarioSesion.idSede = idSedeNueva; 
-          const sedeEncontrada = this.sedes.find(s => s.idSede === idSedeNueva); 
-          if (sedeEncontrada) { this.usuarioSesion.sede = sedeEncontrada.nombre; } 
-          sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); 
-        } 
-      }, 
-      error: () => { this.cargarUsuariosAdmin(); this.alertService.mostrarAlerta('Error', 'No se pudo actualizar la sede.', 'error'); } 
     }); 
   }
+  
+  toggleEstadoUsuario(id: number) { this.api.toggleEstadoUsuario(id).subscribe({ next: () => this.cargarUsuariosAdmin(), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo cambiar el estado.'), 'error') }); }
+  
+  cambiarPasswordUsuario(id: number) { this.alertService.mostrarInput('Restablecer Contraseña', 'Contraseña temporal (Mín. 6 chars, 1 mayúscula, 1 número, 1 especial):', (pwd?: string) => { if(!pwd) return; const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/; if (!passwordRegex.test(pwd)) { this.alertService.mostrarAlerta('Error', 'La contraseña no cumple con los requisitos de seguridad.', 'warning'); return; } this.api.cambiarPasswordUsuario(id, { password: pwd }).subscribe({ next: (res: any) => this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar la contraseña.'), 'error') }); }); }
+  
+  cambiarSedeUsuario(usr: any) { const idSedeNueva = Number(usr.idSede); this.api.cambiarSedeUsuario(usr.idUsuario, { idSede: idSedeNueva }).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'); if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) { this.usuarioSesion.idSede = idSedeNueva; const sedeEncontrada = this.sedes.find(s => s.idSede === idSedeNueva); if (sedeEncontrada) { this.usuarioSesion.sede = sedeEncontrada.nombre; } sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); } }, error: (err: any) => { this.cargarUsuariosAdmin(); this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar la sede.'), 'error'); } }); }
 
+  // === CONFIGURACIÓN DE TRÁMITES ===
   cargarTramitesAdmin() { this.api.getTramitesAdmin().subscribe({ next: (res: any) => { this.categoriasAdmin = res.map((cat: any) => { const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {}; return { idCategoria: cat.idCategoria, nombreCategoria: cat.nombreCategoria, costo: primerServicio.costo || 0, duracionMinutos: primerServicio.duracionMinutos || 30, limiteDiarioSede: primerServicio.limiteDiarioSede || 50, activo: cat.activa, fechaInicio: primerServicio.fechaInicioPermitida ? primerServicio.fechaInicioPermitida.split('T')[0] : '', fechaFin: primerServicio.fechaFinPermitida ? primerServicio.fechaFinPermitida.split('T')[0] : '' }; }); this.cdr.detectChanges(); } }); }
-  
-  actualizarCategoria(cat: any) { const payload = { duracionMinutos: Number(cat.duracionMinutos), costo: Number(cat.costo), activo: cat.activo, limiteDiario: Number(cat.limiteDiarioSede), fechaInicio: cat.fechaInicio ? cat.fechaInicio : null, fechaFin: cat.fechaFin ? cat.fechaFin : null }; this.api.actualizarCategoria(cat.idCategoria, payload).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Guardado', res.mensaje, 'success'); this.cargarTramitesAdmin(); }, error: () => this.alertService.mostrarAlerta('Error', 'No se pudo guardar la configuración.', 'error') }); }
+  actualizarCategoria(cat: any) { const payload = { duracionMinutos: Number(cat.duracionMinutos), costo: Number(cat.costo), activo: cat.activo, limiteDiario: Number(cat.limiteDiarioSede), fechaInicio: cat.fechaInicio ? cat.fechaInicio : null, fechaFin: cat.fechaFin ? cat.fechaFin : null }; this.api.actualizarCategoria(cat.idCategoria, payload).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Guardado', res.mensaje, 'success'); this.cargarTramitesAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo guardar la configuración.'), 'error') }); }
 
+  // === DÍAS INHÁBILES ===
   cargarReglasCalendario() { this.api.getReglasCalendario().subscribe({ next: (res: any) => { this.diasInhabilesAdmin = res.diasInhabiles || []; this.cdr.detectChanges(); } }); }
-  
-  agregarDiaInhabil() { if (!this.nuevoDiaInhabil.fecha || !this.nuevoDiaInhabil.motivo) { this.alertService.mostrarAlerta('Atención', 'Complete la fecha y el motivo para bloquear el día.', 'warning'); return; } this.api.agregarDiaInhabil(this.nuevoDiaInhabil).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Día Bloqueado', res.mensaje, 'success'); this.nuevoDiaInhabil = { fecha: '', motivo: '' }; this.cargarReglasCalendario(); }, error: () => this.alertService.mostrarAlerta('Error', 'No se pudo bloquear el día.', 'error') }); }
-  
-  eliminarDiaInhabil(id: number) { this.api.eliminarDiaInhabil(id).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje, 'success'); this.cargarReglasCalendario(); }, error: () => this.alertService.mostrarAlerta('Error', 'No se pudo eliminar el día.', 'error') }); }
+  agregarDiaInhabil() { if (!this.nuevoDiaInhabil.fecha || !this.nuevoDiaInhabil.motivo) { this.alertService.mostrarAlerta('Atención', 'Complete la fecha y el motivo para bloquear el día.', 'warning'); return; } this.api.agregarDiaInhabil(this.nuevoDiaInhabil).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Día Bloqueado', res.mensaje, 'success'); this.nuevoDiaInhabil = { fecha: '', motivo: '' }; this.cargarReglasCalendario(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo bloquear el día.'), 'error') }); }
+  eliminarDiaInhabil(id: number) { this.api.eliminarDiaInhabil(id).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje, 'success'); this.cargarReglasCalendario(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo eliminar el día.'), 'error') }); }
 
-  // ALIAS PARA CERRAR SESIÓN (Por si tu HTML llama a la función de otra manera)
-  cerrarSesion(idAcceso: number) { this.cerrarSesionRemota(idAcceso); }
-  forzarCierreSesion(idAcceso: number) { this.cerrarSesionRemota(idAcceso); }
+  // === HISTÓRICO DE ACCESOS Y PAGINACIÓN ===
+  cargarAccesosAdmin(paginaSolicitada: number = 1) { 
+    this.cargandoAccesos = true; 
+    
+    // 1. FORZAMOS A VACIAR LA TABLA PRIMERO (Esto obliga a Angular a repintar el HTML)
+    this.registroAccesos = [];
+    this.cdr.detectChanges();
 
+    let urlParams = `?pagina=${paginaSolicitada}&registrosPorPagina=10`; 
+    if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) { 
+      urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`; 
+    } else if (this.fechaAccesos) { 
+      urlParams += `&fecha=${this.fechaAccesos}`; 
+    } 
+    
+    // 2. DESTRUCTOR DE CACHÉ: Evitamos que el navegador nos devuelva datos viejos
+    urlParams += `&_t=${new Date().getTime()}`;
+
+    this.api.getAccesos(urlParams).subscribe({ 
+      next: (res: any) => { 
+        this.registroAccesos = res.datos || []; 
+        this.paginaActualAccesos = Number(paginaSolicitada); 
+        this.totalPaginasAccesos = Number(res.totalPaginas || res.total || 1); 
+        this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1); 
+        
+        this.cargandoAccesos = false; 
+        this.cdr.detectChanges(); 
+      }, 
+      error: (err: any) => { 
+        this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudieron cargar accesos.'), 'error'); 
+        this.cargandoAccesos = false; 
+        this.cdr.detectChanges(); 
+      } 
+    }); 
+  }
+  
+  limpiarBusquedaAccesos() { this.textoBusquedaAccesos = ''; this.cargarAccesosAdmin(1); }
+
+  // === CIERRE DE SESIÓN FORZADO ===
   cerrarSesionRemota(idAcceso: number) { 
     this.alertService.mostrarConfirmacion(
       'Forzar Cierre de Sesión', 
       '¿Está seguro de que desea cerrar la sesión seleccionada?', 
       () => { 
+        // 3. RESTAURADO AL ENDPOINT ORIGINAL PARA OTRAS SESIONES
         this.api.cerrarSesionRemota(idAcceso).subscribe({ 
           next: (res: any) => { 
-            this.alertService.mostrarAlerta('Éxito', res.mensaje, 'success'); 
+            this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Sesión cerrada exitosamente.', 'success'); 
             this.cargarAccesosAdmin(this.paginaActualAccesos); 
           }, 
           error: (err: any) => { 
-            this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'No se pudo cerrar la sesión.', 'error'); 
+            const msj = this.extraerError(err, 'No se pudo cerrar la sesión.');
+            this.alertService.mostrarAlerta('Error', msj, 'error'); 
           } 
         }); 
       }
     ); 
   }
+
+  // === SOPORTE Y NOTIFICACIONES ===
+  abrirBandeja() { this.router.navigate(['/admin/soporte']); }
+  abrirModalPeticion(b: boolean) { /* Manejado en soporte */ }
 
   descargarPDFAccesos() {
     let queryParams = `?pagina=1&registrosPorPagina=10000`; 
