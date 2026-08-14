@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
-import { AlertService } from '../../alert.service'; // <--- EL MENSAJERO OFICIAL
+import { AlertService } from '../../alert.service'; 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -49,8 +49,8 @@ export class BitacoraComponent implements OnInit {
   cargarBitacora(paginaSolicitada: number = 1) {
     this.cargandoBitacora = true;
     
-    // El truco para asegurar que el backend atrape la paginación
-    let urlParams = `?pagina=${paginaSolicitada}&page=${paginaSolicitada}&registrosPorPagina=10&pageSize=10`;
+    // 1. Limpiamos los parámetros para no asustar al estricto backend de C#
+    let urlParams = `?pagina=${paginaSolicitada}&registrosPorPagina=10`;
     if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) {
       urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`;
     } else if (this.fechaBitacora) {
@@ -59,15 +59,24 @@ export class BitacoraComponent implements OnInit {
 
     this.api.getBitacora(urlParams).subscribe({
       next: (res: any) => {
-        this.registrosBitacora = res.datos || res.data || res || [];
-        this.paginaActual = Number(res.paginaActual || paginaSolicitada);
-        this.totalPaginas = Number(res.totalPaginas || res.total || 1);
-        this.arregloPaginas = Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+        // 2. Lógica a prueba de balas: Si el backend manda un array directo o un objeto paginado
+        if (Array.isArray(res)) {
+            this.registrosBitacora = res;
+            this.paginaActual = 1;
+            this.totalPaginas = 1;
+            this.arregloPaginas = [1];
+        } else {
+            this.registrosBitacora = res.datos || res.data || res.bitacora || [];
+            this.paginaActual = Number(res.paginaActual || paginaSolicitada);
+            this.totalPaginas = Number(res.totalPaginas || res.total || 1);
+            this.arregloPaginas = Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+        }
         
         this.cargandoBitacora = false;
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
+        console.error("Error del backend en Bitácora:", err);
         this.alertService.mostrarAlerta('Error', 'No se pudo cargar la bitácora.', 'error');
         this.cargandoBitacora = false;
         this.cdr.detectChanges();
@@ -81,7 +90,6 @@ export class BitacoraComponent implements OnInit {
     this.cargarBitacora(1);
   }
 
-  // === ALIAS PARA EVITAR ERRORES EN TU HTML ===
   cambiarPagina(pag: number) { this.cargarBitacora(pag); }
   deshacer(id: number) { this.deshacerCambio(id); }
 
@@ -111,7 +119,7 @@ export class BitacoraComponent implements OnInit {
 
     this.api.getBitacora(queryParams).subscribe({
         next: (res: any) => {
-            const datos = res.datos || [];
+            const datos = Array.isArray(res) ? res : (res.datos || res.data || []);
             if (datos.length === 0) { this.alertService.mostrarAlerta('Aviso', 'No hay registros para exportar.', 'warning'); return; }
             
             const doc = new jsPDF(); 
