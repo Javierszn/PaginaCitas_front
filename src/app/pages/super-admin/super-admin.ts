@@ -3,9 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
-import { AlertService } from '../../alert.service'; 
+import { AlertService } from '../../alert.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+// DECLARACIÓN PARA GOOGLE RECAPTCHA
+declare var grecaptcha: any;
 
 @Component({
   selector: 'app-super-admin',
@@ -16,11 +19,20 @@ import autoTable from 'jspdf-autotable';
 })
 export class SuperAdminComponent implements OnInit {
   usuarioSesion: any = null;
-  
+
+  // VARIABLES PARA CITAS (Dashboard integrado)
+  fechaDashboard: string = new Date().toISOString().split('T')[0];
+  filtroTramite: string = '';
+  tramitesUnicos: string[] = [];
+  textoBusquedaDashboard: string = '';
+  citasDia: any[] = [];
+  citasOriginales: any[] = [];
+
+  // VARIABLES SUPER ADMIN
   sedes: any[] = [];
   usuariosSistema: any[] = [];
-  categoriasAdmin: any[] = []; 
-  
+  categoriasAdmin: any[] = [];
+
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
   registroAccesos: any[] = [];
   fechaAccesos: string = '';
@@ -29,11 +41,12 @@ export class SuperAdminComponent implements OnInit {
   paginaActualAccesos: number = 1;
   totalPaginasAccesos: number = 1;
   arregloPaginas: number[] = [];
-  
+
   diasInhabilesAdmin: any[] = [];
   nuevoDiaInhabil: any = { fecha: '', motivo: '' };
 
-  notificacionesNuevas: number = 0; 
+  // VARIABLES SOPORTE / NOTIFICACIONES
+  notificacionesNuevas: number = 0;
   mostrarBandeja: boolean = false;
   mostrarModalPeticion: boolean = false;
   misPeticiones: any[] = [];
@@ -44,29 +57,30 @@ export class SuperAdminComponent implements OnInit {
   private api = inject(ApiService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  private alertService = inject(AlertService); 
+  private alertService = inject(AlertService);
 
   ngOnInit() {
     const sessionUser = sessionStorage.getItem('usuarioRC');
     if (sessionUser) {
       this.usuarioSesion = JSON.parse(sessionUser);
-      if(this.usuarioSesion.rol !== 'Super Administrador') {
+      if (this.usuarioSesion.rol !== 'Super Administrador') {
          this.router.navigate(['/admin/dashboard']);
          return;
       }
-      
+
       this.cargarSedes();
-      this.cargarUsuariosAdmin(); 
-      this.cargarTramitesAdmin(); 
+      this.cargarUsuariosAdmin();
+      this.cargarTramitesAdmin();
       this.cargarAccesosAdmin(1);
       this.cargarReglasCalendario();
+      this.cargarCitasDashboard(); 
 
-      this.api.getPeticionesAdmin().subscribe({ 
-        next: (res: any) => { 
+      this.api.getPeticionesAdmin().subscribe({
+        next: (res: any) => {
           const unicas = res.filter((v:any, i:number, a:any) => a.findIndex((t:any) => t.idPeticion === v.idPeticion) === i);
-          this.notificacionesNuevas = unicas.filter((p: any) => p.estatus === 'PENDIENTE' && !p.leido).length; 
-          this.cdr.detectChanges(); 
-        } 
+          this.notificacionesNuevas = unicas.filter((p: any) => p.estatus === 'PENDIENTE' && !p.leido).length;
+          this.cdr.detectChanges();
+        }
       });
 
     } else {
@@ -82,31 +96,90 @@ export class SuperAdminComponent implements OnInit {
     return mensajePorDefecto;
   }
 
+  // ==========================================
+  // FUNCIONES GLOBALES / NAVEGACIÓN
+  // ==========================================
   regresarADashboard() { this.router.navigate(['/admin/dashboard']); }
-  irABitacora() { this.router.navigate(['/admin/bitacora']); } 
-  irASuperAdmin() { this.router.navigate(['/admin/super']); } 
+  irABitacora() { this.router.navigate(['/admin/bitacora']); }
+  irASuperAdmin() { this.router.navigate(['/admin/super']); }
 
   cerrarSesion() {
-    if(this.usuarioSesion?.idAcceso) { 
+    if (this.usuarioSesion?.idAcceso) {
       this.api.logout(this.usuarioSesion.idAcceso).subscribe({
-        next: () => this.limpiarRastrosDeSesion(), 
-        error: () => this.limpiarRastrosDeSesion() 
-      }); 
+        next: () => this.limpiarRastrosDeSesion(),
+        error: () => this.limpiarRastrosDeSesion()
+      });
     } else {
       this.limpiarRastrosDeSesion();
     }
   }
-  
+
   limpiarRastrosDeSesion() {
-    sessionStorage.removeItem('usuarioRC'); 
-    sessionStorage.removeItem('pasoRC'); 
-    this.router.navigate(['/login']); 
+    sessionStorage.removeItem('usuarioRC');
+    sessionStorage.removeItem('pasoRC');
+    this.router.navigate(['/login']);
   }
 
+  // ==========================================
+  // CITAS (DASHBOARD)
+  // ==========================================
+  cargarCitasDashboard() {
+    let urlParams = `?fecha=${this.fechaDashboard}`;
+    if (this.textoBusquedaDashboard) {
+        urlParams = `?busqueda=${encodeURIComponent(this.textoBusquedaDashboard)}`;
+    }
+    this.api.getCitasPorSede(this.usuarioSesion.idSede, urlParams).subscribe({
+      next: (res: any) => {
+        this.citasOriginales = res || [];
+        this.tramitesUnicos = [...new Set(this.citasOriginales.map((c:any) => c.tramite))];
+        this.aplicarFiltroTramite();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  aplicarFiltroTramite() {
+    if (this.filtroTramite) {
+      this.citasDia = this.citasOriginales.filter(c => c.tramite === this.filtroTramite);
+    } else {
+      this.citasDia = [...this.citasOriginales];
+    }
+  }
+
+  limpiarBusqueda() {
+    this.fechaDashboard = new Date().toISOString().split('T')[0];
+    this.textoBusquedaDashboard = '';
+    this.filtroTramite = '';
+    this.cargarCitasDashboard();
+  }
+
+  actualizarEstatusCita(folio: string, estatus: string) {
+    this.api.actualizarEstatusCita(folio, { estatus }).subscribe({
+      next: (res: any) => {
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Estatus actualizado.', 'success');
+        this.cargarCitasDashboard();
+      },
+      error: (err: any) => {
+        this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar.'), 'error');
+      }
+    });
+  }
+
+  abrirConfirmacion(titulo: string, msj: string, callback: () => void) {
+    this.alertService.mostrarConfirmacion(titulo, msj, callback);
+  }
+
+  exportarPDF(tablaId: string, titulo: string) {
+    this.alertService.mostrarAlerta('Aviso', 'Función de PDF en construcción para el Dashboard.', 'info');
+  }
+
+  // ==========================================
+  // SUPER ADMIN: USUARIOS
+  // ==========================================
   cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
   cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
-  
-  crearUsuario() { 
+
+  crearUsuario() {
     if (!this.nuevoUsuario.username || !this.nuevoUsuario.password || !this.nuevoUsuario.nombreCompleto) {
         this.alertService.mostrarAlerta('Atención', 'Todos los campos son obligatorios.', 'warning');
         return;
@@ -118,25 +191,28 @@ export class SuperAdminComponent implements OnInit {
       idSede: Number(this.nuevoUsuario.idSede)
     };
 
-    this.api.crearUsuario(payloadSeguro).subscribe({ 
-      next: (res: any) => { 
-        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success'); 
-        this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 }; 
-        this.cargarUsuariosAdmin(); 
-      }, 
+    this.api.crearUsuario(payloadSeguro).subscribe({
+      next: (res: any) => {
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success');
+        this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
+        this.cargarUsuariosAdmin();
+      },
       error: (err: any) => {
         const msj = this.extraerError(err, 'Error al crear el usuario.');
         this.alertService.mostrarAlerta('Error de validación', msj, 'error');
       }
-    }); 
+    });
   }
-  
+
   toggleEstadoUsuario(id: number) { this.api.toggleEstadoUsuario(id).subscribe({ next: () => this.cargarUsuariosAdmin(), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo cambiar el estado.'), 'error') }); }
-  
+
   cambiarPasswordUsuario(id: number) { this.alertService.mostrarInput('Restablecer Contraseña', 'Contraseña temporal:', (pwd?: string) => { if(!pwd) return; this.api.cambiarPasswordUsuario(id, { password: pwd }).subscribe({ next: (res: any) => this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar la contraseña.'), 'error') }); }); }
-  
+
   cambiarSedeUsuario(usr: any) { const idSedeNueva = Number(usr.idSede); this.api.cambiarSedeUsuario(usr.idUsuario, { idSede: idSedeNueva }).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'); if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) { this.usuarioSesion.idSede = idSedeNueva; const sedeEncontrada = this.sedes.find(s => s.idSede === idSedeNueva); if (sedeEncontrada) { this.usuarioSesion.sede = sedeEncontrada.nombre; } sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); } }, error: (err: any) => { this.cargarUsuariosAdmin(); this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar la sede.'), 'error'); } }); }
 
+  // ==========================================
+  // SUPER ADMIN: TRÁMITES Y DÍAS INHÁBILES
+  // ==========================================
   cargarTramitesAdmin() { this.api.getTramitesAdmin().subscribe({ next: (res: any) => { this.categoriasAdmin = res.map((cat: any) => { const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {}; return { idCategoria: cat.idCategoria, nombreCategoria: cat.nombreCategoria, costo: primerServicio.costo || 0, duracionMinutos: primerServicio.duracionMinutos || 30, limiteDiarioSede: primerServicio.limiteDiarioSede || 50, activo: cat.activa, fechaInicio: primerServicio.fechaInicioPermitida ? primerServicio.fechaInicioPermitida.split('T')[0] : '', fechaFin: primerServicio.fechaFinPermitida ? primerServicio.fechaFinPermitida.split('T')[0] : '' }; }); this.cdr.detectChanges(); } }); }
   actualizarCategoria(cat: any) { const payload = { duracionMinutos: Number(cat.duracionMinutos), costo: Number(cat.costo), activo: cat.activo, limiteDiario: Number(cat.limiteDiarioSede), fechaInicio: cat.fechaInicio ? cat.fechaInicio : null, fechaFin: cat.fechaFin ? cat.fechaFin : null }; this.api.actualizarCategoria(cat.idCategoria, payload).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Guardado', res.mensaje, 'success'); this.cargarTramitesAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo guardar la configuración.'), 'error') }); }
 
@@ -144,71 +220,148 @@ export class SuperAdminComponent implements OnInit {
   agregarDiaInhabil() { if (!this.nuevoDiaInhabil.fecha || !this.nuevoDiaInhabil.motivo) { this.alertService.mostrarAlerta('Atención', 'Complete la fecha y el motivo para bloquear el día.', 'warning'); return; } this.api.agregarDiaInhabil(this.nuevoDiaInhabil).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Día Bloqueado', res.mensaje, 'success'); this.nuevoDiaInhabil = { fecha: '', motivo: '' }; this.cargarReglasCalendario(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo bloquear el día.'), 'error') }); }
   eliminarDiaInhabil(id: number) { this.api.eliminarDiaInhabil(id).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje, 'success'); this.cargarReglasCalendario(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo eliminar el día.'), 'error') }); }
 
-  cargarAccesosAdmin(paginaSolicitada: number = 1) { 
-    this.cargandoAccesos = true; 
-    let urlParams = `?pagina=${paginaSolicitada}&page=${paginaSolicitada}&pageNumber=${paginaSolicitada}&registrosPorPagina=10&pageSize=10`; 
-    
-    if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) { 
-      urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`; 
-    } else if (this.fechaAccesos) { 
-      urlParams += `&fecha=${this.fechaAccesos}`; 
-    } 
-    urlParams += `&_t=${new Date().getTime()}`; 
+  // ==========================================
+  // SUPER ADMIN: ACCESOS Y CIERRE REMOTO
+  // ==========================================
+  cargarAccesosAdmin(paginaSolicitada: number = 1) {
+    this.cargandoAccesos = true;
+    let urlParams = `?pagina=${paginaSolicitada}&page=${paginaSolicitada}&pageNumber=${paginaSolicitada}&registrosPorPagina=10&pageSize=10`;
 
-    this.api.getAccesos(urlParams).subscribe({ 
-      next: (res: any) => { 
-        this.registroAccesos = res.datos || res.data || res || []; 
-        this.paginaActualAccesos = Number(res.paginaActual || res.PaginaActual || paginaSolicitada); 
-        this.totalPaginasAccesos = Number(res.totalPaginas || res.TotalPaginas || res.total || 1); 
-        this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1); 
-        
-        this.cargandoAccesos = false; 
-        this.cdr.detectChanges(); 
-      }, 
-      error: (err: any) => { 
-        this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudieron cargar accesos.'), 'error'); 
-        this.cargandoAccesos = false; 
-        this.cdr.detectChanges(); 
-      } 
-    }); 
+    if (this.textoBusquedaAccesos && this.textoBusquedaAccesos.trim().length > 0) {
+      urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`;
+    } else if (this.fechaAccesos) {
+      urlParams += `&fecha=${this.fechaAccesos}`;
+    }
+    urlParams += `&_t=${new Date().getTime()}`;
+
+    this.api.getAccesos(urlParams).subscribe({
+      next: (res: any) => {
+        this.registroAccesos = res.datos || res.data || res || [];
+        this.paginaActualAccesos = Number(res.paginaActual || res.PaginaActual || paginaSolicitada);
+        this.totalPaginasAccesos = Number(res.totalPaginas || res.TotalPaginas || res.total || 1);
+        this.arregloPaginas = Array.from({ length: this.totalPaginasAccesos }, (_, i) => i + 1);
+
+        this.cargandoAccesos = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudieron cargar accesos.'), 'error');
+        this.cargandoAccesos = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
-  
+
   limpiarBusquedaAccesos() { this.textoBusquedaAccesos = ''; this.cargarAccesosAdmin(1); }
 
- // === CIERRE DE SESIÓN FORZADO (REVERTIDO) ===
-  cerrarSesionRemota(idAcceso: number) { 
+  cerrarSesionRemota(idAcceso: number) {
     this.alertService.mostrarConfirmacion(
-      'Forzar Cierre de Sesión', 
-      '¿Está seguro de que desea cerrar la sesión seleccionada?', 
-      () => { 
-        // REGRESAMOS AL ENDPOINT CORRECTO DE TU API
-        this.api.cerrarSesionRemota(idAcceso).subscribe({ 
-          next: (res: any) => { 
-            this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Sesión cerrada exitosamente.', 'success'); 
-            
+      'Forzar Cierre de Sesión',
+      '¿Está seguro de que desea cerrar la sesión seleccionada?',
+      () => {
+        this.api.logout(idAcceso).subscribe({
+          next: (res: any) => {
+            this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Sesión cerrada exitosamente.', 'success');
+
             if (this.usuarioSesion && Number(this.usuarioSesion.idAcceso) === Number(idAcceso)) {
                 setTimeout(() => { this.limpiarRastrosDeSesion(); }, 1500);
             } else {
-                this.cargarAccesosAdmin(this.paginaActualAccesos); 
+                this.cargarAccesosAdmin(this.paginaActualAccesos);
             }
-          }, 
-          error: (err: any) => { 
-            // EL TRADUCTOR NOS DIRÁ EXACTAMENTE QUÉ LE MOLESTA AL BACKEND
+          },
+          error: (err: any) => {
             const msj = this.extraerError(err, 'No se pudo cerrar la sesión.');
-            this.alertService.mostrarAlerta('Error del Backend', msj, 'error'); 
-          } 
-        }); 
+            this.alertService.mostrarAlerta('Error', msj, 'error');
+          }
+        });
       }
-    ); 
+    );
   }
-  abrirBandeja() { this.router.navigate(['/admin/soporte']); }
-  abrirModalPeticion(b: boolean) { /* Manejado en soporte */ }
+
+  // ==========================================
+  // PETICIONES Y SOPORTE (CON reCAPTCHA)
+  // ==========================================
+  abrirBandeja() {
+    this.mostrarBandeja = true;
+    if (this.usuarioSesion?.username) {
+        this.api.getMisPeticiones(this.usuarioSesion.username).subscribe({
+            next: (res: any) => {
+                this.misPeticiones = res;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+  }
+
+  cerrarBandeja() {
+    this.mostrarBandeja = false;
+    if (this.usuarioSesion?.username) {
+        this.api.marcarLeidasUsuario(this.usuarioSesion.username).subscribe();
+    }
+  }
+
+  abrirModalPeticion(desdeLogin: boolean) {
+    this.peticionDesdeLogin = desdeLogin;
+    this.nuevaPeticion.username = this.usuarioSesion?.username || '';
+    this.mostrarModalPeticion = true;
+
+    // MAGIA: Le damos 100ms a Angular para que termine de abrir el modal en pantalla
+    setTimeout(() => {
+      if (typeof grecaptcha !== 'undefined') {
+        const elemento = document.getElementById('recaptcha-soporte');
+        
+        // Verificamos que el div exista y esté vacío para no dibujarlo doble
+        // Verificamos que el div exista y esté vacío para no dibujarlo doble
+        if (elemento && elemento.innerHTML === '') {
+          grecaptcha.render('recaptcha-soporte', {
+            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // <--- LA VERDADERA CLAVE PÚBLICA
+          });
+        }
+      }
+    }, 100);
+  }
+
+  cerrarModalPeticion() {
+    this.mostrarModalPeticion = false;
+    this.nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' };
+  }
+
+  enviarPeticion() {
+    // 1. Validamos el reCAPTCHA del frontend
+    const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse() : null;
+
+    if (!token) {
+      this.alertService.mostrarAlerta('Atención', 'Por favor, marque la casilla de seguridad reCAPTCHA.', 'warning');
+      return;
+    }
+
+    if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) {
+      this.alertService.mostrarAlerta('Atención', 'Debe llenar todos los campos de la petición.', 'warning');
+      return;
+    }
+
+    const payload = this.nuevaPeticion;
+
+    // 2. Enviamos la petición y el token al Backend
+    this.api.enviarPeticion(payload, token).subscribe({
+      next: (res: any) => {
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Su petición ha sido enviada.', 'success');
+        this.cerrarModalPeticion();
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+      },
+      error: (err: any) => {
+        const msj = err.error?.mensaje || 'No se pudo enviar la petición.';
+        this.alertService.mostrarAlerta('Error', msj, 'error');
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+      }
+    });
+  }
 
   descargarPDFAccesos() {
-    let queryParams = `?pagina=1&registrosPorPagina=10000`; 
-    if (this.fechaAccesos) queryParams += `&fecha=${this.fechaAccesos}`; 
+    let queryParams = `?pagina=1&registrosPorPagina=10000`;
+    if (this.fechaAccesos) queryParams += `&fecha=${this.fechaAccesos}`;
     if (this.textoBusquedaAccesos) queryParams += `&busqueda=${this.textoBusquedaAccesos}`;
-    
+
     this.api.getAccesos(queryParams).subscribe({
         next: (res: any) => {
             const datos = res.datos || []; if (datos.length === 0) { this.alertService.mostrarAlerta('Aviso', 'No hay registros para exportar.', 'warning'); return; }

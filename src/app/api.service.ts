@@ -47,7 +47,6 @@ export class ApiService {
   cambiarSedeUsuario(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/sede`, payload); }
   getAccesos(urlParams: string) { return this.http.get(`${this.apiUrl}/Usuarios/Accesos${urlParams}`); }
   cerrarSesionRemota(id: number) { return this.http.put(`${this.apiUrl}/Usuarios/Accesos/${id}/cerrar`, {}); }
-  // NUEVO: permite verificar si la sesión de un usuario sigue activa (usado para el polling de logout remoto)
   verificarEstadoSesion(username: string) { return this.http.get(`${this.apiUrl}/Usuarios/EstadoSesion/${username}`); }
 
   // === PETICIONES ===
@@ -55,6 +54,9 @@ export class ApiService {
   getPeticionesAdmin() { return this.http.get(`${this.apiUrl}/Peticiones`); }
   marcarLeidasUsuario(username: string) { return this.http.put(`${this.apiUrl}/Peticiones/MarcarLeidasUsuario/${username}`, {}); }
   marcarLeidasAdmin() { return this.http.put(`${this.apiUrl}/Peticiones/MarcarLeidasAdmin`, {}); }
-  enviarPeticion(payload: any) { return this.http.post(`${this.apiUrl}/Peticiones`, payload); }
+  
+  // MODIFICADO: Agregamos el captchaToken
+  enviarPeticion(payload: any, captchaToken: string) { return this.http.post(`${this.apiUrl}/Peticiones?captchaToken=${captchaToken}`, payload); }
+  
   resolverPeticion(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Peticiones/${id}/resolver`, payload); }
 }

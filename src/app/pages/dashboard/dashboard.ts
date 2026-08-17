@@ -6,6 +6,7 @@ import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service'; // NUEVO MENSAJERO
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+declare var grecaptcha: any;
 
 @Component({
   selector: 'app-dashboard',
@@ -183,25 +184,54 @@ export class DashboardComponent implements OnInit {
 
   cerrarBandeja() { this.mostrarBandeja = false; this.cdr.detectChanges(); }
 
-  abrirModalPeticion(desdeLogin: boolean = false) {
-    this.nuevaPeticion = { username: this.usuarioSesion?.username, tipo: 'SOPORTE TÉCNICO', descripcion: '' };
+ abrirModalPeticion(desdeLogin: boolean) {
+    this.peticionDesdeLogin = desdeLogin;
+    this.nuevaPeticion.username = this.usuarioSesion?.username || '';
     this.mostrarModalPeticion = true;
-    this.cdr.detectChanges();
-  }
 
+    // MAGIA: Le damos 100ms a Angular para que termine de abrir el modal en pantalla
+    setTimeout(() => {
+      if (typeof grecaptcha !== 'undefined') {
+        const elemento = document.getElementById('recaptcha-soporte');
+        
+        // Verificamos que el div exista y esté vacío para no dibujarlo doble
+      // Verificamos que el div exista y esté vacío para no dibujarlo doble
+        if (elemento && elemento.innerHTML === '') {
+          grecaptcha.render('recaptcha-soporte', {
+            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // <--- LA VERDADERA CLAVE PÚBLICA
+          });
+        }
+      }
+    }, 100);
+  }
   cerrarModalPeticion() { this.mostrarModalPeticion = false; this.cdr.detectChanges(); }
 
-  enviarPeticion() {
-    if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) {
-      this.alertService.mostrarAlerta('Atención', 'Llene todos los campos.', 'warning'); return;
+ enviarPeticion() {
+    // 1. Extraemos el token del widget de Google
+    const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse() : null;
+    
+    if (!token) {
+      this.alertService.mostrarAlerta('Atención', 'Por favor, marque la casilla de seguridad reCAPTCHA.', 'warning');
+      return;
     }
-    this.api.enviarPeticion(this.nuevaPeticion).subscribe({
+
+    if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) {
+      this.alertService.mostrarAlerta('Atención', 'Debe llenar todos los campos de la petición.', 'warning');
+      return;
+    }
+
+    // 2. Enviamos los 2 parámetros requeridos
+    this.api.enviarPeticion(this.nuevaPeticion, token).subscribe({
       next: (res: any) => {
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Su petición ha sido enviada.', 'success');
         this.cerrarModalPeticion();
-        this.alertService.mostrarAlerta('¡Enviada!', res.mensaje, 'success');
-        this.cargarMisPeticiones();
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset(); 
       },
-      error: () => this.alertService.mostrarAlerta('Error', 'No se pudo enviar la solicitud.', 'error')
+      error: (err: any) => {
+        const msj = err.error?.mensaje || 'No se pudo enviar la petición.';
+        this.alertService.mostrarAlerta('Error', msj, 'error');
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset(); 
+      }
     });
   }
 }
