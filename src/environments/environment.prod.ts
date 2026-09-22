@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
   
-  apiUrl: 'https://www.tudominiooficial.gob.mx/api' 
+  apiUrl: 'https://paginacitasback-production.up.railway.app/s' 
 };

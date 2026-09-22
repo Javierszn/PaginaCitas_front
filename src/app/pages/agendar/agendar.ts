@@ -88,7 +88,7 @@ export class AgendarComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Wrappers para llamar al servicio de alertas global sin cambiar el HTML
+
   abrirAlerta(titulo: string, mensaje: string, icono: string = 'info') { this.alertService.mostrarAlerta(titulo, mensaje, icono); }
   abrirConfirmacion(titulo: string, mensaje: string, accion: () => void) { this.alertService.mostrarConfirmacion(titulo, mensaje, accion); }
 
