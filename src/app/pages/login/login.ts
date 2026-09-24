@@ -83,23 +83,21 @@ export class LoginComponent {
     this.router.navigate(['/admin/dashboard']); 
   }
  solicitarRecuperacion() {
-    // 1. Usamos la ventana nativa del navegador para pedir el usuario
     const usernameIngresado = prompt('Ingrese su nombre de usuario para solicitar la recuperación al Super Administrador:');
 
-    // 2. Si el usuario cancela o deja vacío, detenemos el proceso
     if (!usernameIngresado || usernameIngresado.trim() === '') {
       return;
     }
 
-    // 3. Armamos el ticket de soporte
+    // Estas claves (username, tipo, descripcion) coinciden con NuevaPeticionDTO en tu C#
     const peticion = {
-      usernameSolicitante: usernameIngresado.trim(),
-      tipoPeticion: 'RECUPERAR CONTRASEÑA',
+      username: usernameIngresado.trim(),
+      tipo: 'RECUPERAR CONTRASEÑA',
       descripcion: 'El empleado ha solicitado restablecer su contraseña desde la pantalla de login.'
     };
     
-    // 4. Enviamos la petición y NOS SUSCRIBIMOS para que realmente se ejecute
-    this.api.crearPeticionSoporte(peticion).subscribe({
+    // Llamamos a enviarPeticion mandando '' como token de Captcha
+    this.api.enviarPeticion(peticion, '').subscribe({
       next: () => {
         this.alertService.mostrarAlerta('¡Ticket Enviado!', 'Su solicitud fue enviada al Super Admin. Espere a que sea procesada.', 'success');
       },
