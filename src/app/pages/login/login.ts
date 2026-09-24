@@ -82,4 +82,30 @@ export class LoginComponent {
     sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); 
     this.router.navigate(['/admin/dashboard']); 
   }
+ solicitarRecuperacion() {
+    // 1. Usamos la ventana nativa del navegador para pedir el usuario
+    const usernameIngresado = prompt('Ingrese su nombre de usuario para solicitar la recuperación al Super Administrador:');
+
+    // 2. Si el usuario cancela o deja vacío, detenemos el proceso
+    if (!usernameIngresado || usernameIngresado.trim() === '') {
+      return;
+    }
+
+    // 3. Armamos el ticket de soporte
+    const peticion = {
+      usernameSolicitante: usernameIngresado.trim(),
+      tipoPeticion: 'RECUPERAR CONTRASEÑA',
+      descripcion: 'El empleado ha solicitado restablecer su contraseña desde la pantalla de login.'
+    };
+    
+    // 4. Enviamos la petición y NOS SUSCRIBIMOS para que realmente se ejecute
+    this.api.crearPeticionSoporte(peticion).subscribe({
+      next: () => {
+        this.alertService.mostrarAlerta('¡Ticket Enviado!', 'Su solicitud fue enviada al Super Admin. Espere a que sea procesada.', 'success');
+      },
+      error: (err: any) => {
+        this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'Hubo un error al enviar la solicitud.', 'error');
+      }
+    });
+  }
 }

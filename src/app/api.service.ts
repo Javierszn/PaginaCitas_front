@@ -6,6 +6,9 @@ import { environment } from '../environments/environment';
   providedIn: 'root'
 })
 export class ApiService {
+  crearPeticionSoporte(peticion: { usernameSolicitante: string; tipoPeticion: string; descripcion: string; }) {
+    return this.http.post(`${this.apiUrl}/Peticiones/Soporte`, peticion);
+  }
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
