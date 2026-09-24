@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
 import jsPDF from 'jspdf';
-
+import { environment } from '../../../environments/environment';
 declare var grecaptcha: any;
 
 @Component({
@@ -114,7 +114,7 @@ export class AgendarComponent implements OnInit {
   
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
   
-  renderCaptchaAgendar() { setTimeout(() => { if (typeof grecaptcha !== 'undefined') { const el = document.getElementById('captcha-agendar'); if (el) { el.innerHTML = ''; this.widgetIdAgendar = grecaptcha.render('captcha-agendar', { 'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' }); } } }, 150); }
+  renderCaptchaAgendar() { setTimeout(() => { if (typeof grecaptcha !== 'undefined') { const el = document.getElementById('captcha-agendar'); if (el) { el.innerHTML = ''; this.widgetIdAgendar = grecaptcha.render('captcha-agendar', { 'sitekey': environment.recaptchaSiteKey }); } } }, 150); }
 
   irAPaso4() { this.pasoActual = 4; this.cargarReglasCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); this.renderCaptchaAgendar(); }
   cambiarMes(delta: number) { this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + delta, 1); this.generarCalendario(); }
