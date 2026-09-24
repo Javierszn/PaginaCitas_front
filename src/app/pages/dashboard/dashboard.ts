@@ -198,7 +198,7 @@ export class DashboardComponent implements OnInit {
       // Verificamos que el div exista y esté vacío para no dibujarlo doble
         if (elemento && elemento.innerHTML === '') {
           grecaptcha.render('recaptcha-soporte', {
-            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // <--- LA VERDADERA CLAVE PÚBLICA
+            'sitekey': '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe' // <--- LA VERDADERA CLAVE PÚBLICA
           });
         }
       }
