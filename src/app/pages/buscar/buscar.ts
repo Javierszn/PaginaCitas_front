@@ -37,7 +37,7 @@ export class BuscarComponent implements OnInit {
         if (el) {
           el.innerHTML = '';
           this.widgetIdBuscar = grecaptcha.render('captcha-buscar', { 
-            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' 
+            'sitekey': '6Le3ts4tAAAAAAHEE4VgDKditLXcntMGH3zDwlGJ' 
           });
         }
       }
