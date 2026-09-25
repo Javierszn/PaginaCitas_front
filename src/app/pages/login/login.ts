@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
-import { AlertService } from '../../alert.service'; 
+import { AlertService } from '../../alert.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -82,28 +83,50 @@ export class LoginComponent {
     sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); 
     this.router.navigate(['/admin/dashboard']); 
   }
- solicitarRecuperacion() {
-    const usernameIngresado = prompt('Ingrese su nombre de usuario para solicitar la recuperación al Super Administrador:');
+  mostrarModalRecuperacion: boolean = false;
+  usernameRecuperacion: string = '';
+  siteKeyRecaptcha: string = environment.recaptchaSiteKey;
 
-    if (!usernameIngresado || usernameIngresado.trim() === '') {
+  abrirModalRecuperacion() {
+    this.usernameRecuperacion = '';
+    this.mostrarModalRecuperacion = true;
+  }
+
+  cerrarModalRecuperacion() {
+    this.mostrarModalRecuperacion = false;
+    if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+  }
+
+  solicitarRecuperacion() {
+    if (!this.usernameRecuperacion || this.usernameRecuperacion.trim() === '') {
+      this.alertService.mostrarAlerta('Atención', 'Ingrese su nombre de usuario.', 'warning');
       return;
     }
 
-    // Estas claves (username, tipo, descripcion) coinciden con NuevaPeticionDTO en tu C#
+    const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse() : null;
+    if (!token) {
+      this.alertService.mostrarAlerta('Atención', 'Por favor, marque la casilla de seguridad reCAPTCHA.', 'warning');
+      return;
+    }
+
     const peticion = {
-      username: usernameIngresado.trim(),
+      username: this.usernameRecuperacion.trim(),
       tipo: 'RECUPERAR CONTRASEÑA',
       descripcion: 'El empleado ha solicitado restablecer su contraseña desde la pantalla de login.'
     };
-    
-    // Llamamos a enviarPeticion mandando '' como token de Captcha
-    this.api.enviarPeticion(peticion, '').subscribe({
+
+    this.api.enviarPeticion(peticion, token).subscribe({
       next: () => {
         this.alertService.mostrarAlerta('¡Ticket Enviado!', 'Su solicitud fue enviada al Super Admin. Espere a que sea procesada.', 'success');
+        this.mostrarModalRecuperacion = false;
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
       },
       error: (err: any) => {
         this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'Hubo un error al enviar la solicitud.', 'error');
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
       }
     });
   }
 }
+
+declare var grecaptcha: any;

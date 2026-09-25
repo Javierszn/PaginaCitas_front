@@ -6,6 +6,7 @@ import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { environment } from '../../../environments/environment';
 
 // DECLARACIÓN PARA GOOGLE RECAPTCHA
 declare var grecaptcha: any;
@@ -48,6 +49,7 @@ export class SuperAdminComponent implements OnInit {
   // VARIABLES SOPORTE / NOTIFICACIONES
   notificacionesNuevas: number = 0;
   mostrarBandeja: boolean = false;
+  siteKeyRecaptcha: string = environment.recaptchaSiteKey;
   mostrarModalPeticion: boolean = false;
   misPeticiones: any[] = [];
   nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' };

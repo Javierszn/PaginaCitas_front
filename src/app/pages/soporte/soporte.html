@@ -1,5 +1,4 @@
-
-      <div class="container mt-4">
+<div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h4 class="fw-bold" style="color: #055A1C;"><i class="fa-solid fa-headset me-2"></i>Centro de Soporte y Peticiones</h4>
           <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
@@ -39,7 +38,7 @@
                       <td style="max-width: 200px; white-space: normal;" class="text-success fw-bold">{{ p.respuesta }}</td>
                       <td class="text-center">
                         @if (p.estatus === 'PENDIENTE') {
-                          <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion)">
+                          <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion, p.tipo)">
                             Responder
                           </button>
                         } @else {
@@ -59,4 +58,3 @@
           </div>
         </div>
       </div>
-    

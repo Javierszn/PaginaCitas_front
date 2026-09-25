@@ -36,7 +36,7 @@
       </form>
 
       <div class="text-center mt-4">
-        <button class="btn btn-link text-secondary text-decoration-none d-block w-100 mb-2" style="font-size: 0.8rem;" (click)="abrirModalSoporte()">
+        <button class="btn btn-link text-secondary text-decoration-none d-block w-100 mb-2" style="font-size: 0.8rem;" (click)="abrirModalRecuperacion()">
           ¿Olvidó su contraseña o necesita ayuda?
         </button>
         
@@ -49,6 +49,25 @@
   </div>
 </div>
 <!-- MODAL DE CAMBIO DE CONTRASEÑA FORZOSO (PRIMER LOGIN) -->
+    @if (mostrarModalRecuperacion) {
+      <div class="modal-backdrop fade show" style="z-index: 1070; background-color: rgba(5, 90, 28, 0.9);"></div>
+      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1075; margin-top: 5vh;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+          <div class="modal-content rounded-4 border-0 shadow-lg p-4">
+            <div class="modal-body">
+              <h5 class="fw-bold text-dark mb-3">Recuperar Contraseña</h5>
+              <p class="text-secondary" style="font-size: 0.85rem;">Se enviará una solicitud al Super Administrador para que restablezca su contraseña.</p>
+              <input type="text" class="form-control mb-3 text-center" [(ngModel)]="usernameRecuperacion" name="usernameRecuperacion" placeholder="Su nombre de usuario">
+              <div class="d-flex justify-content-center mb-3">
+                <div class="g-recaptcha" [attr.data-sitekey]="siteKeyRecaptcha"></div>
+              </div>
+              <button class="btn btn-success rounded-pill px-4 py-2 fw-bold w-100 mb-2" (click)="solicitarRecuperacion()">Enviar Solicitud</button>
+              <button class="btn btn-link text-secondary w-100" (click)="cerrarModalRecuperacion()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
     @if (mostrarForzarPassword) {
       <div class="modal-backdrop fade show" style="z-index: 1070; background-color: rgba(5, 90, 28, 0.9);"></div>
       

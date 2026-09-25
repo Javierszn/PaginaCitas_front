@@ -48,7 +48,32 @@ export class SoporteComponent implements OnInit {
     }); 
   }
   
-  resolverPeticion(id: number) { 
+  resolverPeticion(id: number, tipo?: string) {
+    if (tipo === 'RECUPERAR CONTRASEÑA') {
+      this.alertService.mostrarInput(
+        'Restablecer Contraseña',
+        'Escriba la contraseña temporal que le va a dar al empleado:',
+        (nuevaPassword?: string) => {
+          if (!nuevaPassword) return;
+
+          this.api.resolverPeticion(id, {
+            respuesta: `Su contraseña temporal es: ${nuevaPassword}. Deberá cambiarla al iniciar sesión.`,
+            nuevaPassword: nuevaPassword
+          }).subscribe({
+            next: (res: any) => {
+              this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Contraseña restablecida.', 'success');
+              this.cargarPeticionesAdmin();
+            },
+            error: (err: any) => {
+              const msj = err.error?.mensaje || 'Error al restablecer la contraseña.';
+              this.alertService.mostrarAlerta('Error', msj, 'error');
+            }
+          });
+        }
+      );
+      return;
+    }
+
     this.alertService.mostrarInput(
       'Resolver Petición',
       'Escriba el mensaje de resolución para el empleado:',
