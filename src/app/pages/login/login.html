@@ -59,7 +59,7 @@
               <p class="text-secondary" style="font-size: 0.85rem;">Se enviará una solicitud al Super Administrador para que restablezca su contraseña.</p>
               <input type="text" class="form-control mb-3 text-center" [(ngModel)]="usernameRecuperacion" name="usernameRecuperacion" placeholder="Su nombre de usuario">
               <div class="d-flex justify-content-center mb-3">
-                <div class="g-recaptcha" [attr.data-sitekey]="siteKeyRecaptcha"></div>
+                <div id="captcha-recuperacion"></div>
               </div>
               <button class="btn btn-success rounded-pill px-4 py-2 fw-bold w-100 mb-2" (click)="solicitarRecuperacion()">Enviar Solicitud</button>
               <button class="btn btn-link text-secondary w-100" (click)="cerrarModalRecuperacion()">Cancelar</button>

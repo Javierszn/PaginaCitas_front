@@ -316,7 +316,7 @@ export class SuperAdminComponent implements OnInit {
         // Verificamos que el div exista y esté vacío para no dibujarlo doble
         if (elemento && elemento.innerHTML === '') {
           grecaptcha.render('recaptcha-soporte', {
-            'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // <--- LA VERDADERA CLAVE PÚBLICA
+            'sitekey': environment.recaptchaSiteKey
           });
         }
       }

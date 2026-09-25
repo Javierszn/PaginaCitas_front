@@ -86,15 +86,27 @@ export class LoginComponent {
   mostrarModalRecuperacion: boolean = false;
   usernameRecuperacion: string = '';
   siteKeyRecaptcha: string = environment.recaptchaSiteKey;
+  widgetIdRecuperacion: any = null;
 
   abrirModalRecuperacion() {
     this.usernameRecuperacion = '';
     this.mostrarModalRecuperacion = true;
+    setTimeout(() => {
+      if (typeof grecaptcha !== 'undefined') {
+        const el = document.getElementById('captcha-recuperacion');
+        if (el) {
+          el.innerHTML = '';
+          this.widgetIdRecuperacion = grecaptcha.render('captcha-recuperacion', {
+            'sitekey': environment.recaptchaSiteKey
+          });
+        }
+      }
+    }, 150);
   }
 
   cerrarModalRecuperacion() {
     this.mostrarModalRecuperacion = false;
-    if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+    if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) grecaptcha.reset(this.widgetIdRecuperacion);
   }
 
   solicitarRecuperacion() {
@@ -103,7 +115,7 @@ export class LoginComponent {
       return;
     }
 
-    const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse() : null;
+    const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse(this.widgetIdRecuperacion) : null;
     if (!token) {
       this.alertService.mostrarAlerta('Atención', 'Por favor, marque la casilla de seguridad reCAPTCHA.', 'warning');
       return;
@@ -116,14 +128,14 @@ export class LoginComponent {
     };
 
     this.api.enviarPeticion(peticion, token).subscribe({
-      next: () => {
-        this.alertService.mostrarAlerta('¡Ticket Enviado!', 'Su solicitud fue enviada al Super Admin. Espere a que sea procesada.', 'success');
+      next: (res: any) => {
+        this.alertService.mostrarAlerta('Solicitud Enviada', res.mensaje || 'Si el usuario existe, se envió la solicitud.', 'success');
         this.mostrarModalRecuperacion = false;
-        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+        if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) grecaptcha.reset(this.widgetIdRecuperacion);
       },
       error: (err: any) => {
         this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'Hubo un error al enviar la solicitud.', 'error');
-        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+        if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) grecaptcha.reset(this.widgetIdRecuperacion);
       }
     });
   }
