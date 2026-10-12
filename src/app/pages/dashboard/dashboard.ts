@@ -28,6 +28,7 @@ export class DashboardComponent implements OnInit {
     day: '2-digit'
   }).format(new Date());
   textoBusquedaDashboard: string = '';
+  cargandoCitasDashboard: boolean = false;
   paginaActualCitas: number = 1;
   totalPaginasCitas: number = 1;
   evitarBucleCitas: boolean = false;
@@ -89,6 +90,7 @@ export class DashboardComponent implements OnInit {
   cargarCitasDashboard(paginaSolicitada: number = 1) { 
     if (this.evitarBucleCitas) return;
     this.evitarBucleCitas = true;
+    this.cargandoCitasDashboard = true;
 
     let queryParams = `?pagina=${paginaSolicitada}&registrosPorPagina=50`; 
     if (this.textoBusquedaDashboard && this.textoBusquedaDashboard.trim().length > 0) { 
@@ -107,10 +109,12 @@ export class DashboardComponent implements OnInit {
         this.tramitesUnicos = tramites; 
         this.aplicarFiltroTramite(); 
         this.evitarBucleCitas = false; 
+        this.cargandoCitasDashboard = false;
         this.cdr.detectChanges(); 
       }, 
       error: () => {
         this.evitarBucleCitas = false; 
+        this.cargandoCitasDashboard = false;
         this.alertService.mostrarAlerta('Error', 'No se pudieron cargar las citas.', 'error');
         this.cdr.detectChanges();
       } 

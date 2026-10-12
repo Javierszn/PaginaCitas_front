@@ -53,11 +53,14 @@
           <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, NOMBRE O CURP)</label>
           <div class="input-group">
             <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
-            <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+            <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()" [disabled]="cargandoCitasDashboard">
+              @if (cargandoCitasDashboard) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Cargando... }
+              @else { <i class="fa-solid fa-magnifying-glass"></i> Buscar }
+            </button>
             
             <!-- BOTÓN PDF OCULTO PARA VENTANILLA -->
             @if (usuarioSesion?.rol === 'Super Administrador' || usuarioSesion?.rol === 'Administrador') {
-              <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #E60064; border: none;" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+              <button class="btn btn-success fw-bold ms-2 shadow-sm" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
             }
 
             @if(textoBusquedaDashboard || filtroTramite) {
@@ -69,6 +72,11 @@
       </div>
 
       <div class="table-responsive">
+        @if (cargandoCitasDashboard && citasDia.length > 0) {
+          <div class="dashboard-loading text-success small fw-semibold py-2" role="status" aria-live="polite">
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Actualizando citas...
+          </div>
+        }
         <table id="tablaCitas" class="table table-hover align-middle" style="font-size: 0.85rem;">
           <thead style="background-color: #fdfdfd;">
             <tr>
@@ -133,7 +141,7 @@
                       <i class="fa-solid fa-check me-1"></i> Atendida
                     </button>
                     
-                    <button class="btn btn-sm text-white fw-semibold" style="background-color: #E60064; border: none;" title="Marcar Inasistencia"
+                    <button class="btn btn-sm btn-institutional-critical fw-semibold" title="Marcar Inasistencia"
                             (click)="abrirConfirmacion('Falta de Asistencia', '¿Está seguro de marcar que ' + cita.ciudadano + ' NO ASISTIÓ?', () => actualizarEstatusCita(cita.folio, 'NO_ASISTIO'))">
                       <i class="fa-solid fa-xmark me-1"></i> Falta
                     </button>
@@ -143,7 +151,14 @@
                 </td>
               </tr>
             }
-            @if (citasDia.length === 0) {
+            @if (cargandoCitasDashboard && citasDia.length === 0) {
+              <tr>
+                <td colspan="6" class="text-center py-5 text-success" role="status" aria-live="polite">
+                  <span class="spinner-border me-2" aria-hidden="true"></span>Cargando citas...
+                </td>
+              </tr>
+            }
+            @if (!cargandoCitasDashboard && citasDia.length === 0) {
               <tr>
                 <td colspan="6" class="text-center py-5 text-muted">
                   <i class="fa-solid fa-folder-open fs-2 mb-2"></i><br>

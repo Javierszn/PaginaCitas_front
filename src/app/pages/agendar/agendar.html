@@ -7,7 +7,7 @@
       <div class="row justify-content-center mt-4">
         @for (sede of sedes; track sede.idSede) {
           <div class="col-md-5 col-lg-4 m-3">
-            <div class="card h-100 shadow-sm border-0 slp-hover-card" (click)="seleccionarSede(sede)" style="cursor: pointer;">
+            <div class="card h-100 shadow-sm border-0 slp-hover-card" role="button" tabindex="0" (click)="seleccionarSede(sede)" (keydown.enter)="seleccionarSede(sede)" (keydown.space)="$event.preventDefault(); seleccionarSede(sede)" [attr.aria-label]="'Seleccionar sede ' + sede.nombre" style="cursor: pointer;">
               <div class="card-body text-center p-4">
                 <div class="icon-circle rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
                   <i class="fa-solid" [class.fa-earth-americas]="sede.nombre.includes('Otros')" [class.fa-building]="!sede.nombre.includes('Otros')"></i>
@@ -346,8 +346,13 @@
 
           <button class="btn btn-success w-100 py-3 mt-2 rounded-pill fw-bold shadow" style="font-size: 0.9rem;"
                   (click)="confirmarCita()" 
-                  [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios">
-            CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
+                  [disabled]="!fechaSeleccionada || !horaSeleccionada || cargandoHorarios || procesandoCita">
+            @if (procesandoCita) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              {{ modoReagendar ? 'Reagendando...' : 'Agendando...' }}
+            } @else {
+              CONFIRMAR CITA <i class="fa-solid fa-check ms-2"></i>
+            }
           </button>
         </div>
       </div>
@@ -368,7 +373,7 @@
           
           <!-- BOTÓN DE DESCARGA PDF EN PANTALLA DE ÉXITO -->
           <div class="mb-4">
-             <button class="btn rounded-pill fw-bold text-white shadow-sm w-100 py-3" style="background-color: #E60064; border: none; font-size: 0.9rem;" (click)="descargarAcuseOficial()">
+             <button class="btn btn-success rounded-pill fw-bold shadow-sm w-100 py-3" (click)="descargarAcuseOficial()">
                <i class="fa-solid fa-file-pdf me-2"></i> Descargar Acuse Oficial
              </button>
           </div>

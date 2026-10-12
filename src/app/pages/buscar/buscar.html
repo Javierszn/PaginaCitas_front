@@ -60,7 +60,7 @@
             </div>
 <!-- NUEVO BOTÓN DE DESCARGA PDF DE ACUSE -->
             <div class="px-4 pt-3 pb-0 text-end">
-              <button class="btn rounded-pill fw-bold text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="descargarAcuseOficial()">
+              <button class="btn btn-success rounded-pill fw-bold shadow-sm" (click)="descargarAcuseOficial()">
                 <i class="fa-solid fa-file-pdf me-2"></i> Descargar Acuse Oficial
               </button>
             </div>
@@ -104,7 +104,7 @@
                           <h6 class="fw-bold mb-1" style="color: #0dcaf0;"><i class="fa-solid fa-calendar-week me-2"></i>¿Cambiar fecha u hora?</h6>
                           <small class="text-dark" style="font-size: 0.8rem;">Conserve su folio actual y elija un nuevo horario disponible para este trámite.</small>
                         </div>
-                        <button class="btn rounded-pill fw-bold py-2 text-white shadow-sm mt-auto" style="background-color: #0dcaf0; border: none; font-size: 0.85rem;" (click)="prepararReagendar()">
+                        <button class="btn btn-institutional-info rounded-pill fw-bold py-2 shadow-sm mt-auto" (click)="prepararReagendar()">
                           <i class="fa-solid fa-clock-rotate-left me-2"></i> Reagendar Cita
                         </button>
                       </div>
@@ -117,7 +117,7 @@
                         <h6 class="fw-bold mb-1" style="color: #E60064;"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Cancelar cita?</h6>
                         <small class="text-dark" style="font-size: 0.8rem;">Si cancela, perderá este horario, liberará el espacio y tendrá que generar un folio nuevo desde cero.</small>
                       </div>
-                      <button class="btn rounded-pill fw-bold py-2 text-white shadow-sm mt-auto" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="cancelarCita()">
+                      <button class="btn btn-institutional-critical rounded-pill fw-bold py-2 shadow-sm mt-auto" (click)="cancelarCita()">
                         <i class="fa-solid fa-trash me-2"></i> Cancelar Cita
                       </button>
                     </div>
@@ -131,5 +131,4 @@
         </div>
       </div>
     }
-    
-    
+

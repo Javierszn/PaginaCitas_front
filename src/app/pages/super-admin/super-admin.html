@@ -1,5 +1,5 @@
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container mt-4 super-admin-page">
+  <div class="page-heading d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold" style="color: #E60064;">Configuración Global (Super Admin)</h4>
     <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
   </div>
@@ -151,7 +151,7 @@
               <div class="mb-3">
                 <input type="date" class="form-control mb-2" [(ngModel)]="nuevoDiaInhabil.fecha">
                 <input type="text" class="form-control mb-3" placeholder="Motivo (Ej. Día Festivo)" [(ngModel)]="nuevoDiaInhabil.motivo">
-                <button class="btn text-white fw-bold shadow-sm w-100" style="background-color: #E60064;" (click)="agregarDiaInhabil()">Bloquear Día en Calendario <i class="fa-solid fa-lock ms-1"></i></button>
+                <button class="btn btn-institutional-critical fw-bold shadow-sm w-100" (click)="agregarDiaInhabil()">Bloquear Día en Calendario <i class="fa-solid fa-lock ms-1"></i></button>
               </div>
             </div>
             <div class="col-md-7 ps-4">
@@ -193,7 +193,7 @@
               <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL</label>
               <div class="input-group">
                 <input type="text" class="form-control" placeholder="Escriba el nombre de usuario..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin(1)">
-                <button class="btn text-white fw-bold" style="background-color: #E60064;" (click)="cargarAccesosAdmin(1)"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                <button class="btn btn-success fw-bold" (click)="cargarAccesosAdmin(1)"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
                 <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #055A1C;" (click)="descargarPDFAccesos()"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
               </div>
             </div>

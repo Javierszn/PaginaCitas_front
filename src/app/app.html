@@ -53,7 +53,7 @@
               } @else if (alertaTipo === 'confirmacion') {
                 <div class="d-flex justify-content-center gap-2">
                   <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" style="font-size: 0.85rem;" (click)="cerrarAlerta()">Cancelar</button>
-                  <button class="btn rounded-pill px-4 py-2 fw-bold text-white shadow-sm" style="background-color: #E60064; border: none; font-size: 0.85rem;" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
+                  <button class="btn btn-institutional-critical rounded-pill px-4 py-2 fw-bold shadow-sm" (click)="ejecutarConfirmacion()">Sí, Estoy Seguro</button>
                 </div>
               } @else {
                 <button class="btn btn-success rounded-pill px-5 py-2 fw-bold w-100 shadow-sm" style="font-size: 0.9rem;" (click)="cerrarAlerta()">Aceptar</button>
