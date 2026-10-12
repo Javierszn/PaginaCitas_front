@@ -1,0 +1,44 @@
+.aviso-global-modal {
+  padding: 0.75rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.aviso-global-dialog {
+  width: min(600px, 100%);
+  max-width: 600px;
+  height: calc(100dvh - 1.5rem);
+  max-height: calc(100dvh - 1.5rem);
+  margin: auto;
+}
+
+.aviso-global-content {
+  max-height: 100%;
+}
+
+.aviso-global-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.aviso-global-body img {
+  display: block;
+  height: auto;
+}
+
+.aviso-global-footer {
+  flex: 0 0 auto;
+  background: #fff;
+}
+
+@media (max-width: 575.98px) {
+  .aviso-global-dialog {
+    width: 100%;
+  }
+
+  .aviso-global-body:not(.p-0) {
+    padding-right: 1.25rem !important;
+    padding-left: 1.25rem !important;
+  }
+}

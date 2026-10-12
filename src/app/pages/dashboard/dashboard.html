@@ -1,7 +1,7 @@
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
-    <div class="d-flex align-items-center">
+<div class="container mt-4 dashboard-page">
+  <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+    <h4 class="dashboard-title fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
+    <div class="dashboard-actions d-flex align-items-center">
 
       <!-- CAMPANITA DE NOTIFICACIONES TIPO APP -->
       <button class="btn position-relative me-3 border-0 bg-transparent" (click)="abrirBandeja()" title="Ver Notificaciones">
@@ -207,9 +207,9 @@
 @if (mostrarModalPeticion) {
 <div class="modal-backdrop fade show" style="z-index: 1050; background-color: rgba(0,0,0,0.6);"></div>
 
-<div class="modal d-block" tabindex="-1" style="z-index: 1055; margin-top: 10vh;">
-  <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
-    <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.3s ease;">
+<div class="modal d-block support-request-modal" tabindex="-1" style="z-index: 1055;">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable support-request-dialog">
+    <div class="modal-content rounded-4 border-0 shadow-lg support-request-content" style="animation: dropIn 0.3s ease;">
       
       <div class="modal-header bg-light border-0 px-4 py-3">
         <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-headset me-2" style="color: #055A1C;"></i>Centro de Soporte</h5>
@@ -244,7 +244,7 @@
 
         <div class="mb-3">
           <label class="form-label fw-bold small text-secondary">EXPLIQUE EL PROBLEMA</label>
-          <textarea class="form-control bg-light" rows="4" [(ngModel)]="nuevaPeticion.descripcion" placeholder="Describa a detalle qué es lo que necesita..."></textarea>
+          <textarea class="form-control bg-light support-request-description" rows="4" [(ngModel)]="nuevaPeticion.descripcion" placeholder="Describa a detalle qué es lo que necesita..."></textarea>
         </div>
 
         

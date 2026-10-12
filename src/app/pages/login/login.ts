@@ -129,7 +129,11 @@ export class LoginComponent {
 
     this.api.enviarPeticion(peticion, token).subscribe({
       next: (res: any) => {
-        this.alertService.mostrarAlerta('Solicitud Enviada', res.mensaje || 'Si el usuario existe, se envió la solicitud.', 'success');
+        this.alertService.mostrarAlerta(
+          'Solicitud recibida',
+          res.mensaje || 'Si la cuenta corresponde a un usuario registrado, la solicitud se enviará para revisión. Si no existe, no se generará un ticket.',
+          'success'
+        );
         this.mostrarModalRecuperacion = false;
         if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) grecaptcha.reset(this.widgetIdRecuperacion);
       },

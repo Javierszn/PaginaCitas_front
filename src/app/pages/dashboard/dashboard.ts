@@ -21,7 +21,12 @@ export class DashboardComponent implements OnInit {
   citasDia: any[] = []; 
   tramitesUnicos: string[] = []; 
   filtroTramite: string = '';
-  fechaDashboard: string = new Date().toISOString().split('T')[0];
+  fechaDashboard: string = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
   textoBusquedaDashboard: string = '';
   paginaActualCitas: number = 1;
   totalPaginasCitas: number = 1;

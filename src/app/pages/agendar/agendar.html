@@ -383,19 +383,19 @@
     @if (mostrarAvisoGlobal && avisoGlobal) {
       <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
       
-      <div class="modal d-block text-center" tabindex="-1" style="z-index: 1065; margin-top: 5vh;">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-          <div class="modal-content rounded-4 border-0 shadow-lg" style="animation: dropIn 0.4s ease; overflow: hidden;">
+      <div class="modal d-block text-center aviso-global-modal" tabindex="-1" style="z-index: 1065;">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg aviso-global-dialog">
+          <div class="modal-content rounded-4 border-0 shadow-lg aviso-global-content" style="animation: dropIn 0.4s ease; overflow: hidden;">
             
             @if (avisoGlobal.imagenUrl) {
-              <div class="modal-body p-0 position-relative">
+              <div class="modal-body p-0 position-relative aviso-global-body">
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3 bg-white" style="z-index: 1070; opacity: 0.8;" aria-label="Cerrar" (click)="cerrarAvisoGlobal()"></button>
                 <img [src]="avisoGlobal.imagenUrl" alt="Aviso Importante" class="img-fluid w-100">
-                <div class="p-4 bg-white">
-                    <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
-                      He leído y entendido <i class="fa-solid fa-check ms-2"></i>
-                    </button>
-                </div>
+              </div>
+              <div class="modal-footer border-0 justify-content-center p-3 aviso-global-footer">
+                <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
+                  He leído y entendido <i class="fa-solid fa-check ms-2"></i>
+                </button>
               </div>
             } @else {
               <div class="modal-header border-0 bg-light justify-content-center pt-5 pb-3">
@@ -403,11 +403,13 @@
                   <i class="fa-solid fa-bullhorn"></i>
                 </div>
               </div>
-              <div class="modal-body px-5 pb-5 pt-2">
+              <div class="modal-body px-5 pb-4 pt-2 aviso-global-body">
                 <h3 class="fw-bold text-dark mb-4">{{ avisoGlobal.titulo }}</h3>
                 <p class="text-secondary fs-6 mb-5" style="white-space: pre-line; line-height: 1.6;">
                   {{ avisoGlobal.mensaje }}
                 </p>
+              </div>
+              <div class="modal-footer border-0 justify-content-center px-4 pb-4 aviso-global-footer">
                 <button class="btn btn-success rounded-pill px-5 py-3 fw-bold shadow-sm w-100" style="max-width: 400px; font-size: 0.9rem;" (click)="cerrarAvisoGlobal()">
                   He leído y entendido <i class="fa-solid fa-check ms-2"></i>
                 </button>
@@ -418,4 +420,3 @@
         </div>
       </div>
     }
-  

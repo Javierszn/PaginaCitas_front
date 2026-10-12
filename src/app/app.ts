@@ -104,6 +104,12 @@ export class App implements OnInit, OnDestroy {
     this.router.navigate(['/buscar']); 
   }
 
+  irAAccesoCitas() {
+    this.router.navigate(['/login']).then(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   // EL BOTÓN DEL LOGO QUE LLEVA A LA PÁGINA PRINCIPAL
   regresarPaso1() { 
     if (this.router.url === '/') {

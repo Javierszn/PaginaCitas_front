@@ -22,6 +22,23 @@ export class SoporteComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private alertService = inject(AlertService); // <--- INYECTADO
 
+  private extraerError(err: any, mensajePredeterminado: string): string {
+    const cuerpo = err?.error;
+    if (typeof cuerpo?.mensaje === 'string' && cuerpo.mensaje.trim()) return cuerpo.mensaje;
+    if (typeof cuerpo?.detail === 'string' && cuerpo.detail.trim()) return cuerpo.detail;
+
+    if (cuerpo?.errors && typeof cuerpo.errors === 'object') {
+      const errores = Object.values(cuerpo.errors).flatMap((valor: any) => Array.isArray(valor) ? valor : [valor]);
+      if (errores.length) return errores.join('\n');
+    }
+
+    if (typeof cuerpo?.title === 'string' && cuerpo.title.trim()) return cuerpo.title;
+    if (typeof cuerpo === 'string' && cuerpo.trim() && !cuerpo.trim().startsWith('<')) return cuerpo;
+    if (err?.status === 0) return 'No se pudo conectar con el servidor. Revisa la conexión y la URL de la API.';
+    if (err?.status) return `${mensajePredeterminado} (HTTP ${err.status}${err.statusText ? `: ${err.statusText}` : ''})`;
+    return mensajePredeterminado;
+  }
+
   ngOnInit() {
     const sessionUser = sessionStorage.getItem('usuarioRC');
     if (sessionUser) {
@@ -65,7 +82,7 @@ export class SoporteComponent implements OnInit {
               this.cargarPeticionesAdmin();
             },
             error: (err: any) => {
-              const msj = err.error?.mensaje || 'Error al restablecer la contraseña.';
+              const msj = this.extraerError(err, 'Error al restablecer la contraseña.');
               this.alertService.mostrarAlerta('Error', msj, 'error');
             }
           });
@@ -78,15 +95,19 @@ export class SoporteComponent implements OnInit {
       'Resolver Petición',
       'Escriba el mensaje de resolución para el empleado:',
       (respuesta?: string) => {
-        if(!respuesta) return;
+        if (!respuesta?.trim()) return;
+        if (respuesta.trim().length > 500) {
+          this.alertService.mostrarAlerta('Atención', 'La respuesta no puede superar los 500 caracteres.', 'warning');
+          return;
+        }
         
-        this.api.resolverPeticion(id, { respuesta: respuesta }).subscribe({ 
+        this.api.resolverPeticion(id, { respuesta: respuesta.trim() }).subscribe({
           next: (res: any) => { 
             this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Petición marcada como resuelta.', 'success'); 
             this.cargarPeticionesAdmin(); 
           }, 
           error: (err: any) => {
-            const msj = err.error?.mensaje || 'Error al resolver la petición.';
+            const msj = this.extraerError(err, 'Error al resolver la petición.');
             this.alertService.mostrarAlerta('Error', msj, 'error');
           }
         }); 
