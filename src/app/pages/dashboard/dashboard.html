@@ -135,6 +135,8 @@
                             (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
                       <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar
                     </button>
+                  } @else if (cita.estatus === 'CONFIRMADA' && usuarioSesion?.rol === 'Informes') {
+                    <span class="text-muted" style="font-size: 0.75rem;">Confirmada</span>
                   } @else if (cita.estatus === 'CONFIRMADA') {
                     <button class="btn btn-sm btn-success me-2 fw-semibold" title="Marcar Atendida"
                             (click)="abrirConfirmacion('Completar Cita', '¿Está seguro de marcar la cita de ' + cita.ciudadano + ' como ATENDIDA?', () => actualizarEstatusCita(cita.folio, 'ATENDIDA'))">

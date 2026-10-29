@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../environments/environment';
 
 @Injectable({
@@ -43,6 +43,7 @@ export class ApiService {
 
   // === USUARIOS Y ACCESOS ===
   getUsuarios() { return this.http.get(`${this.apiUrl}/Usuarios`); }
+  getRoles() { return this.http.get(`${this.apiUrl}/Usuarios/Roles`); }
   getUsuariosSoporte() { return this.http.get(`${this.apiUrl}/Usuarios/Soporte`); }
   crearUsuario(usuario: any) { return this.http.post(`${this.apiUrl}/Usuarios`, usuario); }
   toggleEstadoUsuario(id: number) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/estado`, {}); }
@@ -59,7 +60,10 @@ export class ApiService {
   marcarLeidasAdmin() { return this.http.put(`${this.apiUrl}/Peticiones/MarcarLeidasAdmin`, {}); }
   
   // MODIFICADO: Agregamos el captchaToken
-  enviarPeticion(payload: any, captchaToken: string) { return this.http.post(`${this.apiUrl}/Peticiones?captchaToken=${captchaToken}`, payload); }
+  enviarPeticion(payload: any, captchaToken: string) {
+    const params = new HttpParams().set('captchaToken', captchaToken);
+    return this.http.post(`${this.apiUrl}/Peticiones`, payload, { params });
+  }
   
   resolverPeticion(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Peticiones/${id}/resolver`, payload); }
 }

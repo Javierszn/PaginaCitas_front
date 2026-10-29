@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
+import { environment } from '../../../environments/environment';
 import jsPDF from 'jspdf';
 
 declare var grecaptcha: any;
@@ -37,7 +38,7 @@ export class BuscarComponent implements OnInit {
         if (el) {
           el.innerHTML = '';
           this.widgetIdBuscar = grecaptcha.render('captcha-buscar', { 
-            'sitekey': '6Le3ts4tAAAAAAHEE4VgDKditLXcntMGH3zDwlGJ' 
+            'sitekey': environment.recaptchaSiteKey
           });
         }
       }

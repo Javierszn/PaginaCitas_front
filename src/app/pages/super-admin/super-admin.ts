@@ -21,6 +21,7 @@ export class SuperAdminComponent implements OnInit {
   usuarioSesion: any = null;
   sedes: any[] = [];
   usuariosSistema: any[] = [];
+  rolesDisponibles: any[] = [];
   categoriasAdmin: any[] = [];
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
   registroAccesos: any[] = [];
@@ -49,8 +50,13 @@ export class SuperAdminComponent implements OnInit {
     const sessionUser = sessionStorage.getItem('usuarioRC');
     if (sessionUser) {
       this.usuarioSesion = JSON.parse(sessionUser);
-      if (this.usuarioSesion.rol !== 'Super Administrador') { this.router.navigate(['/admin/dashboard']); return; }
-      this.cargarSedes(); this.cargarUsuariosAdmin(); this.cargarTramitesAdmin(); this.cargarAccesosAdmin(1); this.cargarReglasCalendario();
+      if (this.usuarioSesion.rol !== 'Super Administrador' && this.usuarioSesion.rol !== 'Dirección') { this.router.navigate(['/admin/dashboard']); return; }
+      this.cargarTramitesAdmin();
+      if (this.usuarioSesion.rol === 'Dirección') {
+        this.cargarMisPeticiones();
+        return;
+      }
+      this.cargarSedes(); this.cargarUsuariosAdmin(); this.cargarRoles(); this.cargarAccesosAdmin(1); this.cargarReglasCalendario();
       this.api.getPeticionesAdmin().subscribe({ next: (res: any) => { const unicas = res.filter((v:any, i:number, a:any) => a.findIndex((t:any) => t.idPeticion === v.idPeticion) === i); this.notificacionesNuevas = unicas.filter((p: any) => p.estatus === 'PENDIENTE' && !p.leido).length; this.cdr.detectChanges(); } });
     } else { this.router.navigate(['/login']); }
   }
@@ -68,11 +74,13 @@ export class SuperAdminComponent implements OnInit {
   limpiarRastrosDeSesion() { sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.router.navigate(['/login']); }
   cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
   cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
+  cargarRoles() { this.api.getRoles().subscribe({ next: (res: any) => { this.rolesDisponibles = res; const ventanilla = res.find((rol: any) => rol.nombreRol === 'Ventanilla'); if (ventanilla) this.nuevoUsuario.idRol = ventanilla.idRol; this.cdr.detectChanges(); } }); }
+  rolPredeterminado(): number { return Number(this.rolesDisponibles.find((rol: any) => rol.nombreRol === 'Ventanilla')?.idRol ?? this.rolesDisponibles[0]?.idRol ?? 2); }
 
   crearUsuario() {
     if (!this.nuevoUsuario.username || !this.nuevoUsuario.password || !this.nuevoUsuario.nombreCompleto) { this.alertService.mostrarAlerta('Atención', 'Todos los campos son obligatorios.', 'warning'); return; }
     const payloadSeguro = { ...this.nuevoUsuario, idRol: Number(this.nuevoUsuario.idRol), idSede: Number(this.nuevoUsuario.idSede) };
-    this.api.crearUsuario(payloadSeguro).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 }; this.cargarUsuariosAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'Error al crear el usuario.'), 'error') });
+    this.api.crearUsuario(payloadSeguro).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: this.rolPredeterminado(), idSede: 1 }; this.cargarUsuariosAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'Error al crear el usuario.'), 'error') });
   }
 
   toggleEstadoUsuario(id: number) { this.api.toggleEstadoUsuario(id).subscribe({ next: () => this.cargarUsuariosAdmin(), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo cambiar el estado.'), 'error') }); }
@@ -185,8 +193,31 @@ export class SuperAdminComponent implements OnInit {
     });
   }
 
-  abrirBandeja() { this.mostrarBandeja = true; if (this.usuarioSesion?.username) { this.api.getMisPeticiones(this.usuarioSesion.username).subscribe({ next: (res: any) => { this.misPeticiones = res; this.cdr.detectChanges(); } }); } }
-  cerrarBandeja() { this.mostrarBandeja = false; if (this.usuarioSesion?.username) this.api.marcarLeidasUsuario(this.usuarioSesion.username).subscribe(); }
+  cargarMisPeticiones() {
+    if (!this.usuarioSesion?.username) return;
+    this.api.getMisPeticiones(this.usuarioSesion.username).subscribe({
+      next: (res: any) => {
+        const unicas = (res || []).filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.idPeticion === v.idPeticion) === i);
+        this.misPeticiones = unicas;
+        this.notificacionesNuevas = unicas.filter((p: any) => p.estatus === 'RESUELTA' && !p.leido).length;
+        this.cdr.detectChanges();
+      },
+      error: () => this.alertService.mostrarAlerta('Error', 'No se pudieron cargar tus notificaciones.', 'error')
+    });
+  }
+
+  abrirBandeja() {
+    this.mostrarBandeja = true;
+    this.cargarMisPeticiones();
+  }
+  cerrarBandeja() {
+    this.mostrarBandeja = false;
+    if (this.usuarioSesion?.username) {
+      this.api.marcarLeidasUsuario(this.usuarioSesion.username).subscribe({
+        next: () => { this.notificacionesNuevas = 0; this.cdr.detectChanges(); }
+      });
+    }
+  }
 
   abrirModalPeticion(desdeLogin: boolean) {
     this.peticionDesdeLogin = desdeLogin; this.nuevaPeticion.username = this.usuarioSesion?.username || ''; this.mostrarModalPeticion = true;

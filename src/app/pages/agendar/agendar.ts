@@ -6,6 +6,7 @@ import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
 import jsPDF from 'jspdf';
 import { environment } from '../../../environments/environment';
+import { finalize } from 'rxjs';
 declare var grecaptcha: any;
 
 @Component({
@@ -47,6 +48,26 @@ export class AgendarComponent implements OnInit {
   mostrarAvisoGlobal: boolean = false;
 
   municipiosRegistro: string[] = [];
+  ladaSeleccionada = '52';
+  ladasPaises = [
+    { pais: 'México', codigo: '52' }, { pais: 'Estados Unidos', codigo: '1' }, { pais: 'Canadá', codigo: '1' },
+    { pais: 'Argentina', codigo: '54' }, { pais: 'Bolivia', codigo: '591' }, { pais: 'Brasil', codigo: '55' },
+    { pais: 'Chile', codigo: '56' }, { pais: 'Colombia', codigo: '57' }, { pais: 'Costa Rica', codigo: '506' },
+    { pais: 'Cuba', codigo: '53' }, { pais: 'Ecuador', codigo: '593' }, { pais: 'El Salvador', codigo: '503' },
+    { pais: 'Guatemala', codigo: '502' }, { pais: 'Honduras', codigo: '504' }, { pais: 'Nicaragua', codigo: '505' },
+    { pais: 'Panamá', codigo: '507' }, { pais: 'Paraguay', codigo: '595' }, { pais: 'Perú', codigo: '51' },
+    { pais: 'Puerto Rico', codigo: '1' }, { pais: 'República Dominicana', codigo: '1' }, { pais: 'Uruguay', codigo: '598' },
+    { pais: 'Venezuela', codigo: '58' }, { pais: 'España', codigo: '34' }, { pais: 'Reino Unido', codigo: '44' },
+    { pais: 'Francia', codigo: '33' }, { pais: 'Alemania', codigo: '49' }, { pais: 'Italia', codigo: '39' },
+    { pais: 'Portugal', codigo: '351' }, { pais: 'Países Bajos', codigo: '31' }, { pais: 'Bélgica', codigo: '32' },
+    { pais: 'Suiza', codigo: '41' }, { pais: 'Suecia', codigo: '46' }, { pais: 'Noruega', codigo: '47' },
+    { pais: 'Dinamarca', codigo: '45' }, { pais: 'Irlanda', codigo: '353' }, { pais: 'Polonia', codigo: '48' },
+    { pais: 'Rusia', codigo: '7' }, { pais: 'Turquía', codigo: '90' }, { pais: 'Israel', codigo: '972' },
+    { pais: 'Arabia Saudita', codigo: '966' }, { pais: 'Emiratos Árabes Unidos', codigo: '971' }, { pais: 'India', codigo: '91' },
+    { pais: 'China', codigo: '86' }, { pais: 'Japón', codigo: '81' }, { pais: 'Corea del Sur', codigo: '82' },
+    { pais: 'Filipinas', codigo: '63' }, { pais: 'Australia', codigo: '61' }, { pais: 'Nueva Zelanda', codigo: '64' },
+    { pais: 'Sudáfrica', codigo: '27' }, { pais: 'Egipto', codigo: '20' }, { pais: 'Marruecos', codigo: '212' }
+  ];
   estadosRepublica: string[] = [ 'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México (CDMX)', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas' ];
   todosLosMunicipiosSLP: string[] = [ 'Ahualulco', 'Alaquines', 'Aquismón', 'Armadillo de los Infante', 'Axtla de Terrazas', 'Cárdenas', 'Catorce', 'Cedral', 'Cerritos', 'Cerro de San Pedro', 'Charcas', 'Ciudad del Maíz', 'Ciudad Fernández', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Guadalcázar', 'Huehuetlán', 'Lagunillas', 'Matehuala', 'Matlapa', 'Mexquitic de Carmona', 'Moctezuma', 'Rayón', 'Rioverde', 'Salinas', 'San Antonio', 'San Ciro de Acosta', 'San Luis Potosí', 'San Martín Chalchicuautla', 'San Nicolás Tolentino', 'San Vicente Tancuayalab', 'Santa Catarina', 'Santa María del Río', 'Santo Domingo', 'Soledad de Graciano Sánchez', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Tierra Nueva', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Arriaga', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa de Reyes', 'Villa Hidalgo', 'Villa Juárez', 'Xilitla', 'Zaragoza', 'Villa de Pozos (Municipio 59)' ].sort();
 
@@ -94,17 +115,19 @@ export class AgendarComponent implements OnInit {
 
   cargarReglasCalendario() { this.api.getReglasCalendario().subscribe({ next: (res: any) => { this.diasInhabilesAdmin = res.diasInhabiles || []; this.diasBloqueados = this.diasInhabilesAdmin.map((d: any) => d.fecha.split('T')[0]); this.generarCalendario(); this.cdr.detectChanges(); } }); }
   soloNumeros(event: any) { const charCode = (event.which) ? event.which : event.keyCode; if (charCode < 48 || charCode > 57) { event.preventDefault(); } }
+  normalizarTelefonoLocal() { this.ciudadano.telefono = (this.ciudadano.telefono || '').replace(/\D/g, '').slice(0, 15 - this.ladaSeleccionada.length); }
+  obtenerTelefonoCompleto() { return `${this.ladaSeleccionada}${(this.ciudadano.telefono || '').replace(/\D/g, '')}`; }
   soloLetras(event: any) { const charCode = (event.which) ? event.which : event.keyCode; if ((charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || charCode === 32 || charCode === 241 || charCode === 209) { return true; } event.preventDefault(); return false; }
   validarFormatoCURP() { if (this.ciudadano.curp) { this.ciudadano.curp = this.ciudadano.curp.toUpperCase(); } if (!this.ciudadano.curp || this.ciudadano.curp.length === 0) { this.curpValida = true; return; } const regexCURP = /^[A-Z]{4}\d{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9]\d$/; this.curpValida = regexCURP.test(this.ciudadano.curp); }
   
-  validarPasoDatos() { this.mostrarMensajesAyuda = true; const tieneCurp = this.ciudadano.curp && this.ciudadano.curp.length === 18 && this.curpValida; const tieneNombre = this.ciudadano.nombre && this.ciudadano.nombre.trim().length > 0; if (!tieneCurp && !tieneNombre) { this.abrirAlerta('Faltan Datos', 'Debe ingresar al menos su CURP o su Nombre Completo para continuar.', 'warning'); return; } if (this.ciudadano.curp && this.ciudadano.curp.length > 0 && !this.curpValida) { this.abrirAlerta('CURP Inválida', 'La CURP ingresada no tiene un formato válido.', 'warning'); return; } if (this.ciudadano.telefono && this.ciudadano.telefono.length !== 10) { this.abrirAlerta('Teléfono Inválido', 'El número de teléfono debe ser exactamente de 10 dígitos.', 'warning'); return; } this.irAPaso4(); }
+  validarPasoDatos() { this.mostrarMensajesAyuda = true; const tieneCurp = this.ciudadano.curp && this.ciudadano.curp.length === 18 && this.curpValida; const tieneNombre = this.ciudadano.nombre && this.ciudadano.nombre.trim().length > 0; if (!tieneCurp && !tieneNombre) { this.abrirAlerta('Faltan Datos', 'Debe ingresar al menos su CURP o su Nombre Completo para continuar.', 'warning'); return; } if (this.ciudadano.curp && this.ciudadano.curp.length > 0 && !this.curpValida) { this.abrirAlerta('CURP Inválida', 'La CURP ingresada no tiene un formato válido.', 'warning'); return; } const telefono = this.obtenerTelefonoCompleto(); if (!this.ciudadano.telefono || telefono.length < 8 || telefono.length > 15) { this.abrirAlerta('Teléfono Inválido', 'El teléfono es obligatorio y debe incluir una lada y un número válido.', 'warning'); return; } this.irAPaso4(); }
 
   cargarAvisoGlobal() { this.api.getAvisoActivo().subscribe({ next: (res: any) => { if (res && res.titulo) { this.avisoGlobal = res; this.mostrarAvisoGlobal = true; this.cdr.detectChanges(); } } }); }
   cerrarAvisoGlobal() { this.mostrarAvisoGlobal = false; this.cdr.detectChanges(); }
 
   obtenerIconoCategoria(nombre: string): string { const n = nombre.toLowerCase(); if (n.includes('acta')) return 'fa-file-signature'; if (n.includes('curp')) return 'fa-id-card'; if (n.includes('anotaciones')) return 'fa-pen-clip'; if (n.includes('constancia')) return 'fa-file-circle-check'; if (n.includes('enmienda')) return 'fa-file-pen'; return 'fa-file-lines'; }
 
-  limpiarFormulario() { this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' }; this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.diasMes.forEach(d => d.seleccionado = false); this.categoriaExpandida = null; this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false; this.curpValida = true; this.mostrarMensajesAyuda = false; this.citaConsultada = null; }
+  limpiarFormulario(preservarAcuse: boolean = false) { this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' }; this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.diasMes.forEach(d => d.seleccionado = false); this.categoriaExpandida = null; this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false; this.curpValida = true; this.mostrarMensajesAyuda = false; if (!preservarAcuse) this.citaConsultada = null; }
 
   cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
   cargarTramites() { this.api.getTramites().subscribe({ next: (datos: any) => { this.categorias = datos; this.cdr.detectChanges(); } }); }
@@ -138,8 +161,107 @@ export class AgendarComponent implements OnInit {
 
   getBrowserInfo() { const ua = navigator.userAgent; let browser = "Desconocido"; let os = "Desconocido"; if(ua.includes("Firefox")) browser = "Firefox"; else if(ua.includes("Opera") || ua.includes("OPR")) browser = "Opera"; else if(ua.includes("Trident") || ua.includes("MSIE")) browser = "Internet Explorer"; else if(ua.includes("Edge") || ua.includes("Edg")) browser = "Edge"; else if(ua.includes("Chrome")) browser = "Chrome"; else if(ua.includes("Safari")) browser = "Safari"; if(ua.includes("Win")) os = "Windows"; else if(ua.includes("Mac")) os = "MacOS/iOS"; else if(ua.includes("Linux")) os = "Linux"; else if(ua.includes("Android")) os = "Android"; return { browser, os }; }
 
-  confirmarCita() { if (this.procesandoCita) return; const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse(this.widgetIdAgendar) : null; if (!token) { this.abrirAlerta('Seguridad', 'Por favor, marque la casilla "No soy un robot".', 'warning'); return; } this.procesandoCita = true; this.citaConsultada = null; if (this.modoReagendar) { const payload = { nuevaFechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00` }; this.api.reagendarCita(this.folioReagendar, payload).subscribe({ next: (res: any) => { this.folioExito = this.folioReagendar; this.citaConsultada = { folio: this.folioExito, tramite: this.tramiteSeleccionado?.nombreTramite || 'Trámite', costo: this.tramiteSeleccionado?.costo || 0, fecha: this.fechaSeleccionada, hora: this.horaSeleccionada, sede: this.sedeSeleccionada?.nombre || '', ciudadano: this.ciudadano.nombre, curp: this.ciudadano.curp, requisitos: this.tramiteSeleccionado?.requisitos || '' }; this.modoReagendar = false; this.folioReagendar = ''; this.pasoActual = 5; history.pushState({ paso: 5 }, '', ''); this.limpiarFormulario(); this.procesandoCita = false; this.cdr.detectChanges(); if (typeof grecaptcha !== 'undefined') grecaptcha.reset(this.widgetIdAgendar); }, error: (err: any) => { this.procesandoCita = false; this.abrirAlerta('Error', err.error.mensaje || 'No se pudo reagendar.', 'error'); if (typeof grecaptcha !== 'undefined') grecaptcha.reset(this.widgetIdAgendar); } }); } else { const navInfo = this.getBrowserInfo(); const solicitud = { curp: this.ciudadano.curp, nombre: this.ciudadano.nombre, correo: this.ciudadano.correo, telefono: this.ciudadano.telefono, municipioRegistro: this.ciudadano.municipioRegistro, estadoRegistro: this.ciudadano.estadoRegistro, idTramite: this.tramiteSeleccionado.idTramite, idSede: this.sedeSeleccionada.idSede, fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`, navegador: navInfo.browser, sistemaOperativo: navInfo.os, captchaToken: token }; this.api.agendarCita(solicitud).subscribe({ next: (res: any) => { this.folioExito = res.folio; this.citaConsultada = { folio: this.folioExito, tramite: this.tramiteSeleccionado.nombreTramite, costo: this.tramiteSeleccionado.costo, fecha: this.fechaSeleccionada, hora: this.horaSeleccionada, sede: this.sedeSeleccionada.nombre, ciudadano: this.ciudadano.nombre, curp: this.ciudadano.curp, requisitos: this.tramiteSeleccionado.requisitos }; this.pasoActual = 5; history.pushState({ paso: 5 }, '', ''); this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' }; this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.diasMes.forEach(d => d.seleccionado = false); this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false; this.curpValida = true; this.mostrarMensajesAyuda = false; this.cdr.detectChanges(); if (typeof grecaptcha !== 'undefined') grecaptcha.reset(this.widgetIdAgendar); }, error: (err: any) => { this.procesandoCita = false; this.abrirAlerta('Alerta', err.error.mensaje || "Error al registrar la cita", 'warning'); if (typeof grecaptcha !== 'undefined') grecaptcha.reset(this.widgetIdAgendar); } }); } }
+  confirmarCita() {
+    if (this.procesandoCita) return;
 
+    const token = typeof grecaptcha !== 'undefined'
+      ? grecaptcha.getResponse(this.widgetIdAgendar)
+      : null;
+    if (!token) {
+      this.abrirAlerta('Seguridad', 'Por favor, marque la casilla "No soy un robot".', 'warning');
+      return;
+    }
+
+    this.procesandoCita = true;
+    this.citaConsultada = null;
+
+    const solicitud = {
+      curp: this.ciudadano.curp,
+      nombre: this.ciudadano.nombre,
+      correo: this.ciudadano.correo,
+      telefono: this.obtenerTelefonoCompleto(),
+      municipioRegistro: this.ciudadano.municipioRegistro,
+      estadoRegistro: this.ciudadano.estadoRegistro,
+      idTramite: this.tramiteSeleccionado.idTramite,
+      idSede: this.sedeSeleccionada.idSede,
+      fechaHora: `${this.fechaSeleccionada}T${this.horaSeleccionada}:00`,
+      navegador: this.getBrowserInfo().browser,
+      sistemaOperativo: this.getBrowserInfo().os,
+      captchaToken: token
+    };
+
+    const peticion = this.modoReagendar
+      ? this.api.reagendarCita(this.folioReagendar, { nuevaFechaHora: solicitud.fechaHora })
+      : this.api.agendarCita(solicitud);
+
+    peticion.pipe(
+      finalize(() => {
+        this.procesandoCita = false;
+        try {
+          if (typeof grecaptcha !== 'undefined' && this.widgetIdAgendar !== null) {
+            grecaptcha.reset(this.widgetIdAgendar);
+          }
+        } catch (error) {
+          console.warn('No se pudo reiniciar el CAPTCHA de agenda.', error);
+        } finally {
+          this.cdr.detectChanges();
+        }
+      })
+    ).subscribe({
+      next: (res: any) => {
+        if (this.modoReagendar) {
+          this.folioExito = this.folioReagendar;
+          this.citaConsultada = {
+            folio: this.folioExito,
+            tramite: this.tramiteSeleccionado?.nombreTramite || 'Trámite',
+            costo: this.tramiteSeleccionado?.costo || 0,
+            fecha: this.fechaSeleccionada,
+            hora: this.horaSeleccionada,
+            sede: this.sedeSeleccionada?.nombre || '',
+            ciudadano: this.ciudadano.nombre,
+            curp: this.ciudadano.curp,
+            requisitos: this.tramiteSeleccionado?.requisitos || ''
+          };
+          this.modoReagendar = false;
+          this.folioReagendar = '';
+          this.pasoActual = 5;
+          history.pushState({ paso: 5 }, '', '');
+          this.limpiarFormulario(true);
+          return;
+        }
+
+        this.folioExito = res.folio;
+        this.citaConsultada = {
+          folio: this.folioExito,
+          tramite: this.tramiteSeleccionado.nombreTramite,
+          costo: this.tramiteSeleccionado.costo,
+          fecha: this.fechaSeleccionada,
+          hora: this.horaSeleccionada,
+          sede: this.sedeSeleccionada.nombre,
+          ciudadano: this.ciudadano.nombre,
+          curp: this.ciudadano.curp,
+          requisitos: this.tramiteSeleccionado.requisitos
+        };
+        this.pasoActual = 5;
+        history.pushState({ paso: 5 }, '', '');
+        this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' };
+        this.fechaSeleccionada = '';
+        this.horaSeleccionada = '';
+        this.horariosDisponibles = [];
+        this.diasMes.forEach(d => d.seleccionado = false);
+        this.modoReagendar = false;
+        this.folioReagendar = '';
+        this.curpValida = true;
+        this.mostrarMensajesAyuda = false;
+      },
+      error: (err: any) => {
+        const mensaje = err?.error?.mensaje || (this.modoReagendar
+          ? 'No se pudo reagendar la cita. Inténtelo de nuevo.'
+          : 'No se pudo registrar la cita. Inténtelo de nuevo.');
+        this.abrirAlerta(this.modoReagendar ? 'Error' : 'Alerta', mensaje, 'warning');
+      }
+    });
+  }
   descargarAcuseOficial() { if (!this.citaConsultada) { this.abrirAlerta('Error', 'No hay datos cargados para generar el PDF.', 'error'); return; } try { const doc = new jsPDF(); const img = new Image(); img.src = 'images/Sin_titulo.png'; img.onload = () => { doc.addImage(img, 'PNG', 15, 10, 180, 25); this.generarContenidoAcuse(doc, 45); }; img.onerror = () => { doc.setFillColor(5, 90, 28); doc.rect(0, 0, 210, 30, 'F'); doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("Poder Ejecutivo del Estado de San Luis Potosí", 105, 12, { align: "center" }); doc.setFontSize(12); doc.setFont("helvetica", "normal"); doc.text("Dirección del Registro Civil", 105, 20, { align: "center" }); this.generarContenidoAcuse(doc, 35); }; } catch (error) { console.error(error); this.abrirAlerta('Error', 'No se pudo generar el PDF.', 'error'); } }
 
   generarContenidoAcuse(doc: any, startY: number) { doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.text("Acuse Oficial de Cita Agendada", 105, startY, { align: "center" }); doc.setDrawColor(5, 90, 28); doc.setLineWidth(0.5); doc.rect(15, startY + 10, 180, 50); let identificador = ""; if (this.citaConsultada.ciudadano && this.citaConsultada.ciudadano.trim() !== '') { identificador = this.citaConsultada.ciudadano; } else { identificador = `CURP: ${this.citaConsultada.curp}`; } doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(5, 90, 28); doc.text(`Folio: ${this.citaConsultada.folio}`, 20, startY + 20); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50); doc.text(`Ciudadano/a: ${identificador}`, 20, startY + 30); doc.text(`Trámite: ${this.citaConsultada.tramite}`, 20, startY + 40); doc.text(`Fecha y Hora: ${this.citaConsultada.fecha} a las ${this.citaConsultada.hora} hrs`, 20, startY + 50); doc.setFont("helvetica", "bold"); doc.text(`Costo del Servicio: $${this.citaConsultada.costo}`, 130, startY + 50); doc.setFontSize(12); doc.setTextColor(5, 90, 28); doc.text("Requisitos del Trámite:", 15, startY + 75); doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50); const reqFormateados = this.citaConsultada.requisitos ? this.citaConsultada.requisitos.replace(/•/g, '- ') : 'Consulte requisitos en ventanilla.'; const reqText = doc.splitTextToSize(reqFormateados, 180); doc.text(reqText, 15, startY + 85); let nextY = startY + 85 + (reqText.length * 5) + 15; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(230, 0, 100); doc.text("Avisos Importantes y Penalización:", 15, nextY); doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); const avisosText = doc.splitTextToSize("- El trámite es estrictamente personal. Es obligatorio presentar Identificación Oficial (ID) vigente.\n- SISTEMA DE PENALIZACIÓN: Si usted agenda su cita y NO asiste, el sistema lo bloqueará automáticamente, impidiéndole agendar un nuevo trámite durante 1 semana.", 180); doc.text(avisosText, 15, nextY + 10); doc.save(`Acuse_Cita_${this.citaConsultada.folio}.pdf`); }

@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
 import { environment } from '../../../environments/environment';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -85,11 +86,13 @@ export class LoginComponent {
   }
   mostrarModalRecuperacion: boolean = false;
   usernameRecuperacion: string = '';
+  enviandoRecuperacion: boolean = false;
   siteKeyRecaptcha: string = environment.recaptchaSiteKey;
   widgetIdRecuperacion: any = null;
 
   abrirModalRecuperacion() {
     this.usernameRecuperacion = '';
+    this.enviandoRecuperacion = false;
     this.mostrarModalRecuperacion = true;
     setTimeout(() => {
       if (typeof grecaptcha !== 'undefined') {
@@ -106,10 +109,21 @@ export class LoginComponent {
 
   cerrarModalRecuperacion() {
     this.mostrarModalRecuperacion = false;
-    if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) grecaptcha.reset(this.widgetIdRecuperacion);
+    try {
+      if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) {
+        grecaptcha.reset(this.widgetIdRecuperacion);
+      }
+    } catch (error) {
+      console.warn('No se pudo reiniciar el CAPTCHA de recuperación.', error);
+    } finally {
+      this.widgetIdRecuperacion = null;
+      this.cdr.detectChanges();
+    }
   }
 
   solicitarRecuperacion() {
+    if (this.enviandoRecuperacion) return;
+
     if (!this.usernameRecuperacion || this.usernameRecuperacion.trim() === '') {
       this.alertService.mostrarAlerta('Atención', 'Ingrese su nombre de usuario.', 'warning');
       return;
@@ -127,15 +141,20 @@ export class LoginComponent {
       descripcion: 'El empleado ha solicitado restablecer su contraseña desde la pantalla de login.'
     };
 
-    this.api.enviarPeticion(peticion, token).subscribe({
+    this.enviandoRecuperacion = true;
+    this.api.enviarPeticion(peticion, token).pipe(
+      finalize(() => {
+        this.enviandoRecuperacion = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
       next: (res: any) => {
         this.alertService.mostrarAlerta(
           'Solicitud recibida',
           res.mensaje || 'Si la cuenta corresponde a un usuario registrado, la solicitud se enviará para revisión. Si no existe, no se generará un ticket.',
           'success'
         );
-        this.mostrarModalRecuperacion = false;
-        if (typeof grecaptcha !== 'undefined' && this.widgetIdRecuperacion !== null) grecaptcha.reset(this.widgetIdRecuperacion);
+        this.cerrarModalRecuperacion();
       },
       error: (err: any) => {
         this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'Hubo un error al enviar la solicitud.', 'error');

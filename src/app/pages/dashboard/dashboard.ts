@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service'; // NUEVO MENSAJERO
+import { environment } from '../../../environments/environment';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 declare var grecaptcha: any;
@@ -51,6 +52,10 @@ export class DashboardComponent implements OnInit {
     const sessionUser = sessionStorage.getItem('usuarioRC');
     if (sessionUser) {
       this.usuarioSesion = JSON.parse(sessionUser);
+      if (this.usuarioSesion.rol === 'Dirección') {
+        this.router.navigate(['/admin/super']);
+        return;
+      }
       this.cargarCitasDashboard(1);
 
       if (this.usuarioSesion.rol === 'Super Administrador') {
@@ -207,7 +212,7 @@ export class DashboardComponent implements OnInit {
       // Verificamos que el div exista y esté vacío para no dibujarlo doble
         if (elemento && elemento.innerHTML === '') {
           grecaptcha.render('recaptcha-soporte', {
-            'sitekey': '6Le3ts4tAAAAAAHEE4VgDKditLXcntMGH3zDwlGJ' // <--- LA VERDADERA CLAVE PÚBLICA
+            'sitekey': environment.recaptchaSiteKey
           });
         }
       }

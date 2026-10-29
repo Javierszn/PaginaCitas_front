@@ -247,12 +247,22 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">TELÉFONO *</label>
-                <input type="tel" class="form-control rounded-3" 
-                       maxlength="10" 
-                       (keypress)="soloNumeros($event)" 
-                       [(ngModel)]="ciudadano.telefono" 
-                       placeholder="10 dígitos"
-                       style="font-size: 0.9rem;">
+                <div class="input-group">
+                  <select class="form-select" style="max-width: 48%; font-size: 0.85rem;"
+                          aria-label="Lada del país" [(ngModel)]="ladaSeleccionada"
+                          (ngModelChange)="normalizarTelefonoLocal()">
+                    <option *ngFor="let opcion of ladasPaises" [value]="opcion.codigo">{{ opcion.pais }} (+{{ opcion.codigo }})</option>
+                  </select>
+                  <input type="tel" class="form-control rounded-end-3"
+                         [attr.maxlength]="15 - ladaSeleccionada.length"
+                         (keypress)="soloNumeros($event)"
+                         (input)="normalizarTelefonoLocal()"
+                         [(ngModel)]="ciudadano.telefono"
+                         placeholder="Número"
+                         aria-label="Número de teléfono"
+                         required
+                         style="font-size: 0.9rem;">
+                </div>
               </div>
             </div>
             

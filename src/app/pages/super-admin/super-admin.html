@@ -1,10 +1,24 @@
 <div class="container mt-4 super-admin-page">
   <div class="page-heading d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold" style="color: #E60064;">Configuración Global (Super Admin)</h4>
-    <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+    <h4 class="fw-bold" style="color: #E60064;">{{ usuarioSesion?.rol === 'Dirección' ? 'Configuración de Trámites y Tiempos' : 'Configuración Global (Super Admin)' }}</h4>
+    @if (usuarioSesion?.rol === 'Dirección') {
+      <div class="d-flex gap-2">
+        <button class="btn position-relative border-0 bg-transparent" (click)="abrirBandeja()" title="Ver notificaciones" aria-label="Ver notificaciones">
+          <i class="fa-solid fa-bell fs-5" [style.color]="notificacionesNuevas > 0 ? '#E60064' : '#9d9d9c'"></i>
+          @if (notificacionesNuevas > 0) {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: #E60064; font-size: 0.65rem;">{{ notificacionesNuevas }}</span>
+          }
+        </button>
+        <button class="btn btn-outline-success fw-bold" style="font-size: 0.85rem;" (click)="abrirModalPeticion(false)"><i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda</button>
+        <button class="btn btn-dark fw-bold" style="font-size: 0.85rem;" (click)="cerrarSesion()">Cerrar Sesión</button>
+      </div>
+    } @else {
+      <button class="btn btn-outline-secondary fw-bold" style="font-size: 0.85rem;" (click)="regresarADashboard()"><i class="fa-solid fa-arrow-left me-2"></i>Regresar al Panel</button>
+    }
   </div>
 
   <div class="row">
+    @if (usuarioSesion?.rol === 'Super Administrador') {
     <!-- GESTIÓN DE USUARIOS -->
     <div class="col-lg-12 mb-4">
       <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
@@ -25,9 +39,9 @@
             </div>
             <div class="col-md-2">
               <select class="form-select" [(ngModel)]="nuevoUsuario.idRol">
-                <option [value]="2">Ventanilla</option>
-                <option [value]="1">Administrador</option>
-                <option [value]="3">Super Admin</option>
+                @for (rol of rolesDisponibles; track rol.idRol) {
+                  <option [ngValue]="rol.idRol">{{ rol.nombreRol }}</option>
+                }
               </select>
             </div>
             <div class="col-md-2">
@@ -87,6 +101,7 @@
         </div>
       </div>
     </div>
+    }
 
     <!-- CONFIGURACIÓN DE TRÁMITES -->
     <div class="col-lg-12 mb-4">
@@ -138,6 +153,7 @@
       </div>
     </div>
 
+    @if (usuarioSesion?.rol === 'Super Administrador') {
     <!-- CONFIGURACIÓN DE DÍAS INHÁBILES -->
     <div class="col-lg-12 mb-4">
       <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
@@ -237,6 +253,7 @@
         </div>
       </div>
     </div>
+    }
   </div>
 </div>
 
