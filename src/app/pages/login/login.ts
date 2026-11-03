@@ -45,6 +45,10 @@ export class LoginComponent {
         this.usuarioSesion = res; 
 
         if (this.usuarioSesion.requiereCambioPassword) { 
+          // El endpoint de cambio exige autenticación. Guardar temporalmente
+          // el token recibido en login permite que el interceptor lo envíe
+          // mientras el usuario completa el cambio obligatorio.
+          sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion));
           this.mostrarForzarPassword = true;
           this.cdr.detectChanges(); 
           return; 
