@@ -123,10 +123,10 @@
                         [class.bg-primary]="cita.estatus === 'PROGRAMADA'"
                         [class.bg-info]="cita.estatus === 'CONFIRMADA'"
                         [class.bg-success]="cita.estatus === 'ATENDIDA'"
-                        [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
+                        [class.bg-warning]="cita.estatus === 'NO_ASISTIO' || cita.estatus === 'NO_CONFIRMADA'"
                         [class.bg-secondary]="cita.estatus === 'REPROGRAMADA'"
                         [class.bg-danger]="cita.estatus === 'CANCELADA'">
-                    {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus }}
+                    {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus === 'NO_CONFIRMADA' ? 'NO CONFIRMADA' : cita.estatus }}
                   </span>
                 </td>
                 <td class="text-center">

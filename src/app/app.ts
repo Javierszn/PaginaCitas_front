@@ -21,6 +21,8 @@ export class App implements OnInit, OnDestroy {
   alertaTipo: 'alerta' | 'confirmacion' | 'input' = 'alerta';
   accionConfirmacion: (valor?: string) => void = () => {};
   inputTemporal: string = '';
+  inputTipo: 'text' | 'password' = 'text';
+  mostrarInputPassword = false;
 
   private router = inject(Router);
   private alertService = inject(AlertService);
@@ -40,6 +42,8 @@ export class App implements OnInit, OnDestroy {
       this.alertaTipo = alerta.tipo;
       this.accionConfirmacion = alerta.accion || (() => {});
       this.inputTemporal = '';
+      this.inputTipo = alerta.inputType === 'password' ? 'password' : 'text';
+      this.mostrarInputPassword = false;
       this.mostrarAlerta = true;
       this.cdr.detectChanges();
     });

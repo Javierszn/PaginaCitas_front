@@ -66,7 +66,7 @@
                         <td class="text-muted">{{ log.valorAnterior || 'N/A' }}</td>
                         <td class="fw-bold" style="color: #055A1C;">{{ log.valorNuevo || 'N/A' }}</td>
                         <td class="text-center">
-                          @if (log.accion === 'UPDATE' && log.tabla === 'Citas' && !log.valorNuevo.includes('RESTAURADO')) {
+                          @if (log.puedeDeshacer) {
                             <button class="btn btn-sm btn-institutional-critical fw-semibold"
                                     (click)="deshacerCambio(log.idBitacora)" title="Deshacer Cambio">
                               <i class="fa-solid fa-rotate-left me-1"></i> Deshacer

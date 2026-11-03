@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -16,7 +16,7 @@ declare var grecaptcha: any;
   templateUrl: './agendar.html',
   styleUrls: ['./agendar.css']
 })
-export class AgendarComponent implements OnInit {
+export class AgendarComponent implements OnInit, OnDestroy {
   pasoActual: number = 1;
   sedes: any[] = [];
   categorias: any[] = [];
@@ -37,6 +37,9 @@ export class AgendarComponent implements OnInit {
   horaSeleccionada: string = '';
   horariosDisponibles: string[] = [];
   cargandoHorarios: boolean = false; 
+  segundosReserva: number = 0;
+  private venceReservaHorario = 0;
+  private intervaloReserva: ReturnType<typeof setInterval> | null = null;
   folioExito: string = '';
   citaConsultada: any = null; 
 
@@ -93,6 +96,7 @@ export class AgendarComponent implements OnInit {
       this.ciudadano.nombre = cita.ciudadano;
       this.ciudadano.curp = cita.curp;
       this.pasoActual = 4;
+      this.iniciarCuentaRegresiva();
       setTimeout(() => this.renderCaptchaAgendar(), 200);
       history.replaceState({}, ''); 
     } else {
@@ -101,9 +105,15 @@ export class AgendarComponent implements OnInit {
     }
   }
 
+  ngOnDestroy() {
+    this.detenerCuentaRegresiva();
+  }
+
   @HostListener('window:popstate', ['$event'])
   onPopState(event: any) {
     if (event.state && event.state.paso) { this.pasoActual = event.state.paso; } else { this.pasoActual = 1; }
+    if (this.pasoActual !== 4) this.detenerCuentaRegresiva();
+    else this.iniciarCuentaRegresiva();
     if (this.pasoActual === 2 && this.categorias.length === 0) this.cargarTramites();
     if (this.pasoActual === 4) { this.generarCalendario(); this.renderCaptchaAgendar(); }
     this.cdr.detectChanges();
@@ -122,7 +132,14 @@ export class AgendarComponent implements OnInit {
   
   validarPasoDatos() { this.mostrarMensajesAyuda = true; const tieneCurp = this.ciudadano.curp && this.ciudadano.curp.length === 18 && this.curpValida; const tieneNombre = this.ciudadano.nombre && this.ciudadano.nombre.trim().length > 0; if (!tieneCurp && !tieneNombre) { this.abrirAlerta('Faltan Datos', 'Debe ingresar al menos su CURP o su Nombre Completo para continuar.', 'warning'); return; } if (this.ciudadano.curp && this.ciudadano.curp.length > 0 && !this.curpValida) { this.abrirAlerta('CURP Inválida', 'La CURP ingresada no tiene un formato válido.', 'warning'); return; } const telefono = this.obtenerTelefonoCompleto(); if (!this.ciudadano.telefono || telefono.length < 8 || telefono.length > 15) { this.abrirAlerta('Teléfono Inválido', 'El teléfono es obligatorio y debe incluir una lada y un número válido.', 'warning'); return; } this.irAPaso4(); }
 
-  cargarAvisoGlobal() { this.api.getAvisoActivo().subscribe({ next: (res: any) => { if (res && res.titulo) { this.avisoGlobal = res; this.mostrarAvisoGlobal = true; this.cdr.detectChanges(); } } }); }
+  cargarAvisoGlobal() {
+    this.avisoGlobal = {
+      titulo: 'Aviso de horario',
+      imagenUrl: 'images/aviso-horas.jpeg'
+    };
+    this.mostrarAvisoGlobal = true;
+    this.cdr.detectChanges();
+  }
   cerrarAvisoGlobal() { this.mostrarAvisoGlobal = false; this.cdr.detectChanges(); }
 
   obtenerIconoCategoria(nombre: string): string { const n = nombre.toLowerCase(); if (n.includes('acta')) return 'fa-file-signature'; if (n.includes('curp')) return 'fa-id-card'; if (n.includes('anotaciones')) return 'fa-pen-clip'; if (n.includes('constancia')) return 'fa-file-circle-check'; if (n.includes('enmienda')) return 'fa-file-pen'; return 'fa-file-lines'; }
@@ -150,12 +167,67 @@ export class AgendarComponent implements OnInit {
       } 
     }, 150); 
   }
-  irAPaso4() { this.pasoActual = 4; this.cargarReglasCalendario(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); this.renderCaptchaAgendar(); }
+  irAPaso4() { this.pasoActual = 4; this.cargarReglasCalendario(); this.iniciarCuentaRegresiva(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); this.renderCaptchaAgendar(); }
   cambiarMes(delta: number) { this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + delta, 1); this.generarCalendario(); }
 
   generarCalendario() { const year = this.mesActual.getFullYear(); const month = this.mesActual.getMonth(); const primerDia = new Date(year, month, 1); const ultimoDia = new Date(year, month + 1, 0); this.diasMes = []; for (let i = 0; i < primerDia.getDay(); i++) { this.diasMes.push({ vacio: true }); } const hoy = new Date(); hoy.setHours(0, 0, 0, 0); for (let i = 1; i <= ultimoDia.getDate(); i++) { const fecha = new Date(year, month, i); const fechaStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`; const esFinde = fecha.getDay() === 0 || fecha.getDay() === 6; const esInhabil = this.diasBloqueados.includes(fechaStr); const yaPaso = fecha < hoy; let seleccionado = false; if (this.fechaSeleccionada === fechaStr) seleccionado = true; const activo = !esFinde && !yaPaso && !esInhabil; this.diasMes.push({ vacio: false, fecha: fecha, dia: i, activo: activo, seleccionado: seleccionado }); } }
 
-  seleccionarFecha(dia: any) { if (!dia.activo || dia.vacio) return; this.diasMes.forEach(d => d.seleccionado = false); dia.seleccionado = true; const yyyy = dia.fecha.getFullYear(); const mm = String(dia.fecha.getMonth() + 1).padStart(2, '0'); const dd = String(dia.fecha.getDate()).padStart(2, '0'); this.fechaSeleccionada = `${yyyy}-${mm}-${dd}`; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.buscarHorariosBackend(); }
+  seleccionarFecha(dia: any) {
+    if (!dia.activo || dia.vacio) return;
+    this.diasMes.forEach(d => d.seleccionado = false);
+    dia.seleccionado = true;
+    const yyyy = dia.fecha.getFullYear();
+    const mm = String(dia.fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(dia.fecha.getDate()).padStart(2, '0');
+    this.fechaSeleccionada = `${yyyy}-${mm}-${dd}`;
+    this.horaSeleccionada = '';
+    this.horariosDisponibles = [];
+    this.buscarHorariosBackend();
+  }
+
+  private iniciarCuentaRegresiva() {
+    if (this.intervaloReserva) return;
+    this.venceReservaHorario = Date.now() + 10 * 60 * 1000;
+    this.actualizarCuentaRegresiva();
+    this.intervaloReserva = setInterval(() => this.actualizarCuentaRegresiva(), 1000);
+  }
+
+  seleccionarHora(hora: string) {
+    if (!this.fechaSeleccionada || !this.horariosDisponibles.includes(hora)) return;
+    this.horaSeleccionada = hora;
+  }
+
+  private actualizarCuentaRegresiva() {
+    this.segundosReserva = Math.max(0, Math.ceil((this.venceReservaHorario - Date.now()) / 1000));
+    if (this.segundosReserva === 0 && this.pasoActual === 4) {
+      this.expirarTiempoCalendario();
+    }
+    this.cdr.detectChanges();
+  }
+
+  private expirarTiempoCalendario() {
+    this.detenerCuentaRegresiva();
+    this.horaSeleccionada = '';
+    this.fechaSeleccionada = '';
+    this.diasMes.forEach(d => d.seleccionado = false);
+    this.horariosDisponibles = [];
+    this.pasoActual = 3;
+    history.replaceState({ paso: 3 }, '', '');
+    this.abrirAlerta('Tiempo agotado', 'Pasaron 10 minutos en la selección de fecha y hora. Vuelva a elegir el horario para continuar.', 'warning');
+  }
+
+  obtenerCuentaRegresiva(): string {
+    const minutos = Math.floor(this.segundosReserva / 60);
+    const segundos = this.segundosReserva % 60;
+    return `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  }
+
+  private detenerCuentaRegresiva() {
+    if (this.intervaloReserva) clearInterval(this.intervaloReserva);
+    this.intervaloReserva = null;
+    this.venceReservaHorario = 0;
+    this.segundosReserva = 0;
+  }
 
   buscarHorariosBackend() { this.cargandoHorarios = true; this.api.getHorarios(this.sedeSeleccionada.idSede, this.tramiteSeleccionado.idTramite, this.fechaSeleccionada).subscribe({ next: (horas) => { this.horariosDisponibles = horas; this.cargandoHorarios = false; this.cdr.detectChanges(); }, error: () => { this.abrirAlerta('Error', 'No se pudieron cargar los horarios.', 'error'); this.cargandoHorarios = false; this.cdr.detectChanges(); } }); }
 
@@ -224,6 +296,7 @@ export class AgendarComponent implements OnInit {
           };
           this.modoReagendar = false;
           this.folioReagendar = '';
+          this.detenerCuentaRegresiva();
           this.pasoActual = 5;
           history.pushState({ paso: 5 }, '', '');
           this.limpiarFormulario(true);
@@ -231,6 +304,7 @@ export class AgendarComponent implements OnInit {
         }
 
         this.folioExito = res.folio;
+        this.detenerCuentaRegresiva();
         this.citaConsultada = {
           folio: this.folioExito,
           tramite: this.tramiteSeleccionado.nombreTramite,
@@ -266,7 +340,7 @@ export class AgendarComponent implements OnInit {
 
   generarContenidoAcuse(doc: any, startY: number) { doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.text("Acuse Oficial de Cita Agendada", 105, startY, { align: "center" }); doc.setDrawColor(5, 90, 28); doc.setLineWidth(0.5); doc.rect(15, startY + 10, 180, 50); let identificador = ""; if (this.citaConsultada.ciudadano && this.citaConsultada.ciudadano.trim() !== '') { identificador = this.citaConsultada.ciudadano; } else { identificador = `CURP: ${this.citaConsultada.curp}`; } doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(5, 90, 28); doc.text(`Folio: ${this.citaConsultada.folio}`, 20, startY + 20); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50); doc.text(`Ciudadano/a: ${identificador}`, 20, startY + 30); doc.text(`Trámite: ${this.citaConsultada.tramite}`, 20, startY + 40); doc.text(`Fecha y Hora: ${this.citaConsultada.fecha} a las ${this.citaConsultada.hora} hrs`, 20, startY + 50); doc.setFont("helvetica", "bold"); doc.text(`Costo del Servicio: $${this.citaConsultada.costo}`, 130, startY + 50); doc.setFontSize(12); doc.setTextColor(5, 90, 28); doc.text("Requisitos del Trámite:", 15, startY + 75); doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50); const reqFormateados = this.citaConsultada.requisitos ? this.citaConsultada.requisitos.replace(/•/g, '- ') : 'Consulte requisitos en ventanilla.'; const reqText = doc.splitTextToSize(reqFormateados, 180); doc.text(reqText, 15, startY + 85); let nextY = startY + 85 + (reqText.length * 5) + 15; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(230, 0, 100); doc.text("Avisos Importantes y Penalización:", 15, nextY); doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); const avisosText = doc.splitTextToSize("- El trámite es estrictamente personal. Es obligatorio presentar Identificación Oficial (ID) vigente.\n- SISTEMA DE PENALIZACIÓN: Si usted agenda su cita y NO asiste, el sistema lo bloqueará automáticamente, impidiéndole agendar un nuevo trámite durante 1 semana.", 180); doc.text(avisosText, 15, nextY + 10); doc.save(`Acuse_Cita_${this.citaConsultada.folio}.pdf`); }
 
-  regresarPaso1() { this.pasoActual = 1; this.sedeSeleccionada = null; this.categorias = []; this.limpiarFormulario(); history.pushState({ paso: 1 }, '', ''); this.cdr.detectChanges(); }
-  regresarPaso2() { this.pasoActual = 2; this.tramiteSeleccionado = null; history.pushState({ paso: 2 }, '', ''); this.cdr.detectChanges(); }
-  regresarPaso3() { this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
+  regresarPaso1() { this.detenerCuentaRegresiva(); this.pasoActual = 1; this.sedeSeleccionada = null; this.categorias = []; this.limpiarFormulario(); history.pushState({ paso: 1 }, '', ''); this.cdr.detectChanges(); }
+  regresarPaso2() { this.detenerCuentaRegresiva(); this.pasoActual = 2; this.tramiteSeleccionado = null; history.pushState({ paso: 2 }, '', ''); this.cdr.detectChanges(); }
+  regresarPaso3() { this.detenerCuentaRegresiva(); this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
 }

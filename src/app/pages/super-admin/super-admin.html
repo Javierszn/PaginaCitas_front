@@ -35,7 +35,10 @@
               <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="nuevoUsuario.username">
             </div>
             <div class="col-md-2">
-              <input type="password" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoUsuario.password">
+              <div class="input-group">
+                <input [type]="mostrarPasswordNuevoUsuario ? 'text' : 'password'" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoUsuario.password">
+                <button class="btn btn-outline-secondary" type="button" (click)="mostrarPasswordNuevoUsuario = !mostrarPasswordNuevoUsuario" [attr.aria-label]="mostrarPasswordNuevoUsuario ? 'Ocultar contraseña' : 'Mostrar contraseña'"><i [class]="mostrarPasswordNuevoUsuario ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i></button>
+              </div>
             </div>
             <div class="col-md-2">
               <select class="form-select" [(ngModel)]="nuevoUsuario.idRol">

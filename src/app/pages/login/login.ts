@@ -16,10 +16,15 @@ import { finalize } from 'rxjs';
 })
 export class LoginComponent {
   credenciales = { username: '', password: '' };
+  mostrarPasswordLogin = false;
   cargandoLogin: boolean = false;
   mostrarForzarPassword: boolean = false;
   nuevaPassword = '';
   confirmarPassword = '';
+  cargandoCambioPassword = false;
+  errorCambioPassword: string | null = null;
+  mostrarNuevaPassword = false;
+  mostrarConfirmarPassword = false;
   usuarioSesion: any = null;
 
   private api = inject(ApiService);
@@ -66,15 +71,22 @@ export class LoginComponent {
       this.alertService.mostrarAlerta('Atención', 'Las contraseñas no coinciden.', 'warning'); 
       return; 
     } 
-    this.api.cambiarPasswordUsuario(this.usuarioSesion.idUsuario, { password: this.nuevaPassword }).subscribe({ 
-      next: (res: any) => { 
-        this.mostrarForzarPassword = false; 
-        this.alertService.mostrarAlerta('Éxito', 'Contraseña actualizada correctamente.', 'success'); 
-        this.usuarioSesion.requiereCambioPassword = false; 
-        this.procesarAccesoCorrecto(); 
-      }, 
-      error: () => {
-        this.alertService.mostrarAlerta('Error', 'No se pudo actualizar la contraseña.', 'error');
+    this.errorCambioPassword = null;
+    this.cargandoCambioPassword = true;
+    this.api.cambiarPasswordUsuario(this.usuarioSesion.idUsuario, { password: this.nuevaPassword }).pipe(
+      finalize(() => {
+        this.cargandoCambioPassword = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        this.mostrarForzarPassword = false;
+        this.alertService.mostrarAlerta('Éxito', 'Contraseña personal actualizada correctamente.', 'success');
+        this.usuarioSesion.requiereCambioPassword = false;
+        this.procesarAccesoCorrecto();
+      },
+      error: (err: any) => {
+        this.errorCambioPassword = err.error?.mensaje || 'No se pudo guardar la contraseña. Revise la conexión e inténtelo nuevamente.';
         this.cdr.detectChanges();
       }
     }); 

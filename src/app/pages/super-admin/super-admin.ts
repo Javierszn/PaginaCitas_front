@@ -24,6 +24,7 @@ export class SuperAdminComponent implements OnInit {
   rolesDisponibles: any[] = [];
   categoriasAdmin: any[] = [];
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
+  mostrarPasswordNuevoUsuario = false;
   registroAccesos: any[] = [];
   fechaAccesos: string = '';
   textoBusquedaAccesos: string = '';
@@ -61,7 +62,16 @@ export class SuperAdminComponent implements OnInit {
     } else { this.router.navigate(['/login']); }
   }
 
-  extraerError(err: any, msg: string): string { if (!err || !err.error) return msg; if (err.error.mensaje) return err.error.mensaje; return typeof err.error === 'string' ? err.error : msg; }
+  extraerError(err: any, msg: string): string {
+    const body = err?.error;
+    if (typeof body === 'string' && body.trim()) return body;
+    if (body?.mensaje || body?.detail || body?.title) return body.mensaje || body.detail || body.title;
+    if (body?.errors && typeof body.errors === 'object') {
+      const detalles = Object.values(body.errors).flat().filter(Boolean);
+      if (detalles.length) return detalles.join(' ');
+    }
+    return msg;
+  }
   regresarADashboard() { this.router.navigate(['/admin/dashboard']); }
   irABitacora() { this.router.navigate(['/admin/bitacora']); }
   irASuperAdmin() { this.router.navigate(['/admin/super']); }
@@ -78,13 +88,16 @@ export class SuperAdminComponent implements OnInit {
   rolPredeterminado(): number { return Number(this.rolesDisponibles.find((rol: any) => rol.nombreRol === 'Ventanilla')?.idRol ?? this.rolesDisponibles[0]?.idRol ?? 2); }
 
   crearUsuario() {
+    this.nuevoUsuario.username = this.nuevoUsuario.username.trim();
+    this.nuevoUsuario.nombreCompleto = this.nuevoUsuario.nombreCompleto.trim();
     if (!this.nuevoUsuario.username || !this.nuevoUsuario.password || !this.nuevoUsuario.nombreCompleto) { this.alertService.mostrarAlerta('Atención', 'Todos los campos son obligatorios.', 'warning'); return; }
+    if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(this.nuevoUsuario.password)) { this.alertService.mostrarAlerta('Contraseña inválida', 'Usa al menos 6 caracteres, una mayúscula, un número y un carácter especial.', 'warning'); return; }
     const payloadSeguro = { ...this.nuevoUsuario, idRol: Number(this.nuevoUsuario.idRol), idSede: Number(this.nuevoUsuario.idSede) };
     this.api.crearUsuario(payloadSeguro).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: this.rolPredeterminado(), idSede: 1 }; this.cargarUsuariosAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'Error al crear el usuario.'), 'error') });
   }
 
   toggleEstadoUsuario(id: number) { this.api.toggleEstadoUsuario(id).subscribe({ next: () => this.cargarUsuariosAdmin(), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo cambiar el estado.'), 'error') }); }
-  cambiarPasswordUsuario(id: number) { this.alertService.mostrarInput('Restablecer Contraseña', 'Contraseña temporal:', (pwd?: string) => { if(!pwd) return; this.api.cambiarPasswordUsuario(id, { password: pwd }).subscribe({ next: (res: any) => this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar.'), 'error') }); }); }
+  cambiarPasswordUsuario(id: number) { this.alertService.mostrarInput('Restablecer Contraseña', 'Contraseña temporal:', (pwd?: string) => { if(!pwd) return; if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(pwd)) { this.alertService.mostrarAlerta('Contraseña inválida', 'Usa al menos 6 caracteres, una mayúscula, un número y un carácter especial.', 'warning'); return; } this.api.cambiarPasswordUsuario(id, { password: pwd }).subscribe({ next: (res: any) => this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar.'), 'error') }); }, 'password'); }
   cambiarSedeUsuario(usr: any) { const idSedeNueva = Number(usr.idSede); this.api.cambiarSedeUsuario(usr.idUsuario, { idSede: idSedeNueva }).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'); if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) { this.usuarioSesion.idSede = idSedeNueva; const sedeEncontrada = this.sedes.find(s => s.idSede === idSedeNueva); if (sedeEncontrada) { this.usuarioSesion.sede = sedeEncontrada.nombre; } sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); } }, error: (err: any) => { this.cargarUsuariosAdmin(); this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar.'), 'error'); } }); }
 
   cargarTramitesAdmin() { this.api.getTramitesAdmin().subscribe({ next: (res: any) => { this.categoriasAdmin = res.map((cat: any) => { const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {}; return { idCategoria: cat.idCategoria, nombreCategoria: cat.nombreCategoria, costo: primerServicio.costo || 0, duracionMinutos: primerServicio.duracionMinutos || 30, limiteDiarioSede: primerServicio.limiteDiarioSede || 50, activo: cat.activa, fechaInicio: primerServicio.fechaInicioPermitida ? primerServicio.fechaInicioPermitida.split('T')[0] : '', fechaFin: primerServicio.fechaFinPermitida ? primerServicio.fechaFinPermitida.split('T')[0] : '' }; }); this.cdr.detectChanges(); } }); }
@@ -224,7 +237,11 @@ export class SuperAdminComponent implements OnInit {
     setTimeout(() => { if (typeof grecaptcha !== 'undefined') { const elemento = document.getElementById('recaptcha-soporte'); if (elemento && elemento.innerHTML === '') { grecaptcha.render('recaptcha-soporte', { 'sitekey': environment.recaptchaSiteKey }); } } }, 100);
   }
 
-  cerrarModalPeticion() { this.mostrarModalPeticion = false; this.nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' }; }
+  cerrarModalPeticion() {
+    this.mostrarModalPeticion = false;
+    this.nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' };
+    this.cdr.detectChanges();
+  }
 
   enviarPeticion() {
     const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse() : null;
@@ -232,7 +249,11 @@ export class SuperAdminComponent implements OnInit {
     if (!this.nuevaPeticion.username || !this.nuevaPeticion.descripcion) { this.alertService.mostrarAlerta('Atención', 'Llene todos los campos.', 'warning'); return; }
 
     this.api.enviarPeticion(this.nuevaPeticion, token).subscribe({
-      next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Su petición ha sido enviada.', 'success'); this.cerrarModalPeticion(); if (typeof grecaptcha !== 'undefined') grecaptcha.reset(); },
+      next: (res: any) => {
+        if (typeof grecaptcha !== 'undefined') { try { grecaptcha.reset(); } catch { /* El widget pudo desmontarse */ } }
+        this.cerrarModalPeticion();
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Su petición ha sido enviada.', 'success');
+      },
       error: (err: any) => { this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'No se pudo enviar.', 'error'); if (typeof grecaptcha !== 'undefined') grecaptcha.reset(); }
     });
   }

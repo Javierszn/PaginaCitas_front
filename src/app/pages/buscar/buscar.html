@@ -47,10 +47,10 @@
                       [class.bg-success]="citaConsultada?.estatus === 'PROGRAMADA'" 
                       [class.bg-info]="citaConsultada?.estatus === 'REPROGRAMADA'" 
                       [class.bg-danger]="citaConsultada?.estatus === 'CANCELADA'" 
-                      [class.bg-warning]="citaConsultada?.estatus === 'NO_ASISTIO'"
-                      [class.bg-secondary]="citaConsultada?.estatus !== 'PROGRAMADA' && citaConsultada?.estatus !== 'REPROGRAMADA' && citaConsultada?.estatus !== 'CANCELADA' && citaConsultada?.estatus !== 'NO_ASISTIO'">
-                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'" [class.fa-user-slash]="citaConsultada?.estatus === 'NO_ASISTIO'"></i> 
-                  ESTATUS: {{ citaConsultada?.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : citaConsultada?.estatus }}
+                      [class.bg-warning]="citaConsultada?.estatus === 'NO_ASISTIO' || citaConsultada?.estatus === 'NO_CONFIRMADA'"
+                      [class.bg-secondary]="citaConsultada?.estatus !== 'PROGRAMADA' && citaConsultada?.estatus !== 'REPROGRAMADA' && citaConsultada?.estatus !== 'CANCELADA' && citaConsultada?.estatus !== 'NO_ASISTIO' && citaConsultada?.estatus !== 'NO_CONFIRMADA'">
+                  <i class="fa-solid" [class.fa-check]="citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA'" [class.fa-xmark]="citaConsultada?.estatus === 'CANCELADA'" [class.fa-user-slash]="citaConsultada?.estatus === 'NO_ASISTIO'" [class.fa-clock]="citaConsultada?.estatus === 'NO_CONFIRMADA'"></i> 
+                  ESTATUS: {{ citaConsultada?.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : citaConsultada?.estatus === 'NO_CONFIRMADA' ? 'NO CONFIRMADA' : citaConsultada?.estatus }}
                 </span>
               </div>
               <div class="text-end">
@@ -93,16 +93,16 @@
                 </div>
               </div>
               
-              @if (citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA') {
+              @if (citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'REPROGRAMADA' || citaConsultada?.estatus === 'NO_CONFIRMADA') {
                 <hr style="border-color: #eaeaea;">
                 <div class="row mt-4 justify-content-center">
                   
-                  @if (citaConsultada?.estatus === 'PROGRAMADA') {
+                  @if (citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'NO_CONFIRMADA') {
                     <div class="col-md-6 mb-3">
                       <div class="alert p-4 rounded-3 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background-color: #f0f8ff; border-left: 5px solid #0dcaf0 !important;">
                         <div class="mb-3">
                           <h6 class="fw-bold mb-1" style="color: #0dcaf0;"><i class="fa-solid fa-calendar-week me-2"></i>¿Cambiar fecha u hora?</h6>
-                          <small class="text-dark" style="font-size: 0.8rem;">Conserve su folio actual y elija un nuevo horario disponible para este trámite.</small>
+                          <small class="text-dark" style="font-size: 0.8rem;">{{ citaConsultada?.estatus === 'NO_CONFIRMADA' ? 'Su cita no fue confirmada a tiempo. No se le sancionará; puede elegir otro horario y conservar este folio.' : 'Conserve su folio actual y elija un nuevo horario disponible para este trámite.' }}</small>
                         </div>
                         <button class="btn btn-institutional-info rounded-pill fw-bold py-2 shadow-sm mt-auto" (click)="prepararReagendar()">
                           <i class="fa-solid fa-clock-rotate-left me-2"></i> Reagendar Cita
@@ -111,7 +111,7 @@
                     </div>
                   }
                   
-                  <div class="mb-3" [class.col-md-6]="citaConsultada?.estatus === 'PROGRAMADA'" [class.col-md-8]="citaConsultada?.estatus === 'REPROGRAMADA'">
+                  <div class="mb-3" [class.col-md-6]="citaConsultada?.estatus === 'PROGRAMADA' || citaConsultada?.estatus === 'NO_CONFIRMADA'" [class.col-md-8]="citaConsultada?.estatus === 'REPROGRAMADA'">
                     <div class="alert p-4 rounded-3 h-100 d-flex flex-column justify-content-between border-0 shadow-sm" style="background-color: #fdf3f4; border-left: 5px solid #E60064 !important;">
                       <div class="mb-3">
                         <h6 class="fw-bold mb-1" style="color: #E60064;"><i class="fa-solid fa-triangle-exclamation me-2"></i>¿Cancelar cita?</h6>

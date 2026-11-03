@@ -218,7 +218,11 @@ export class DashboardComponent implements OnInit {
       }
     }, 100);
   }
-  cerrarModalPeticion() { this.mostrarModalPeticion = false; this.cdr.detectChanges(); }
+  cerrarModalPeticion() {
+    this.mostrarModalPeticion = false;
+    this.nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' };
+    this.cdr.detectChanges();
+  }
 
  enviarPeticion() {
     // 1. Extraemos el token del widget de Google
@@ -237,9 +241,9 @@ export class DashboardComponent implements OnInit {
     // 2. Enviamos los 2 parámetros requeridos
     this.api.enviarPeticion(this.nuevaPeticion, token).subscribe({
       next: (res: any) => {
-        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Su petición ha sido enviada.', 'success');
+        if (typeof grecaptcha !== 'undefined') { try { grecaptcha.reset(); } catch { /* El widget pudo desmontarse */ } }
         this.cerrarModalPeticion();
-        if (typeof grecaptcha !== 'undefined') grecaptcha.reset(); 
+        this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Su petición ha sido enviada.', 'success');
       },
       error: (err: any) => {
         const msj = err.error?.mensaje || 'No se pudo enviar la petición.';

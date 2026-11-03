@@ -10,7 +10,7 @@
         </a>
 
         <!-- Logo Oficial (Clickeable para ir al inicio del sistema local) -->
-        <img src="https://d3dac9gdq8t83x.cloudfront.net/media/static/images/hor-verde.png" alt="Gobierno del Estado SLP" style="height: 3.5rem; object-fit: contain; cursor: pointer;" (click)="regresarPaso1()" title="Ir al Inicio de Citas">
+        <img class="institutional-header-logo" src="images/logo-header-registro-civil.jpeg" alt="Gobierno del Estado de San Luis Potosí · Dirección del Registro Civil" (click)="regresarPaso1()" title="Ir al Inicio de Citas">
       </div>
       
       <button class="btn rounded-pill fw-semibold px-4" style="color: #232323; border: 1px solid #232323; background: transparent; font-size: 0.85rem;" (click)="irABuscarCita()">
@@ -45,7 +45,12 @@
 
               <!-- MODO INPUT PARA CONTRASEÑAS Y RESPUESTAS -->
               @if (alertaTipo === 'input') {
-                <input type="text" class="form-control mb-4 text-center" [(ngModel)]="inputTemporal" placeholder="Escriba aquí...">
+                <div class="input-group mb-4">
+                  <input [type]="inputTipo === 'password' && !mostrarInputPassword ? 'password' : 'text'" class="form-control text-center" [(ngModel)]="inputTemporal" placeholder="Escriba aquí...">
+                  @if (inputTipo === 'password') {
+                    <button class="btn btn-outline-secondary" type="button" (click)="mostrarInputPassword = !mostrarInputPassword" [attr.aria-label]="mostrarInputPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"><i [class]="mostrarInputPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i></button>
+                  }
+                </div>
                 <div class="d-flex justify-content-center gap-2">
                   <button class="btn btn-light rounded-pill px-4 py-2 fw-bold" style="font-size: 0.85rem;" (click)="cerrarAlerta()">Cancelar</button>
                   <button class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;" (click)="ejecutarConfirmacion()">Guardar</button>

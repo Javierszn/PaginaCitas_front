@@ -14,7 +14,7 @@ export class AlertService {
     this.alertSubject.next({ tipo: 'confirmacion', titulo, mensaje, icono: 'warning', accion });
   }
 
-  mostrarInput(titulo: string, mensaje: string, accion: (valor: string) => void) {
-    this.alertSubject.next({ tipo: 'input', titulo, mensaje, icono: 'info', accion });
+  mostrarInput(titulo: string, mensaje: string, accion: (valor: string) => void, inputType: 'text' | 'password' = 'text') {
+    this.alertSubject.next({ tipo: 'input', titulo, mensaje, icono: 'info', accion, inputType });
   }
 }
