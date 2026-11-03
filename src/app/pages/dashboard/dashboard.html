@@ -1,10 +1,14 @@
 <div class="container mt-4 dashboard-page">
   <div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
-    <h4 class="dashboard-title fw-bold" style="color: #055A1C !important;">Panel de Control: {{ usuarioSesion?.sede }}</h4>
+    <div class="dashboard-title">
+      <span class="panel-welcome-kicker">Bienvenido/a</span>
+      <h1 class="panel-welcome-name">{{ usuarioSesion?.nombreCompleto || usuarioSesion?.username || 'Usuario' }}</h1>
+      <p class="panel-welcome-context"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>Panel de Control · {{ usuarioSesion?.sede }}</p>
+    </div>
     <div class="dashboard-actions d-flex align-items-center">
 
       <!-- CAMPANITA DE NOTIFICACIONES TIPO APP -->
-      <button class="btn position-relative me-3 border-0 bg-transparent" (click)="abrirBandeja()" title="Ver Notificaciones">
+      <button class="btn position-relative notifications-action" type="button" (click)="abrirBandeja()" title="Ver notificaciones" aria-label="Ver notificaciones">
         <i class="fa-solid fa-bell fs-4" [style.color]="notificacionesNuevas > 0 ? '#E60064' : '#9d9d9c'"></i>
         @if (notificacionesNuevas > 0) {
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: #E60064; font-size: 0.65rem;">
@@ -13,21 +17,23 @@
         }
       </button>
 
-      <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="abrirModalPeticion(false)">
+      <button class="btn panel-action" type="button" (click)="abrirModalPeticion(false)">
         <i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda
       </button>
 
       @if (usuarioSesion?.rol === 'Super Administrador') {
-        <button class="btn fw-bold me-2" style="font-size: 0.85rem; color: #E60064; border: 1px solid #E60064; background: transparent;" (click)="irASuperAdmin()">
+        <button class="btn panel-action" type="button" (click)="irASuperAdmin()">
           <i class="fa-solid fa-gear me-2"></i>Ajustes
         </button>
       }
       @if (usuarioSesion?.rol === 'Administrador' || usuarioSesion?.rol === 'Super Administrador') {
-        <button class="btn fw-bold me-3" style="font-size: 0.85rem; color: #055A1C; border: 1px solid #055A1C; background: transparent;" (click)="irABitacora()">
+        <button class="btn panel-action" type="button" (click)="irABitacora()">
           <i class="fa-solid fa-clipboard-list me-2"></i>Ver Auditoría
         </button>
       }
-      <button class="btn text-white fw-bold" style="font-size: 0.85rem; background-color: #2b2727; border: none;" (click)="cerrarSesion()">Cerrar Sesión</button>
+      <button class="btn logout-action" type="button" (click)="cerrarSesion()" title="Cerrar la sesión actual">
+        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Cerrar sesión</span>
+      </button>
     </div>
   </div>
 

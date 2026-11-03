@@ -3,6 +3,31 @@
   margin-bottom: 0;
 }
 
+.panel-welcome-kicker {
+  display: block;
+  margin-bottom: .15rem;
+  color: #626b63;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.panel-welcome-name {
+  margin: 0;
+  color: #055A1C;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  font-weight: 750;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.panel-welcome-context {
+  margin: .3rem 0 0;
+  color: #66706a;
+  font-size: .9rem;
+}
+
 .dashboard-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -11,6 +36,73 @@
 
 .dashboard-actions > button {
   margin: 0 !important;
+}
+
+.notifications-action {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e3e9e3;
+  border-radius: 50%;
+  background: #fff;
+  transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.notifications-action:hover {
+  transform: translateY(-1px);
+  border-color: #b7d2bc;
+  background: #f4f8f4;
+}
+
+.panel-action,
+.logout-action {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: .15rem;
+  padding: .55rem .8rem;
+  border-radius: .65rem;
+  font-size: .84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.panel-action {
+  border: 1px solid #b9cfbd;
+  background: #fff;
+  color: #055A1C;
+}
+
+.panel-action:hover {
+  border-color: #055A1C;
+  background: #f2f7f3;
+  color: #044a17;
+}
+
+.logout-action {
+  padding-inline: 1rem;
+  border: 1px solid #055A1C;
+  background: #055A1C;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(5, 90, 28, .16);
+}
+
+.logout-action:hover {
+  transform: translateY(-1px);
+  border-color: #044a17;
+  background: #044a17;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(5, 90, 28, .2);
+}
+
+.dashboard-actions button:focus-visible {
+  outline: 3px solid rgba(138, 191, 63, .55);
+  outline-offset: 2px;
 }
 
 @media (max-width: 767.98px) {
@@ -37,6 +129,14 @@
 
   .dashboard-actions > button:first-child {
     flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notifications-action,
+  .panel-action,
+  .logout-action {
+    transition: none;
   }
 }
 

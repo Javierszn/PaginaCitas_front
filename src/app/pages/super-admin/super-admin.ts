@@ -54,6 +54,7 @@ export class SuperAdminComponent implements OnInit {
       if (this.usuarioSesion.rol !== 'Super Administrador' && this.usuarioSesion.rol !== 'Dirección') { this.router.navigate(['/admin/dashboard']); return; }
       this.cargarTramitesAdmin();
       if (this.usuarioSesion.rol === 'Dirección') {
+        this.cargarReglasCalendario();
         this.cargarMisPeticiones();
         return;
       }
