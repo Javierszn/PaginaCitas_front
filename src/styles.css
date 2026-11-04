@@ -68,6 +68,18 @@ body, h1, h2, h3, h4, h5, h6, p, a, button, input, select, label, small, strong,
     color: #ffffff !important;
 }
 
+.alert-message {
+    color: #3f464d !important;
+    opacity: 1 !important;
+    white-space: pre-line;
+}
+
+.badge-confirmada {
+    color: #084766 !important;
+    background-color: #d9f0ff !important;
+    border: 1px solid #9bd9f4;
+}
+
 .green-line::after {
     content: "";
     display: block;

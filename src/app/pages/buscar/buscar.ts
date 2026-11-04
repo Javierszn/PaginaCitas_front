@@ -82,6 +82,22 @@ export class BuscarComponent implements OnInit {
     }); 
   }
 
+  elegirAtencionPresencial() {
+    this.alertService.mostrarConfirmacion(
+      'Conservar turno presencial',
+      'Se conservará su lugar en la sede indicada durante siete días hábiles. Deberá presentarse con su folio dentro de ese plazo. ¿Desea continuar?',
+      () => this.api.elegirAtencionPresencial(this.citaConsultada.folio).subscribe({
+        next: (res: any) => {
+          this.citaConsultada.estatus = 'PRESENCIAL_PENDIENTE';
+          this.citaConsultada.mensajeAtencionPresencial = res.mensaje;
+          this.cdr.detectChanges();
+          this.alertService.mostrarAlerta('Turno conservado', res.mensaje, 'success');
+        },
+        error: (err: any) => this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'No se pudo conservar el turno.', 'error')
+      })
+    );
+  }
+
   prepararReagendar() { 
     // TRUCO SENIOR: Mandamos la cita por "paquetería invisible" al Router principal
     this.router.navigate(['/'], { state: { reagendar: this.citaConsultada } });

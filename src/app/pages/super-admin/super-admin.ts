@@ -105,7 +105,26 @@ export class SuperAdminComponent implements OnInit {
   actualizarCategoria(cat: any) { const payload = { duracionMinutos: Number(cat.duracionMinutos), costo: Number(cat.costo), activo: cat.activo, limiteDiario: Number(cat.limiteDiarioSede), fechaInicio: cat.fechaInicio ? cat.fechaInicio : null, fechaFin: cat.fechaFin ? cat.fechaFin : null }; this.api.actualizarCategoria(cat.idCategoria, payload).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Guardado', res.mensaje, 'success'); this.cargarTramitesAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo guardar la configuración.'), 'error') }); }
 
   cargarReglasCalendario() { this.api.getReglasCalendario().subscribe({ next: (res: any) => { this.diasInhabilesAdmin = res.diasInhabiles || []; this.cdr.detectChanges(); } }); }
-  agregarDiaInhabil() { if (!this.nuevoDiaInhabil.fecha || !this.nuevoDiaInhabil.motivo) { this.alertService.mostrarAlerta('Atención', 'Complete la fecha y el motivo.', 'warning'); return; } this.api.agregarDiaInhabil(this.nuevoDiaInhabil).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Día Bloqueado', res.mensaje, 'success'); this.nuevoDiaInhabil = { fecha: '', motivo: '' }; this.cargarReglasCalendario(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo bloquear el día.'), 'error') }); }
+  agregarDiaInhabil() {
+    if (!this.nuevoDiaInhabil.fecha || !this.nuevoDiaInhabil.motivo) {
+      this.alertService.mostrarAlerta('Atención', 'Complete la fecha y el motivo.', 'warning');
+      return;
+    }
+
+    const fecha = this.nuevoDiaInhabil.fecha;
+    this.alertService.mostrarConfirmacion(
+      'Confirme el bloqueo del día',
+      `Al bloquear el ${fecha}, se cancelarán las citas futuras de esa fecha sin sancionar a las personas y se les enviará un correo. Tendrán 7 días hábiles para reagendar, cancelar o solicitar que se respete su turno presencial en la sede. ¿Desea continuar?`,
+      () => this.api.agregarDiaInhabil(this.nuevoDiaInhabil).subscribe({
+        next: () => {
+          this.alertService.mostrarAlerta('Día bloqueado', 'La fecha quedó bloqueada correctamente.', 'success');
+          this.nuevoDiaInhabil = { fecha: '', motivo: '' };
+          this.cargarReglasCalendario();
+        },
+        error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo bloquear el día.'), 'error')
+      })
+    );
+  }
   eliminarDiaInhabil(id: number) { this.api.eliminarDiaInhabil(id).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje, 'success'); this.cargarReglasCalendario(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo eliminar el día.'), 'error') }); }
 
   cargarAccesosAdmin(paginaSolicitada: number = 1) {

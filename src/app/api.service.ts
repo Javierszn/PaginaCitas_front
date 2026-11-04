@@ -22,7 +22,10 @@ export class ApiService {
   eliminarDiaInhabil(id: number) { return this.http.delete(`${this.apiUrl}/Configuracion/DiasInhabiles/${id}`); }
   getAvisoActivo() { return this.http.get(`${this.apiUrl}/Avisos/Activo`); }
   getSedes() { return this.http.get(`${this.apiUrl}/Sedes`); }
-  getTramites() { return this.http.get(`${this.apiUrl}/Tramites`); }
+  getTramites(idSede?: number) {
+    const params = idSede == null ? undefined : new HttpParams().set('idSede', idSede);
+    return this.http.get(`${this.apiUrl}/Tramites`, { params });
+  }
   getTramitesAdmin() { return this.http.get(`${this.apiUrl}/Tramites/Admin`); }
   actualizarCategoria(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Tramites/Categoria/${id}`, payload); }
 
@@ -32,6 +35,7 @@ export class ApiService {
   buscarCita(folio: string, token: string) { return this.http.get(`${this.apiUrl}/Citas/${folio}?captchaToken=${token}`); }
   cancelarCita(folio: string) { return this.http.put(`${this.apiUrl}/Citas/${folio}/cancelar`, {}); }
   reagendarCita(folio: string, payload: any) { return this.http.put(`${this.apiUrl}/Citas/${folio}/reagendar`, payload); }
+  elegirAtencionPresencial(folio: string) { return this.http.put(`${this.apiUrl}/Citas/${folio}/atencion-presencial`, {}); }
 
   // === GESTIÓN DE CITAS (EMPLEADOS) ===
   getCitasPorSede(idSede: number, urlParams: string) { return this.http.get(`${this.apiUrl}/Citas/PorSede/${idSede}${urlParams}`); }

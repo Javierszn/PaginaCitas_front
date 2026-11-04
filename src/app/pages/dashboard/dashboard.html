@@ -127,20 +127,28 @@
                 <td>
                   <span class="badge" 
                         [class.bg-primary]="cita.estatus === 'PROGRAMADA'"
-                        [class.bg-info]="cita.estatus === 'CONFIRMADA'"
+                        [class.badge-confirmada]="cita.estatus === 'CONFIRMADA'"
                         [class.bg-success]="cita.estatus === 'ATENDIDA'"
-                        [class.bg-warning]="cita.estatus === 'NO_ASISTIO' || cita.estatus === 'NO_CONFIRMADA'"
+                        [class.bg-warning]="cita.estatus === 'NO_ASISTIO'"
+                        [class.bg-info]="cita.estatus === 'PRESENCIAL_PENDIENTE' || cita.estatus === 'CANCELADA_INHABIL'"
                         [class.bg-secondary]="cita.estatus === 'REPROGRAMADA'"
                         [class.bg-danger]="cita.estatus === 'CANCELADA'">
-                    {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus === 'NO_CONFIRMADA' ? 'NO CONFIRMADA' : cita.estatus }}
+                    {{ cita.estatus === 'NO_ASISTIO' ? 'NO ASISTIÓ' : cita.estatus === 'CANCELADA_INHABIL' ? 'CANCELADA POR DÍA INHÁBIL' : cita.estatus === 'PRESENCIAL_PENDIENTE' ? 'TURNO PRESENCIAL PENDIENTE' : cita.estatus }}
                   </span>
+                  @if (cita.estatus === 'PRESENCIAL_PENDIENTE') {
+                    <small class="d-block text-muted mt-1">Turno protegido hasta {{ cita.fechaLimiteResolucion | date:'dd/MM/yyyy' }}</small>
+                  }
                 </td>
                 <td class="text-center">
-                  @if (cita.estatus === 'PROGRAMADA' || cita.estatus === 'REPROGRAMADA') {
-                    <button class="btn btn-sm btn-primary me-2 fw-semibold" title="Marcar Confirmada"
-                            (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
-                      <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar
-                    </button>
+                  @if (cita.estatus === 'PROGRAMADA' || cita.estatus === 'REPROGRAMADA' || cita.estatus === 'PRESENCIAL_PENDIENTE') {
+                    @if (usuarioSesion?.rol === 'Informes') {
+                      <button class="btn btn-sm btn-primary me-2 fw-semibold" title="Confirmar llegada"
+                              (click)="actualizarEstatusCita(cita.folio, 'CONFIRMADA')">
+                        <i class="fa-solid fa-thumbs-up me-1"></i> Confirmar llegada
+                      </button>
+                    } @else {
+                      <span class="text-muted" style="font-size: 0.75rem;">Pendiente de confirmación en Informes</span>
+                    }
                   } @else if (cita.estatus === 'CONFIRMADA' && usuarioSesion?.rol === 'Informes') {
                     <span class="text-muted" style="font-size: 0.75rem;">Confirmada</span>
                   } @else if (cita.estatus === 'CONFIRMADA') {
