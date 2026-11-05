@@ -41,12 +41,21 @@
     <div class="card-body p-4">
       <h6 class="fw-bold mb-4 text-dark">Gestión de Citas</h6>
       
-      <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
-        <div class="col-md-2 mb-3 mb-md-0">
+      <div class="row g-3 align-items-end mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
+        @if (usuarioSesion?.rol === 'Super Administrador') {
+          <div class="col-12 col-sm-6 col-xl-2">
+            <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR SEDE</label>
+            <select class="form-select" [(ngModel)]="filtroSedeDashboard" (change)="cargarCitasDashboard(1)">
+              <option [ngValue]="0">Todas las sedes</option>
+              @for (sede of sedes; track sede.idSede) { <option [ngValue]="sede.idSede">{{ sede.nombre }}</option> }
+            </select>
+          </div>
+        }
+        <div class="col-12 col-sm-6 col-xl-2">
           <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
           <input type="date" class="form-control" [(ngModel)]="fechaDashboard" (change)="limpiarBusqueda()">
         </div>
-        <div class="col-md-4 mb-3 mb-md-0">
+        <div class="col-12 col-md-6 col-xl-3">
           <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR TRÁMITE</label>
           <select class="form-select" [(ngModel)]="filtroTramite" (change)="aplicarFiltroTramite()">
             <option value="">Todos los trámites</option>
@@ -55,10 +64,10 @@
             }
           </select>
         </div>
-        <div class="col-md-6">
+        <div class="col-12" [class.col-xl-5]="usuarioSesion?.rol === 'Super Administrador'" [class.col-xl-7]="usuarioSesion?.rol !== 'Super Administrador'">
           <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL (FOLIO, NOMBRE O CURP)</label>
-          <div class="input-group">
-            <input type="text" class="form-control" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
+          <div class="d-flex flex-wrap gap-2 filter-search-controls">
+            <input type="text" class="form-control flex-grow-1" style="min-width: 180px;" placeholder="Escriba y presione Enter..." [(ngModel)]="textoBusquedaDashboard" (keyup.enter)="cargarCitasDashboard()">
             <button class="btn btn-success fw-bold" (click)="cargarCitasDashboard()" [disabled]="cargandoCitasDashboard">
               @if (cargandoCitasDashboard) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Cargando... }
               @else { <i class="fa-solid fa-magnifying-glass"></i> Buscar }
@@ -66,11 +75,11 @@
             
             <!-- BOTÓN PDF OCULTO PARA VENTANILLA -->
             @if (usuarioSesion?.rol === 'Super Administrador' || usuarioSesion?.rol === 'Administrador') {
-              <button class="btn btn-success fw-bold ms-2 shadow-sm" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+              <button class="btn btn-success fw-bold shadow-sm" (click)="exportarPDF('tablaCitas', 'Reporte de Citas Programadas')"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
             }
 
             @if(textoBusquedaDashboard || filtroTramite) {
-              <button class="btn btn-outline-secondary ms-2" (click)="limpiarBusqueda()"><i class="fa-solid fa-xmark"></i></button>
+              <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()" aria-label="Limpiar búsqueda"><i class="fa-solid fa-xmark"></i></button>
             }
           </div>
           <small class="text-muted" style="font-size: 0.7rem;">Nota: Buscar texto ignora filtros de fecha y trámite.</small>
@@ -267,7 +276,6 @@
         <div class="mb-3">
           <label class="form-label fw-bold small text-secondary">TIPO DE AYUDA</label>
           <select class="form-select bg-light" [(ngModel)]="nuevaPeticion.tipo">
-            <option value="RECUPERAR CONTRASEÑA">Olvidé mi contraseña</option>
             <option value="SOPORTE TÉCNICO">Soporte Técnico o Bug</option>
             <option value="OTRA PETICIÓN">Otras Peticiones</option>
           </select>

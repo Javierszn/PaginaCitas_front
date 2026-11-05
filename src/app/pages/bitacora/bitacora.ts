@@ -16,6 +16,8 @@ import autoTable from 'jspdf-autotable';
 })
 export class BitacoraComponent implements OnInit {
   usuarioSesion: any = null;
+  sedes: any[] = [];
+  filtroSedeBitacora = 0;
   registrosBitacora: any[] = [];
   fechaBitacora: string = '';
   textoBusquedaBitacora: string = '';
@@ -38,6 +40,7 @@ export class BitacoraComponent implements OnInit {
          this.router.navigate(['/admin/dashboard']);
          return;
       }
+      if (this.usuarioSesion.rol === 'Super Administrador') this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = sedes || []; this.cdr.detectChanges(); } });
       this.cargarBitacora(1);
     } else {
       this.router.navigate(['/login']);
@@ -51,6 +54,7 @@ export class BitacoraComponent implements OnInit {
     
     // 1. Limpiamos los parámetros para no asustar al estricto backend de C#
     let urlParams = `?pagina=${paginaSolicitada}&registrosPorPagina=10`;
+    if (this.usuarioSesion?.rol === 'Super Administrador' && this.filtroSedeBitacora > 0) urlParams += `&idSede=${this.filtroSedeBitacora}`;
     if (this.textoBusquedaBitacora && this.textoBusquedaBitacora.trim().length > 0) {
       urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaBitacora)}`;
     } else if (this.fechaBitacora) {
@@ -114,8 +118,9 @@ export class BitacoraComponent implements OnInit {
 
   descargarPDF() {
     let queryParams = `?pagina=1&registrosPorPagina=10000`;
-    if (this.fechaBitacora) queryParams += `&fecha=${this.fechaBitacora}`;
-    if (this.textoBusquedaBitacora) queryParams += `&busqueda=${this.textoBusquedaBitacora}`;
+    if (this.usuarioSesion?.rol === 'Super Administrador' && this.filtroSedeBitacora > 0) queryParams += `&idSede=${this.filtroSedeBitacora}`;
+    if (this.textoBusquedaBitacora.trim()) queryParams += `&busqueda=${encodeURIComponent(this.textoBusquedaBitacora.trim())}`;
+    else if (this.fechaBitacora) queryParams += `&fecha=${this.fechaBitacora}`;
 
     this.api.getBitacora(queryParams).subscribe({
         next: (res: any) => {
@@ -127,7 +132,15 @@ export class BitacoraComponent implements OnInit {
             img.src = 'images/Sin_titulo.png';
             
             const generarTabla = (documento: any, startY: number) => {
-                documento.setFontSize(13); documento.setTextColor(5, 90, 28); documento.setFont("helvetica", "bold"); documento.text("Bitácora de Movimientos", 14, startY); documento.setFontSize(9); documento.setFont("helvetica", "normal"); documento.setTextColor(80, 80, 80); let y = startY + 6; documento.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username}`, 14, y); y += 5; documento.text(`Sede Operativa: ${this.usuarioSesion?.sede || 'Global'}`, 14, y); y += 8;
+                documento.setFontSize(13); documento.setTextColor(5, 90, 28); documento.setFont("helvetica", "bold"); documento.text("Bitácora de Movimientos", 14, startY); documento.setFontSize(9); documento.setFont("helvetica", "normal"); documento.setTextColor(80, 80, 80); let y = startY + 6; documento.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username}`, 14, y); y += 5; documento.text(`Sede operativa del usuario: ${this.usuarioSesion?.sede || 'Global'}`, 14, y); y += 5;
+                const sedeFiltro = this.usuarioSesion?.rol === 'Super Administrador'
+                    ? (this.filtroSedeBitacora > 0 ? (this.sedes.find(s => Number(s.idSede) === Number(this.filtroSedeBitacora))?.nombre || `Sede ${this.filtroSedeBitacora}`) : 'Todas las sedes')
+                    : (this.usuarioSesion?.sede || 'Sede asignada');
+                const filtros = [`Sede: ${sedeFiltro}`];
+                if (this.textoBusquedaBitacora.trim()) filtros.push(`Búsqueda: ${this.textoBusquedaBitacora.trim()}`);
+                else if (this.fechaBitacora) filtros.push(`Fecha: ${this.fechaBitacora}`);
+                const lineasFiltro = documento.splitTextToSize(`Filtros aplicados: ${filtros.join(' · ')}`, 180);
+                documento.setFont("helvetica", "bold"); documento.text(lineasFiltro, 14, y); y += lineasFiltro.length * 4 + 4;
                 
                 const body = datos.map((a: any) => {
                     const f = new Date(a.fechaHora || a.fecha).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });

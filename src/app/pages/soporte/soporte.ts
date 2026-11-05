@@ -14,6 +14,8 @@ import { AlertService } from '../../alert.service'; // <--- NUESTRO MENSAJERO
 })
 export class SoporteComponent implements OnInit {
   usuarioSesion: any = null;
+  sedes: any[] = [];
+  filtroSede = 0;
   peticionesSistema: any[] = [];
   notificacionesNuevas: number = 0;
 
@@ -48,6 +50,7 @@ export class SoporteComponent implements OnInit {
          this.router.navigate(['/admin/dashboard']);
          return;
       }
+      this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = sedes || []; this.cdr.detectChanges(); } });
       this.cargarPeticionesAdmin();
     } else {
       this.router.navigate(['/login']);
@@ -55,7 +58,7 @@ export class SoporteComponent implements OnInit {
   }
 
   cargarPeticionesAdmin() { 
-    this.api.getPeticionesAdmin().subscribe({ 
+    this.api.getPeticionesAdmin(this.filtroSede).subscribe({ 
       next: (res: any) => { 
         this.peticionesSistema = res; 
         this.notificacionesNuevas = this.peticionesSistema.filter((p: any) => p.estatus === 'PENDIENTE' && p.leido === false).length; 
@@ -65,16 +68,16 @@ export class SoporteComponent implements OnInit {
     }); 
   }
   
-  resolverPeticion(id: number, tipo?: string) {
+  resolverPeticion(id: number, tipo?: string, correo?: string) {
     if (tipo === 'RECUPERAR CONTRASEÑA') {
       this.alertService.mostrarInput(
         'Restablecer Contraseña',
-        'Escriba la contraseña temporal que le va a dar al empleado:',
+        `Se enviará al correo indicado en la solicitud (${correo || 'sin correo'}). Escriba la contraseña temporal:`,
         (nuevaPassword?: string) => {
           if (!nuevaPassword) return;
 
           this.api.resolverPeticion(id, {
-            respuesta: `Su contraseña temporal es: ${nuevaPassword}. Deberá cambiarla al iniciar sesión.`,
+            respuesta: 'Contraseña temporal enviada al correo proporcionado. Deberá cambiarla al iniciar sesión.',
             nuevaPassword: nuevaPassword
           }).subscribe({
             next: (res: any) => {

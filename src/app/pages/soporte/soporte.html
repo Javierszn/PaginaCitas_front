@@ -6,6 +6,15 @@
 
         <div class="card shadow-sm border-0 rounded-4 bg-white" style="border: 1px solid #f4f4f4 !important;">
           <div class="card-body p-4">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-bold small text-secondary">FILTRAR POR SEDE</label>
+                <select class="form-select" [(ngModel)]="filtroSede" (change)="cargarPeticionesAdmin()">
+                  <option [ngValue]="0">Todas las sedes</option>
+                  @for (sede of sedes; track sede.idSede) { <option [ngValue]="sede.idSede">{{ sede.nombre }}</option> }
+                </select>
+              </div>
+            </div>
             <div class="table-responsive">
               <table class="table table-hover align-middle" style="font-size: 0.85rem;">
                 <thead style="background-color: #fdfdfd;">
@@ -23,7 +32,7 @@
                   @for (p of peticionesSistema; track p.idPeticion) {
                     <tr>
                       <td class="text-nowrap">{{ p.fecha | date:'short' }}</td>
-                      <td class="fw-bold text-dark">{{ p.username }}</td>
+                      <td class="fw-bold text-dark">{{ p.nombreCompleto || p.username }}<small class="d-block text-muted">{{ p.username }}</small>@if (p.correo) { <small class="d-block text-primary">{{ p.correo }}</small> }</td>
                       <td>
                         <span class="badge" [class.bg-warning]="p.tipo.includes('CONTRASEÑA')" [class.bg-info]="!p.tipo.includes('CONTRASEÑA')">
                           {{ p.tipo }}
@@ -38,7 +47,7 @@
                       <td style="max-width: 200px; white-space: normal;" class="text-success fw-bold">{{ p.respuesta }}</td>
                       <td class="text-center">
                         @if (p.estatus === 'PENDIENTE') {
-                          <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion, p.tipo)">
+                          <button class="btn btn-sm btn-success fw-bold" (click)="resolverPeticion(p.idPeticion, p.tipo, p.correo)">
                             Responder
                           </button>
                         } @else {

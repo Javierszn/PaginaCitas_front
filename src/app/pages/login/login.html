@@ -59,6 +59,7 @@
               <h5 class="fw-bold text-dark mb-3">Recuperar Contraseña</h5>
               <p class="text-secondary" style="font-size: 0.85rem;">Se enviará una solicitud al Super Administrador para que restablezca su contraseña.</p>
               <input type="text" class="form-control mb-3 text-center" [(ngModel)]="usernameRecuperacion" name="usernameRecuperacion" placeholder="Su nombre de usuario">
+              <input type="email" class="form-control mb-3 text-center" [(ngModel)]="correoRecuperacion" name="correoRecuperacion" placeholder="Correo donde recibirá la contraseña temporal" autocomplete="email">
               <div class="d-flex justify-content-center mb-3">
                 <div id="captcha-recuperacion"></div>
               </div>

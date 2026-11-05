@@ -102,12 +102,14 @@ export class LoginComponent {
   }
   mostrarModalRecuperacion: boolean = false;
   usernameRecuperacion: string = '';
+  correoRecuperacion: string = '';
   enviandoRecuperacion: boolean = false;
   siteKeyRecaptcha: string = environment.recaptchaSiteKey;
   widgetIdRecuperacion: any = null;
 
   abrirModalRecuperacion() {
     this.usernameRecuperacion = '';
+    this.correoRecuperacion = '';
     this.enviandoRecuperacion = false;
     this.mostrarModalRecuperacion = true;
     setTimeout(() => {
@@ -144,6 +146,10 @@ export class LoginComponent {
       this.alertService.mostrarAlerta('Atención', 'Ingrese su nombre de usuario.', 'warning');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correoRecuperacion.trim())) {
+      this.alertService.mostrarAlerta('Atención', 'Ingrese un correo electrónico válido para recibir la contraseña temporal.', 'warning');
+      return;
+    }
 
     const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse(this.widgetIdRecuperacion) : null;
     if (!token) {
@@ -153,6 +159,7 @@ export class LoginComponent {
 
     const peticion = {
       username: this.usernameRecuperacion.trim(),
+      correo: this.correoRecuperacion.trim(),
       tipo: 'RECUPERAR CONTRASEÑA',
       descripcion: 'El empleado ha solicitado restablecer su contraseña desde la pantalla de login.'
     };

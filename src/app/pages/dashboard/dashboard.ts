@@ -18,6 +18,8 @@ declare var grecaptcha: any;
 })
 export class DashboardComponent implements OnInit {
   usuarioSesion: any = null;
+  sedes: any[] = [];
+  filtroSedeDashboard = 0;
   citasDiaOriginales: any[] = []; 
   citasDia: any[] = []; 
   tramitesUnicos: string[] = []; 
@@ -59,6 +61,7 @@ export class DashboardComponent implements OnInit {
       this.cargarCitasDashboard(1);
 
       if (this.usuarioSesion.rol === 'Super Administrador') {
+        this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = sedes || []; this.filtroSedeDashboard = 0; this.cdr.detectChanges(); } });
         this.api.getPeticionesAdmin().subscribe({ 
           next: (res: any) => { 
             // ARREGLO DEL BUG: Eliminamos clones (datos repetidos) de la base de datos
@@ -104,7 +107,8 @@ export class DashboardComponent implements OnInit {
       queryParams += `&fecha=${this.fechaDashboard}`; 
     } 
     
-    this.api.getCitasPorSede(this.usuarioSesion.idSede, queryParams).subscribe({ 
+    const sedeConsulta = this.usuarioSesion.rol === 'Super Administrador' ? this.filtroSedeDashboard : this.usuarioSesion.idSede;
+    this.api.getCitasPorSede(sedeConsulta, queryParams).subscribe({ 
       next: (res: any) => { 
         const data = res.datos || []; 
         this.paginaActualCitas = res.paginaActual || 1;
@@ -160,11 +164,17 @@ export class DashboardComponent implements OnInit {
   generarContenidoReporte(doc: any, idTabla: string, tituloReporte: string, startY: number) {
     doc.setFontSize(13); doc.setTextColor(5, 90, 28); doc.setFont("helvetica", "bold"); doc.text(tituloReporte, 14, startY);
     doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(80, 80, 80);
-    let y = startY + 6; doc.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username || 'Sistema'}`, 14, y); y += 5; doc.text(`Sede Operativa: ${this.usuarioSesion?.sede || 'Global'}`, 14, y); y += 5;
-    let filtroExtra = 'Mostrando todos los registros';
-    if (this.fechaDashboard) filtroExtra = `Filtrado por fecha: ${this.fechaDashboard}`;
-    if (this.filtroTramite) filtroExtra = `Filtrado por trámite: ${this.filtroTramite}`;
-    doc.setFont("helvetica", "bold"); doc.text(`Filtros aplicados: ${filtroExtra}`, 14, y); y += 8;
+    let y = startY + 6; doc.text(`Generado el: ${new Date().toLocaleString()} por el usuario: ${this.usuarioSesion?.username || 'Sistema'}`, 14, y); y += 5; doc.text(`Sede operativa del usuario: ${this.usuarioSesion?.sede || 'Global'}`, 14, y); y += 5;
+    const sedeFiltro = this.usuarioSesion?.rol === 'Super Administrador'
+      ? (this.filtroSedeDashboard > 0 ? (this.sedes.find(s => Number(s.idSede) === Number(this.filtroSedeDashboard))?.nombre || `Sede ${this.filtroSedeDashboard}`) : 'Todas las sedes')
+      : (this.usuarioSesion?.sede || 'Sede asignada');
+    const filtros = [`Sede: ${sedeFiltro}`];
+    if (this.textoBusquedaDashboard.trim()) filtros.push(`Búsqueda: ${this.textoBusquedaDashboard.trim()}`);
+    else if (this.fechaDashboard) filtros.push(`Fecha: ${this.fechaDashboard}`);
+    if (this.filtroTramite) filtros.push(`Trámite: ${this.filtroTramite}`);
+    doc.setFont("helvetica", "bold");
+    const textoFiltros = doc.splitTextToSize(`Filtros aplicados: ${filtros.join(' · ')}`, 180);
+    doc.text(textoFiltros, 14, y); y += textoFiltros.length * 4 + 4;
     autoTable(doc, { html: `#${idTabla}`, startY: y, theme: 'grid', headStyles: { fillColor: [5, 90, 28], textColor: 255 }, alternateRowStyles: { fillColor: [255, 255, 255] }, styles: { fontSize: 7, cellPadding: 1, textColor: [0, 0, 0], lineColor: [200, 200, 200] },
       didParseCell: (data: any) => { if (data.section === 'body' && data.cell.text && data.cell.text.length > 0) { for (let i = 0; i < data.cell.text.length; i++) { data.cell.text[i] = data.cell.text[i].replace(/(\d{2}:\d{2})(\d{2}\/\d{2}\/\d{4})/, '$1\n$2'); } } }
     });

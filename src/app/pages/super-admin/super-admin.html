@@ -120,6 +120,14 @@
           <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sliders me-2" style="color: #055A1C;"></i>Configuración de Trámites y Tiempos</h6>
         </div>
         <div class="card-body p-4">
+          <div class="row mb-3">
+            <div class="col-md-5 col-lg-4">
+              <label class="form-label fw-bold small text-secondary">SEDE A CONFIGURAR</label>
+              <select class="form-select" [(ngModel)]="sedeConfiguracion" (change)="cargarTramitesAdmin()">
+                @for (sede of sedes; track sede.idSede) { <option [ngValue]="sede.idSede">{{ sede.nombre }}</option> }
+              </select>
+            </div>
+          </div>
           <div class="table-responsive">
             <table class="table table-hover align-middle" style="font-size: 0.85rem;">
               <thead style="background-color: #fdfdfd;">
@@ -212,17 +220,24 @@
           <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-door-open me-2" style="color: #E60064;"></i>Registro Histórico de Accesos</h6>
         </div>
         <div class="card-body p-4">
-          <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
-            <div class="col-md-3 mb-3 mb-md-0">
+          <div class="row g-3 align-items-end mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #E60064;">
+            <div class="col-12 col-sm-6 col-xl-2">
+              <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR SEDE</label>
+              <select class="form-select" [(ngModel)]="filtroSedeAccesos" (change)="cargarAccesosAdmin(1)">
+                <option [ngValue]="0">Todas las sedes</option>
+                @for (sede of sedes; track sede.idSede) { <option [ngValue]="sede.idSede">{{ sede.nombre }}</option> }
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-2">
               <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">FILTRAR POR DÍA</label>
               <input type="date" class="form-control" [(ngModel)]="fechaAccesos" (change)="cargarAccesosAdmin(1)">
             </div>
-            <div class="col-md-9">
+            <div class="col-12 col-xl-8">
               <label class="form-label fw-bold text-secondary" style="font-size: 0.75rem;">BÚSQUEDA GLOBAL</label>
-              <div class="input-group">
-                <input type="text" class="form-control" placeholder="Escriba el nombre de usuario..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin(1)">
+              <div class="d-flex flex-wrap gap-2 filter-search-controls">
+                <input type="text" class="form-control flex-grow-1" style="min-width: 180px;" placeholder="Escriba el nombre de usuario..." [(ngModel)]="textoBusquedaAccesos" (keyup.enter)="cargarAccesosAdmin(1)">
                 <button class="btn btn-success fw-bold" (click)="cargarAccesosAdmin(1)"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                <button class="btn text-white fw-bold ms-2 shadow-sm" style="background-color: #055A1C;" (click)="descargarPDFAccesos()"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
+                <button class="btn text-white fw-bold shadow-sm" style="background-color: #055A1C;" (click)="descargarPDFAccesos()"><i class="fa-solid fa-file-pdf me-2"></i> PDF</button>
               </div>
             </div>
           </div>

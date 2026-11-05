@@ -26,8 +26,8 @@ export class ApiService {
     const params = idSede == null ? undefined : new HttpParams().set('idSede', idSede);
     return this.http.get(`${this.apiUrl}/Tramites`, { params });
   }
-  getTramitesAdmin() { return this.http.get(`${this.apiUrl}/Tramites/Admin`); }
-  actualizarCategoria(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Tramites/Categoria/${id}`, payload); }
+  getTramitesAdmin(idSede: number) { return this.http.get(`${this.apiUrl}/Tramites/Admin?idSede=${idSede}`); }
+  actualizarCategoria(id: number, idSede: number, payload: any) { return this.http.put(`${this.apiUrl}/Tramites/Categoria/${id}?idSede=${idSede}`, payload); }
 
   // === CITAS CIUDADANO ===
   getHorarios(idSede: number, idTramite: number, fecha: string) { return this.http.get<string[]>(`${this.apiUrl}/Citas/Horarios?idSede=${idSede}&idTramite=${idTramite}&fecha=${fecha}`); }
@@ -59,7 +59,10 @@ export class ApiService {
 
   // === PETICIONES ===
   getMisPeticiones(username: string) { return this.http.get(`${this.apiUrl}/Peticiones/MisPeticiones/${username}`); }
-  getPeticionesAdmin() { return this.http.get(`${this.apiUrl}/Peticiones`); }
+  getPeticionesAdmin(idSede?: number) {
+    const params = idSede == null || idSede === 0 ? undefined : new HttpParams().set('idSede', idSede);
+    return this.http.get(`${this.apiUrl}/Peticiones`, { params });
+  }
   marcarLeidasUsuario(username: string) { return this.http.put(`${this.apiUrl}/Peticiones/MarcarLeidasUsuario/${username}`, {}); }
   marcarLeidasAdmin() { return this.http.put(`${this.apiUrl}/Peticiones/MarcarLeidasAdmin`, {}); }
   

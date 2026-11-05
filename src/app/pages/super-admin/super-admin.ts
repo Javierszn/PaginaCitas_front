@@ -23,9 +23,11 @@ export class SuperAdminComponent implements OnInit {
   usuariosSistema: any[] = [];
   rolesDisponibles: any[] = [];
   categoriasAdmin: any[] = [];
+  sedeConfiguracion = 0;
   nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: 2, idSede: 1 };
   mostrarPasswordNuevoUsuario = false;
   registroAccesos: any[] = [];
+  filtroSedeAccesos = 0;
   fechaAccesos: string = '';
   textoBusquedaAccesos: string = '';
   cargandoAccesos: boolean = false;
@@ -52,13 +54,13 @@ export class SuperAdminComponent implements OnInit {
     if (sessionUser) {
       this.usuarioSesion = JSON.parse(sessionUser);
       if (this.usuarioSesion.rol !== 'Super Administrador' && this.usuarioSesion.rol !== 'Dirección') { this.router.navigate(['/admin/dashboard']); return; }
-      this.cargarTramitesAdmin();
+      this.cargarSedes();
       if (this.usuarioSesion.rol === 'Dirección') {
         this.cargarReglasCalendario();
         this.cargarMisPeticiones();
         return;
       }
-      this.cargarSedes(); this.cargarUsuariosAdmin(); this.cargarRoles(); this.cargarAccesosAdmin(1); this.cargarReglasCalendario();
+      this.cargarUsuariosAdmin(); this.cargarRoles(); this.cargarAccesosAdmin(1); this.cargarReglasCalendario();
       this.api.getPeticionesAdmin().subscribe({ next: (res: any) => { const unicas = res.filter((v:any, i:number, a:any) => a.findIndex((t:any) => t.idPeticion === v.idPeticion) === i); this.notificacionesNuevas = unicas.filter((p: any) => p.estatus === 'PENDIENTE' && !p.leido).length; this.cdr.detectChanges(); } });
     } else { this.router.navigate(['/login']); }
   }
@@ -83,7 +85,7 @@ export class SuperAdminComponent implements OnInit {
   }
 
   limpiarRastrosDeSesion() { sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.router.navigate(['/login']); }
-  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
+  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos || []; if (!this.sedeConfiguracion && this.sedes.length) this.sedeConfiguracion = Number(this.sedes[0].idSede); this.cargarTramitesAdmin(); this.cdr.detectChanges(); } }); }
   cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
   cargarRoles() { this.api.getRoles().subscribe({ next: (res: any) => { this.rolesDisponibles = res; const ventanilla = res.find((rol: any) => rol.nombreRol === 'Ventanilla'); if (ventanilla) this.nuevoUsuario.idRol = ventanilla.idRol; this.cdr.detectChanges(); } }); }
   rolPredeterminado(): number { return Number(this.rolesDisponibles.find((rol: any) => rol.nombreRol === 'Ventanilla')?.idRol ?? this.rolesDisponibles[0]?.idRol ?? 2); }
@@ -101,8 +103,8 @@ export class SuperAdminComponent implements OnInit {
   cambiarPasswordUsuario(id: number) { this.alertService.mostrarInput('Restablecer Contraseña', 'Contraseña temporal:', (pwd?: string) => { if(!pwd) return; if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(pwd)) { this.alertService.mostrarAlerta('Contraseña inválida', 'Usa al menos 6 caracteres, una mayúscula, un número y un carácter especial.', 'warning'); return; } this.api.cambiarPasswordUsuario(id, { password: pwd }).subscribe({ next: (res: any) => this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'), error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar.'), 'error') }); }, 'password'); }
   cambiarSedeUsuario(usr: any) { const idSedeNueva = Number(usr.idSede); this.api.cambiarSedeUsuario(usr.idUsuario, { idSede: idSedeNueva }).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Actualizado', res.mensaje, 'success'); if (this.usuarioSesion && this.usuarioSesion.idUsuario === usr.idUsuario) { this.usuarioSesion.idSede = idSedeNueva; const sedeEncontrada = this.sedes.find(s => s.idSede === idSedeNueva); if (sedeEncontrada) { this.usuarioSesion.sede = sedeEncontrada.nombre; } sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); } }, error: (err: any) => { this.cargarUsuariosAdmin(); this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo actualizar.'), 'error'); } }); }
 
-  cargarTramitesAdmin() { this.api.getTramitesAdmin().subscribe({ next: (res: any) => { this.categoriasAdmin = res.map((cat: any) => { const primerServicio = cat.tramites.length > 0 ? cat.tramites[0] : {}; return { idCategoria: cat.idCategoria, nombreCategoria: cat.nombreCategoria, costo: primerServicio.costo || 0, duracionMinutos: primerServicio.duracionMinutos || 30, limiteDiarioSede: primerServicio.limiteDiarioSede || 50, activo: cat.activa, fechaInicio: primerServicio.fechaInicioPermitida ? primerServicio.fechaInicioPermitida.split('T')[0] : '', fechaFin: primerServicio.fechaFinPermitida ? primerServicio.fechaFinPermitida.split('T')[0] : '' }; }); this.cdr.detectChanges(); } }); }
-  actualizarCategoria(cat: any) { const payload = { duracionMinutos: Number(cat.duracionMinutos), costo: Number(cat.costo), activo: cat.activo, limiteDiario: Number(cat.limiteDiarioSede), fechaInicio: cat.fechaInicio ? cat.fechaInicio : null, fechaFin: cat.fechaFin ? cat.fechaFin : null }; this.api.actualizarCategoria(cat.idCategoria, payload).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Guardado', res.mensaje, 'success'); this.cargarTramitesAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo guardar la configuración.'), 'error') }); }
+  cargarTramitesAdmin() { if (!this.sedeConfiguracion) return; this.api.getTramitesAdmin(this.sedeConfiguracion).subscribe({ next: (res: any) => { this.categoriasAdmin = res.map((cat: any) => { const primerServicio = cat.tramites?.[0] || {}; return { idCategoria: cat.idCategoria, nombreCategoria: cat.nombreCategoria, costo: primerServicio.costo ?? 0, duracionMinutos: primerServicio.duracionMinutos ?? 30, limiteDiarioSede: primerServicio.limiteDiarioSede ?? 50, activo: cat.tramites?.some((t: any) => t.activo === true) ?? false, fechaInicio: primerServicio.fechaInicioPermitida ? primerServicio.fechaInicioPermitida.split('T')[0] : '', fechaFin: primerServicio.fechaFinPermitida ? primerServicio.fechaFinPermitida.split('T')[0] : '' }; }); this.cdr.detectChanges(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo cargar la configuración de la sede.'), 'error') }); }
+  actualizarCategoria(cat: any) { const payload = { duracionMinutos: Number(cat.duracionMinutos), costo: Number(cat.costo), activo: cat.activo, limiteDiario: Number(cat.limiteDiarioSede), fechaInicio: cat.fechaInicio || null, fechaFin: cat.fechaFin || null }; this.api.actualizarCategoria(cat.idCategoria, this.sedeConfiguracion, payload).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Guardado', res.mensaje, 'success'); this.cargarTramitesAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudo guardar la configuración.'), 'error') }); }
 
   cargarReglasCalendario() { this.api.getReglasCalendario().subscribe({ next: (res: any) => { this.diasInhabilesAdmin = res.diasInhabiles || []; this.cdr.detectChanges(); } }); }
   agregarDiaInhabil() {
@@ -130,6 +132,7 @@ export class SuperAdminComponent implements OnInit {
   cargarAccesosAdmin(paginaSolicitada: number = 1) {
     this.cargandoAccesos = true;
     let urlParams = `?pagina=${paginaSolicitada}&page=${paginaSolicitada}&pageNumber=${paginaSolicitada}&registrosPorPagina=10&pageSize=10`;
+    if (this.filtroSedeAccesos > 0) urlParams += `&idSede=${this.filtroSedeAccesos}`;
     if (this.textoBusquedaAccesos) urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`; else if (this.fechaAccesos) urlParams += `&fecha=${this.fechaAccesos}`;
     this.api.getAccesos(urlParams).subscribe({
       next: (res: any) => {
@@ -158,8 +161,9 @@ export class SuperAdminComponent implements OnInit {
 
   descargarPDFAccesos() {
     let urlParams = '?page=1&pageSize=10000';
-    if (this.fechaAccesos) urlParams += `&fecha=${encodeURIComponent(this.fechaAccesos)}`;
-    if (this.textoBusquedaAccesos) urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos)}`;
+    if (this.filtroSedeAccesos > 0) urlParams += `&idSede=${this.filtroSedeAccesos}`;
+    if (this.textoBusquedaAccesos.trim()) urlParams += `&busqueda=${encodeURIComponent(this.textoBusquedaAccesos.trim())}`;
+    else if (this.fechaAccesos) urlParams += `&fecha=${encodeURIComponent(this.fechaAccesos)}`;
 
     this.api.getAccesos(urlParams).subscribe({
       next: (res: any) => {
@@ -184,11 +188,18 @@ export class SuperAdminComponent implements OnInit {
           let posicionY = inicioY + 6;
           documento.text(`Generado el: ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })} por ${this.usuarioSesion?.username || 'Super Admin'}`, 14, posicionY);
           posicionY += 5;
-          documento.text(`Sede operativa: ${this.usuarioSesion?.sede || 'Global'}`, 14, posicionY);
+          documento.text(`Sede operativa del usuario: ${this.usuarioSesion?.sede || 'Global'}`, 14, posicionY);
           posicionY += 5;
-          const filtro = this.fechaAccesos ? `Fecha: ${this.fechaAccesos}` : 'Todas las fechas';
-          documento.text(`Filtro: ${filtro}`, 14, posicionY);
-          posicionY += 8;
+          const sedeFiltro = this.filtroSedeAccesos > 0
+            ? (this.sedes.find(s => Number(s.idSede) === Number(this.filtroSedeAccesos))?.nombre || `Sede ${this.filtroSedeAccesos}`)
+            : 'Todas las sedes';
+          const filtros = [`Sede: ${sedeFiltro}`];
+          if (this.textoBusquedaAccesos.trim()) filtros.push(`Búsqueda: ${this.textoBusquedaAccesos.trim()}`);
+          else if (this.fechaAccesos) filtros.push(`Fecha: ${this.fechaAccesos}`);
+          const lineasFiltro = documento.splitTextToSize(`Filtros aplicados: ${filtros.join(' · ')}`, 180);
+          documento.setFont('helvetica', 'bold');
+          documento.text(lineasFiltro, 14, posicionY);
+          posicionY += lineasFiltro.length * 4 + 4;
 
           const filas = accesos.map((acceso: any) => {
             const inicio = acceso.fechaLogin
