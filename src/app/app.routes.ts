@@ -25,16 +25,22 @@ export const routes: Routes = [
   { 
     path: 'admin/bitacora', 
     canActivate: [authGuard], 
+    data: { roles: ['Super Administrador', 'Administrador'] },
     loadComponent: () => import('./pages/bitacora/bitacora').then(m => m.BitacoraComponent) 
   },
   { 
     path: 'admin/super', 
     canActivate: [authGuard], 
+    data: { roles: ['Super Administrador', 'Dirección'] },
     loadComponent: () => import('./pages/super-admin/super-admin').then(m => m.SuperAdminComponent) 
   },
   { 
     path: 'admin/soporte', 
     canActivate: [authGuard], 
     loadComponent: () => import('./pages/soporte/soporte').then(m => m.SoporteComponent) 
+  },
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then(m => m.NotFoundComponent)
   }
 ];

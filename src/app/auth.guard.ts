@@ -1,16 +1,25 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = (route) => {
   const router = inject(Router);
   const sessionUser = sessionStorage.getItem('usuarioRC');
 
-  // Si hay sesión activa, el cadenero lo deja pasar
-  if (sessionUser) {
-    return true; 
-  } else {
-    // Si no hay sesión, lo patea al login inmediatamente
-    router.navigate(['/login']);
-    return false;
+  if (!sessionUser) return router.createUrlTree(['/login']);
+
+  try {
+    const usuario = JSON.parse(sessionUser);
+    if (!usuario?.token || !usuario?.rol) throw new Error('Sesión incompleta');
+
+    const rolesPermitidos = route.data['roles'] as string[] | undefined;
+    if (rolesPermitidos?.length && !rolesPermitidos.includes(usuario.rol)) {
+      return router.createUrlTree(['/admin/dashboard']);
+    }
+
+    return true;
+  } catch {
+    sessionStorage.removeItem('usuarioRC');
+    sessionStorage.removeItem('pasoRC');
+    return router.createUrlTree(['/login']);
   }
 };

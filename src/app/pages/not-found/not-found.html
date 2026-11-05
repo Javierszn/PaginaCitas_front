@@ -1,0 +1,17 @@
+<section class="not-found-page d-flex align-items-center justify-content-center py-5">
+  <div class="not-found-card text-center bg-white rounded-4 shadow-sm p-4 p-md-5">
+    <div class="not-found-code mb-2" aria-hidden="true">404</div>
+    <h1 class="h3 fw-bold text-dark mb-3">Página no encontrada</h1>
+    <p class="text-secondary mb-4">
+      La dirección que abriste no existe o pudo haber cambiado. Revisa el enlace e inténtalo de nuevo.
+    </p>
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+      <button class="btn btn-outline-secondary rounded-pill px-4" type="button" (click)="regresar()">
+        <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"></i>Regresar
+      </button>
+      <a class="btn btn-success rounded-pill px-4" routerLink="/">
+        <i class="fa-solid fa-house me-2" aria-hidden="true"></i>Ir al inicio
+      </a>
+    </div>
+  </div>
+</section>

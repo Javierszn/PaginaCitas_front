@@ -1,0 +1,16 @@
+.not-found-page {
+  min-height: 48vh;
+}
+
+.not-found-card {
+  width: min(100%, 34rem);
+  border: 1px solid #edf0ed;
+}
+
+.not-found-code {
+  color: #055a1c;
+  font-size: clamp(4rem, 12vw, 6rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
