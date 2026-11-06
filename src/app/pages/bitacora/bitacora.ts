@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
+import { ordenarSedesParaMostrar } from '../../sede-utils';
 import { AlertService } from '../../alert.service'; 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -40,7 +41,7 @@ export class BitacoraComponent implements OnInit {
          this.router.navigate(['/admin/dashboard']);
          return;
       }
-      if (this.usuarioSesion.rol === 'Super Administrador') this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = sedes || []; this.cdr.detectChanges(); } });
+      if (this.usuarioSesion.rol === 'Super Administrador') this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = ordenarSedesParaMostrar(sedes); this.cdr.detectChanges(); } });
       this.cargarBitacora(1);
     } else {
       this.router.navigate(['/login']);

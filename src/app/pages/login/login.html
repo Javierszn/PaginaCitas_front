@@ -57,9 +57,8 @@
           <div class="modal-content rounded-4 border-0 shadow-lg p-4">
             <div class="modal-body">
               <h5 class="fw-bold text-dark mb-3">Recuperar Contraseña</h5>
-              <p class="text-secondary" style="font-size: 0.85rem;">Se enviará una solicitud al Super Administrador para que restablezca su contraseña.</p>
+              <p class="text-secondary" style="font-size: 0.85rem;">Escribe tu usuario. Si se autoriza la recuperación, la contraseña temporal se enviará al correo registrado en tu cuenta.</p>
               <input type="text" class="form-control mb-3 text-center" [(ngModel)]="usernameRecuperacion" name="usernameRecuperacion" placeholder="Su nombre de usuario">
-              <input type="email" class="form-control mb-3 text-center" [(ngModel)]="correoRecuperacion" name="correoRecuperacion" placeholder="Correo donde recibirá la contraseña temporal" autocomplete="email">
               <div class="d-flex justify-content-center mb-3">
                 <div id="captcha-recuperacion"></div>
               </div>
@@ -83,7 +82,7 @@
                   <i class="fa-solid fa-shield-halved" style="font-size: 4.5rem; color: #055A1C;"></i>
               </div>
               <h4 class="fw-bold text-dark mb-2">Seguridad de la Cuenta</h4>
-              <p class="text-secondary fs-6 mb-4">Para proteger su cuenta, es obligatorio crear una contraseña personal nueva en su primer inicio de sesión.</p>
+              <p class="text-secondary fs-6 mb-4">Crea una contraseña personal y registra un correo y teléfono de contacto. El correo se usará para recuperar el acceso.</p>
 
               <!-- NUEVO CUADRO DE REQUISITOS DE CONTRASEÑA -->
               <div class="alert alert-info text-start mb-4" style="font-size: 0.75rem;">
@@ -101,6 +100,14 @@
               <div class="input-group mb-4">
                 <input [type]="mostrarConfirmarPassword ? 'text' : 'password'" class="form-control text-center" [(ngModel)]="confirmarPassword" placeholder="Confirmar Contraseña">
                 <button class="btn btn-outline-secondary" type="button" (click)="mostrarConfirmarPassword = !mostrarConfirmarPassword" [attr.aria-label]="mostrarConfirmarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"><i [class]="mostrarConfirmarPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i></button>
+              </div>
+              <input type="email" class="form-control mb-3" [(ngModel)]="correoCuenta" name="correoCuenta" placeholder="Correo electrónico de la cuenta" autocomplete="email" required>
+              <label class="form-label w-100 text-start">Teléfono de contacto</label>
+              <div class="input-group mb-4">
+                <select class="form-select" style="flex: 0 0 48%; width: 48%; min-width: 140px; max-width: 165px;" aria-label="Lada del país" [(ngModel)]="ladaCuenta" (ngModelChange)="normalizarTelefonoCuenta()" name="ladaCuenta">
+                  <option *ngFor="let opcion of ladasPaises" [value]="opcion.codigo">{{ opcion.pais }} (+{{ opcion.codigo }})</option>
+                </select>
+                <input type="tel" class="form-control" [(ngModel)]="telefonoCuenta" (input)="normalizarTelefonoCuenta()" name="telefonoCuenta" placeholder="Número telefónico" autocomplete="tel-national" inputmode="numeric" [attr.maxlength]="maximoTelefonoCuenta()" required>
               </div>
               @if (errorCambioPassword) {
                 <div class="alert alert-danger text-start" role="alert">{{ errorCambioPassword }}</div>

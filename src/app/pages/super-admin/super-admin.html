@@ -13,6 +13,7 @@
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: #E60064; font-size: 0.65rem;">{{ notificacionesNuevas }}</span>
           }
         </button>
+        <button class="btn panel-action" type="button" (click)="abrirMiCuenta()"><i class="fa-solid fa-user-pen me-2"></i>Mi cuenta</button>
         <button class="btn panel-action" type="button" (click)="abrirModalPeticion(false)"><i class="fa-solid fa-circle-question me-2"></i>Solicitar Ayuda</button>
         <button class="btn logout-action" type="button" (click)="cerrarSesion()" title="Cerrar la sesión actual"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Cerrar sesión</span></button>
       </div>
@@ -35,33 +36,34 @@
         <div class="card-body p-4">
           <div class="row mb-4 p-3 rounded-3" style="background-color: #fafafa; border-left: 4px solid #055A1C;">
             <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.85rem;">NUEVO EMPLEADO</h6>
-            <div class="col-md-2">
+            <p class="small text-muted mt-n2 mb-3">El usuario registrará su correo y teléfono al crear su contraseña personal en el primer acceso.</p>
+            <div class="col">
               <input type="text" class="form-control" placeholder="Nombre Completo" [(ngModel)]="nuevoUsuario.nombreCompleto">
             </div>
-            <div class="col-md-2">
+            <div class="col">
               <input type="text" class="form-control" placeholder="Usuario" [(ngModel)]="nuevoUsuario.username">
             </div>
-            <div class="col-md-2">
+            <div class="col">
               <div class="input-group">
                 <input [type]="mostrarPasswordNuevoUsuario ? 'text' : 'password'" class="form-control" placeholder="Contraseña" [(ngModel)]="nuevoUsuario.password">
                 <button class="btn btn-outline-secondary" type="button" (click)="mostrarPasswordNuevoUsuario = !mostrarPasswordNuevoUsuario" [attr.aria-label]="mostrarPasswordNuevoUsuario ? 'Ocultar contraseña' : 'Mostrar contraseña'"><i [class]="mostrarPasswordNuevoUsuario ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i></button>
               </div>
             </div>
-            <div class="col-md-2">
+            <div class="col">
               <select class="form-select" [(ngModel)]="nuevoUsuario.idRol">
                 @for (rol of rolesDisponibles; track rol.idRol) {
                   <option [ngValue]="rol.idRol">{{ rol.nombreRol }}</option>
                 }
               </select>
             </div>
-            <div class="col-md-2">
+            <div class="col">
               <select class="form-select" [(ngModel)]="nuevoUsuario.idSede">
                 @for (s of sedes; track s.idSede) {
                   <option [value]="s.idSede">{{ s.nombre }}</option>
                 }
               </select>
             </div>
-            <div class="col-md-2">
+            <div class="col">
               <button class="btn btn-success w-100 fw-bold" (click)="crearUsuario()">Crear</button>
             </div>
           </div>
@@ -344,6 +346,29 @@
           <button class="btn btn-outline-secondary rounded-pill px-4 fw-bold" (click)="cerrarModalPeticion()">Cancelar</button>
           <button class="btn btn-success rounded-pill px-4 fw-bold" (click)="enviarPeticion()">Enviar Solicitud <i class="fa-solid fa-paper-plane ms-1"></i></button>
         </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (mostrarMiCuenta) {
+  <div class="modal-backdrop fade show" style="z-index: 1060; background-color: rgba(0,0,0,.55);"></div>
+  <div class="modal d-block" tabindex="-1" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header bg-light border-0"><h5 class="fw-bold mb-0">Mi cuenta</h5><button class="btn-close" type="button" (click)="mostrarMiCuenta = false"></button></div>
+        <div class="modal-body">
+          <p class="small text-muted">Actualiza los datos de contacto usados para proteger y recuperar tu cuenta.</p>
+          <label class="form-label">Correo electrónico</label><input type="email" class="form-control mb-3" [(ngModel)]="correoPerfil" autocomplete="email">
+          <label class="form-label">Teléfono</label>
+          <div class="input-group">
+            <select class="form-select" style="flex: 0 0 48%; width: 48%; min-width: 140px; max-width: 165px;" aria-label="Lada del país" [(ngModel)]="ladaPerfil" (ngModelChange)="normalizarTelefonoPerfil()">
+              <option *ngFor="let opcion of ladasPaises" [value]="opcion.codigo">{{ opcion.pais }} (+{{ opcion.codigo }})</option>
+            </select>
+            <input type="tel" class="form-control" [(ngModel)]="telefonoPerfil" (input)="normalizarTelefonoPerfil()" autocomplete="tel-national" inputmode="numeric" [attr.maxlength]="maximoTelefonoPerfil()" placeholder="Número telefónico">
+          </div>
+        </div>
+        <div class="modal-footer border-0"><button class="btn btn-outline-secondary" type="button" (click)="mostrarMiCuenta = false">Cancelar</button><button class="btn btn-success" type="button" [disabled]="guardandoPerfil" (click)="guardarMiCuenta()">{{ guardandoPerfil ? 'Guardando…' : 'Guardar cambios' }}</button></div>
       </div>
     </div>
   </div>

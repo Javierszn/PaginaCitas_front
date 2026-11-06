@@ -5,6 +5,8 @@ import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service'; // NUEVO MENSAJERO
 import { environment } from '../../../environments/environment';
+import { PHONE_COUNTRY_CODES, formatPhoneForApi, maxNationalPhoneDigits, parsePhoneForEditor } from '../../phone-utils';
+import { ordenarSedesParaMostrar } from '../../sede-utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 declare var grecaptcha: any;
@@ -44,6 +46,14 @@ export class DashboardComponent implements OnInit {
   
   peticionDesdeLogin: boolean = false;
   usuariosSoporte: any[] = [];
+  mostrarMiCuenta = false;
+  guardandoPerfil = false;
+  correoPerfil = '';
+  telefonoPerfil = '';
+  ladaPerfil = '52';
+  ladasPaises = PHONE_COUNTRY_CODES;
+  maximoTelefonoPerfil(): number { return maxNationalPhoneDigits(this.ladaPerfil); }
+  normalizarTelefonoPerfil() { this.telefonoPerfil = (this.telefonoPerfil || '').replace(/\D/g, '').slice(0, this.maximoTelefonoPerfil()); }
 
   private api = inject(ApiService);
   private router = inject(Router);
@@ -61,7 +71,7 @@ export class DashboardComponent implements OnInit {
       this.cargarCitasDashboard(1);
 
       if (this.usuarioSesion.rol === 'Super Administrador') {
-        this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = sedes || []; this.filtroSedeDashboard = 0; this.cdr.detectChanges(); } });
+        this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = ordenarSedesParaMostrar(sedes); this.filtroSedeDashboard = 0; this.cdr.detectChanges(); } });
         this.api.getPeticionesAdmin().subscribe({ 
           next: (res: any) => { 
             // ARREGLO DEL BUG: Eliminamos clones (datos repetidos) de la base de datos
@@ -93,6 +103,27 @@ export class DashboardComponent implements OnInit {
     sessionStorage.removeItem('usuarioRC'); 
     sessionStorage.removeItem('pasoRC'); 
     this.router.navigate(['/login']); 
+  }
+
+  abrirMiCuenta() {
+    this.correoPerfil = this.usuarioSesion?.correo || '';
+    const telefono = parsePhoneForEditor(this.usuarioSesion?.telefono);
+    this.ladaPerfil = telefono.codigo;
+    this.telefonoPerfil = telefono.numero;
+    this.mostrarMiCuenta = true;
+  }
+
+  guardarMiCuenta() {
+    const correo = this.correoPerfil.trim();
+    const telefonoLocal = this.telefonoPerfil.replace(/\D/g, '');
+    const telefono = formatPhoneForApi(this.ladaPerfil, telefonoLocal);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) { this.alertService.mostrarAlerta('Correo inválido', 'Captura un correo electrónico válido.', 'warning'); return; }
+    if (telefonoLocal.length < 7 || telefonoLocal.length > this.maximoTelefonoPerfil()) { this.alertService.mostrarAlerta('Teléfono inválido', `Captura un número de 7 a ${this.maximoTelefonoPerfil()} dígitos para la lada seleccionada.`, 'warning'); return; }
+    this.guardandoPerfil = true;
+    this.api.actualizarPerfil(this.usuarioSesion.idUsuario, { correo, telefono }).subscribe({
+      next: (res: any) => { this.usuarioSesion.correo = res.correo || correo; this.usuarioSesion.telefono = res.telefono || telefono; sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); this.guardandoPerfil = false; this.mostrarMiCuenta = false; this.alertService.mostrarAlerta('Actualizado', res.mensaje || 'Tus datos de contacto se actualizaron.', 'success'); this.cdr.detectChanges(); },
+      error: (err: any) => { this.guardandoPerfil = false; this.alertService.mostrarAlerta('Error', err.error?.mensaje || 'No se pudieron actualizar los datos.', 'error'); this.cdr.detectChanges(); }
+    });
   }
 
   cargarCitasDashboard(paginaSolicitada: number = 1) { 

@@ -23,8 +23,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(requestClonado).pipe(
     catchError((err) => {
-      // 2. Si el servidor nos rechaza (401) Y NO estamos intentando iniciar sesión
-      if ((err.status === 401 || err.status === 403) && !req.url.includes('/login')) {
+      // Solo 401 significa que la sesión ya no es válida. Un 403 indica falta
+      // de permiso para esa acción y no debe cerrar una sesión autenticada.
+      if (err.status === 401 && !req.url.includes('/login')) {
         
         // Limpiamos la memoria
         sessionStorage.removeItem('usuarioRC');

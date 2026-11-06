@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
+import { ordenarSedesParaMostrar } from '../../sede-utils';
 import jsPDF from 'jspdf';
 import { environment } from '../../../environments/environment';
 import { finalize } from 'rxjs';
@@ -146,11 +147,42 @@ export class AgendarComponent implements OnInit, OnDestroy {
 
   limpiarFormulario(preservarAcuse: boolean = false) { this.ciudadano = { nombre: '', curp: '', correo: '', telefono: '', municipioRegistro: '', estadoRegistro: '' }; this.fechaSeleccionada = ''; this.horaSeleccionada = ''; this.horariosDisponibles = []; this.diasMes.forEach(d => d.seleccionado = false); this.categoriaExpandida = null; this.modoReagendar = false; this.folioReagendar = ''; this.procesandoCita = false; this.curpValida = true; this.mostrarMensajesAyuda = false; if (!preservarAcuse) this.citaConsultada = null; }
 
-  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos; this.cdr.detectChanges(); } }); }
+  cargarSedes() {
+    this.api.getSedes().subscribe({
+      next: (datos: any) => {
+        this.sedes = ordenarSedesParaMostrar(datos);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+  esSedeOtrosEstados(sede: any): boolean { return (sede?.nombre || '').toLocaleLowerCase().includes('otros estados'); }
   cargarTramites() { this.api.getTramites(this.sedeSeleccionada?.idSede).subscribe({ next: (datos: any) => { this.categorias = datos; this.cdr.detectChanges(); } }); }
   toggleCategoria(idCategoria: number) { this.categoriaExpandida = (this.categoriaExpandida === idCategoria) ? null : idCategoria; this.cdr.detectChanges(); }
 
-  seleccionarSede(sede: any) { this.sedeSeleccionada = sede; const nombreSede = sede.nombre.toLowerCase(); this.esOtrosEstados = nombreSede.includes('otros'); this.ciudadano.estadoRegistro = ''; this.ciudadano.municipioRegistro = ''; if (nombreSede.includes('centro') || nombreSede.includes('direcci')) { this.municipiosRegistro = ['Ahualulco', 'Armadillo de los Infante', 'Cerro de San Pedro', 'Mexquitic de Carmona', 'San Luis Potosí', 'Santa María del Río', 'Soledad de Graciano Sánchez', 'Tierra Nueva', 'Villa de Arriaga', 'Villa de Reyes', 'Villa de Zaragoza', 'Villa de Pozos (Municipio 59)'].sort(); } else if (nombreSede.includes('altiplano') || nombreSede.includes('charcas')) { this.municipiosRegistro = ['Catorce', 'Cedral', 'Charcas', 'Guadalcázar', 'Matehuala', 'Moctezuma', 'Salinas', 'Santo Domingo', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa Hidalgo'].sort(); } else if (nombreSede.includes('huasteca') || nombreSede.includes('valles') || nombreSede.includes('tamazunchale')) { this.municipiosRegistro = ['Aquismón', 'Axtla de Terrazas', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Huehuetlán', 'Matlapa', 'San Antonio', 'San Martín Chalchicuautla', 'San Vicente Tancuayalab', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Xilitla'].sort(); } else if (this.esOtrosEstados) { this.municipiosRegistro = [...this.todosLosMunicipiosSLP]; } else { this.municipiosRegistro = []; } this.pasoActual = 2; this.cargarTramites(); history.pushState({ paso: 2 }, '', ''); }
+  seleccionarSede(sede: any) {
+    this.sedeSeleccionada = sede;
+    const nombreSede = sede.nombre.toLowerCase();
+    this.esOtrosEstados = nombreSede.includes('otros');
+    this.ciudadano.estadoRegistro = '';
+    this.ciudadano.municipioRegistro = '';
+
+    if (nombreSede.includes('rioverde') || nombreSede.includes('zona sur')) {
+      this.municipiosRegistro = ['Alaquines', 'Cárdenas', 'Cerritos', 'Ciudad Fernández', 'Lagunillas', 'Rayón', 'Rioverde', 'San Ciro de Acosta', 'San Nicolás Tolentino', 'Santa Catarina', 'Villa Juárez'].sort();
+    } else if (nombreSede.includes('centro') || nombreSede.includes('direcci')) {
+      this.municipiosRegistro = ['Ahualulco', 'Armadillo de los Infante', 'Cerro de San Pedro', 'Mexquitic de Carmona', 'San Luis Potosí', 'Santa María del Río', 'Soledad de Graciano Sánchez', 'Tierra Nueva', 'Villa de Arriaga', 'Villa de Reyes', 'Villa de Zaragoza', 'Villa de Pozos (Municipio 59)'].sort();
+    } else if (nombreSede.includes('altiplano') || nombreSede.includes('charcas')) {
+      this.municipiosRegistro = ['Catorce', 'Cedral', 'Charcas', 'Guadalcázar', 'Matehuala', 'Moctezuma', 'Salinas', 'Santo Domingo', 'Vanegas', 'Venado', 'Villa de Arista', 'Villa de Guadalupe', 'Villa de la Paz', 'Villa de Ramos', 'Villa Hidalgo'].sort();
+    } else if (nombreSede.includes('huasteca') || nombreSede.includes('valles') || nombreSede.includes('tamazunchale')) {
+      this.municipiosRegistro = ['Aquismón', 'Axtla de Terrazas', 'Ciudad Valles', 'Coxcatlán', 'Ébano', 'El Naranjo', 'Huehuetlán', 'Matlapa', 'San Antonio', 'San Martín Chalchicuautla', 'San Vicente Tancuayalab', 'Tamasopo', 'Tamazunchale', 'Tampacán', 'Tampamolón Corona', 'Tamuín', 'Tancanhuitz', 'Tanlajás', 'Tanquián de Escobedo', 'Xilitla'].sort();
+    } else if (this.esOtrosEstados) {
+      this.municipiosRegistro = [...this.todosLosMunicipiosSLP];
+    } else {
+      this.municipiosRegistro = [];
+    }
+    this.pasoActual = 2;
+    this.cargarTramites();
+    history.pushState({ paso: 2 }, '', '');
+  }
   
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
   

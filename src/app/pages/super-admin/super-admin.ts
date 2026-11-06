@@ -7,6 +7,8 @@ import { AlertService } from '../../alert.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { environment } from '../../../environments/environment';
+import { PHONE_COUNTRY_CODES, formatPhoneForApi, maxNationalPhoneDigits, parsePhoneForEditor } from '../../phone-utils';
+import { ordenarSedesParaMostrar } from '../../sede-utils';
 
 declare var grecaptcha: any;
 
@@ -43,6 +45,14 @@ export class SuperAdminComponent implements OnInit {
   misPeticiones: any[] = [];
   nuevaPeticion = { username: '', tipo: 'SOPORTE TÉCNICO', descripcion: '' };
   peticionDesdeLogin: boolean = false;
+  mostrarMiCuenta = false;
+  guardandoPerfil = false;
+  correoPerfil = '';
+  telefonoPerfil = '';
+  ladaPerfil = '52';
+  ladasPaises = PHONE_COUNTRY_CODES;
+  maximoTelefonoPerfil(): number { return maxNationalPhoneDigits(this.ladaPerfil); }
+  normalizarTelefonoPerfil() { this.telefonoPerfil = (this.telefonoPerfil || '').replace(/\D/g, '').slice(0, this.maximoTelefonoPerfil()); }
 
   private api = inject(ApiService);
   private router = inject(Router);
@@ -76,6 +86,19 @@ export class SuperAdminComponent implements OnInit {
     return msg;
   }
   regresarADashboard() { this.router.navigate(['/admin/dashboard']); }
+  abrirMiCuenta() { this.correoPerfil = this.usuarioSesion?.correo || ''; const telefono = parsePhoneForEditor(this.usuarioSesion?.telefono); this.ladaPerfil = telefono.codigo; this.telefonoPerfil = telefono.numero; this.mostrarMiCuenta = true; }
+  guardarMiCuenta() {
+    const correo = this.correoPerfil.trim();
+    const telefonoLocal = this.telefonoPerfil.replace(/\D/g, '');
+    const telefono = formatPhoneForApi(this.ladaPerfil, telefonoLocal);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) { this.alertService.mostrarAlerta('Correo inválido', 'Captura un correo electrónico válido.', 'warning'); return; }
+    if (telefonoLocal.length < 7 || telefonoLocal.length > this.maximoTelefonoPerfil()) { this.alertService.mostrarAlerta('Teléfono inválido', `Captura un número de 7 a ${this.maximoTelefonoPerfil()} dígitos para la lada seleccionada.`, 'warning'); return; }
+    this.guardandoPerfil = true;
+    this.api.actualizarPerfil(this.usuarioSesion.idUsuario, { correo, telefono }).subscribe({
+      next: (res: any) => { this.usuarioSesion.correo = res.correo || correo; this.usuarioSesion.telefono = res.telefono || telefono; sessionStorage.setItem('usuarioRC', JSON.stringify(this.usuarioSesion)); this.guardandoPerfil = false; this.mostrarMiCuenta = false; this.alertService.mostrarAlerta('Actualizado', res.mensaje || 'Tus datos de contacto se actualizaron.', 'success'); this.cdr.detectChanges(); },
+      error: (err: any) => { this.guardandoPerfil = false; this.alertService.mostrarAlerta('Error', this.extraerError(err, 'No se pudieron actualizar los datos.'), 'error'); this.cdr.detectChanges(); }
+    });
+  }
   irABitacora() { this.router.navigate(['/admin/bitacora']); }
   irASuperAdmin() { this.router.navigate(['/admin/super']); }
 
@@ -85,7 +108,7 @@ export class SuperAdminComponent implements OnInit {
   }
 
   limpiarRastrosDeSesion() { sessionStorage.removeItem('usuarioRC'); sessionStorage.removeItem('pasoRC'); this.router.navigate(['/login']); }
-  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = datos || []; if (!this.sedeConfiguracion && this.sedes.length) this.sedeConfiguracion = Number(this.sedes[0].idSede); this.cargarTramitesAdmin(); this.cdr.detectChanges(); } }); }
+  cargarSedes() { this.api.getSedes().subscribe({ next: (datos: any) => { this.sedes = ordenarSedesParaMostrar(datos); if (!this.sedeConfiguracion && this.sedes.length) this.sedeConfiguracion = Number(this.sedes[0].idSede); this.cargarTramitesAdmin(); this.cdr.detectChanges(); } }); }
   cargarUsuariosAdmin() { this.api.getUsuarios().subscribe({ next: (res: any) => { this.usuariosSistema = res; this.cdr.detectChanges(); } }); }
   cargarRoles() { this.api.getRoles().subscribe({ next: (res: any) => { this.rolesDisponibles = res; const ventanilla = res.find((rol: any) => rol.nombreRol === 'Ventanilla'); if (ventanilla) this.nuevoUsuario.idRol = ventanilla.idRol; this.cdr.detectChanges(); } }); }
   rolPredeterminado(): number { return Number(this.rolesDisponibles.find((rol: any) => rol.nombreRol === 'Ventanilla')?.idRol ?? this.rolesDisponibles[0]?.idRol ?? 2); }
@@ -93,7 +116,7 @@ export class SuperAdminComponent implements OnInit {
   crearUsuario() {
     this.nuevoUsuario.username = this.nuevoUsuario.username.trim();
     this.nuevoUsuario.nombreCompleto = this.nuevoUsuario.nombreCompleto.trim();
-    if (!this.nuevoUsuario.username || !this.nuevoUsuario.password || !this.nuevoUsuario.nombreCompleto) { this.alertService.mostrarAlerta('Atención', 'Todos los campos son obligatorios.', 'warning'); return; }
+    if (!this.nuevoUsuario.username || !this.nuevoUsuario.password || !this.nuevoUsuario.nombreCompleto) { this.alertService.mostrarAlerta('Atención', 'Completa el nombre, usuario y contraseña temporal.', 'warning'); return; }
     if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(this.nuevoUsuario.password)) { this.alertService.mostrarAlerta('Contraseña inválida', 'Usa al menos 6 caracteres, una mayúscula, un número y un carácter especial.', 'warning'); return; }
     const payloadSeguro = { ...this.nuevoUsuario, idRol: Number(this.nuevoUsuario.idRol), idSede: Number(this.nuevoUsuario.idSede) };
     this.api.crearUsuario(payloadSeguro).subscribe({ next: (res: any) => { this.alertService.mostrarAlerta('Éxito', res.mensaje || 'Usuario creado correctamente.', 'success'); this.nuevoUsuario = { username: '', password: '', nombreCompleto: '', idRol: this.rolPredeterminado(), idSede: 1 }; this.cargarUsuariosAdmin(); }, error: (err: any) => this.alertService.mostrarAlerta('Error', this.extraerError(err, 'Error al crear el usuario.'), 'error') });

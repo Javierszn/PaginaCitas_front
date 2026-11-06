@@ -87,7 +87,10 @@
       <div class="text-center mb-5">
         <span class="badge bg-success mb-2 px-3 py-2 rounded-pill">Paso 2 de 4</span>
         <h3 class="fw-bold text-dark mt-2 green-line">Seleccione su Trámite</h3>
-        <p class="text-secondary mt-3" style="font-size: 0.9rem;">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
+        <p class="text-secondary mt-3 mb-1" style="font-size: 0.9rem;">Oficina: <strong class="text-dark">{{ sedeSeleccionada?.nombre }}</strong></p>
+        @if (sedeSeleccionada?.direccion) {
+          <p class="text-secondary small mb-0"><i class="fa-solid fa-location-dot me-1"></i>{{ sedeSeleccionada.direccion }}</p>
+        }
       </div>
 
       <div class="row justify-content-center mt-4">

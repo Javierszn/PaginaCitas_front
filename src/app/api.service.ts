@@ -52,6 +52,8 @@ export class ApiService {
   crearUsuario(usuario: any) { return this.http.post(`${this.apiUrl}/Usuarios`, usuario); }
   toggleEstadoUsuario(id: number) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/estado`, {}); }
   cambiarPasswordUsuario(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/password`, payload); }
+  activarCuenta(id: number, payload: { password: string; correo: string; telefono: string }) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/activar-cuenta`, payload); }
+  actualizarPerfil(id: number, payload: { correo: string; telefono: string }) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/perfil`, payload); }
   cambiarSedeUsuario(id: number, payload: any) { return this.http.put(`${this.apiUrl}/Usuarios/${id}/sede`, payload); }
   getAccesos(urlParams: string) { return this.http.get(`${this.apiUrl}/Usuarios/Accesos${urlParams}`); }
   cerrarSesionRemota(id: number) { return this.http.put(`${this.apiUrl}/Usuarios/Accesos/${id}/cerrar`, {}); }

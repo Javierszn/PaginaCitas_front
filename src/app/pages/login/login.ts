@@ -6,6 +6,7 @@ import { ApiService } from '../../api.service';
 import { AlertService } from '../../alert.service';
 import { environment } from '../../../environments/environment';
 import { finalize } from 'rxjs';
+import { PHONE_COUNTRY_CODES, formatPhoneForApi, maxNationalPhoneDigits, parsePhoneForEditor } from '../../phone-utils';
 
 @Component({
   selector: 'app-login',
@@ -21,11 +22,18 @@ export class LoginComponent {
   mostrarForzarPassword: boolean = false;
   nuevaPassword = '';
   confirmarPassword = '';
+  correoCuenta = '';
+  telefonoCuenta = '';
+  ladaCuenta = '52';
+  ladasPaises = PHONE_COUNTRY_CODES;
   cargandoCambioPassword = false;
   errorCambioPassword: string | null = null;
   mostrarNuevaPassword = false;
   mostrarConfirmarPassword = false;
   usuarioSesion: any = null;
+
+  maximoTelefonoCuenta(): number { return maxNationalPhoneDigits(this.ladaCuenta); }
+  normalizarTelefonoCuenta() { this.telefonoCuenta = (this.telefonoCuenta || '').replace(/\D/g, '').slice(0, this.maximoTelefonoCuenta()); }
 
   private api = inject(ApiService);
   private router = inject(Router);
@@ -43,6 +51,10 @@ export class LoginComponent {
       next: (res: any) => { 
         this.cargandoLogin = false; 
         this.usuarioSesion = res; 
+        this.correoCuenta = res.correo || '';
+        const telefono = parsePhoneForEditor(res.telefono);
+        this.ladaCuenta = telefono.codigo;
+        this.telefonoCuenta = telefono.numero;
 
         if (this.usuarioSesion.requiereCambioPassword) { 
           // El endpoint de cambio exige autenticación. Guardar temporalmente
@@ -76,8 +88,18 @@ export class LoginComponent {
       return; 
     } 
     this.errorCambioPassword = null;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correoCuenta.trim())) {
+      this.alertService.mostrarAlerta('Correo inválido', 'Captura un correo electrónico válido para proteger tu cuenta.', 'warning');
+      return;
+    }
+    const telefonoLocal = this.telefonoCuenta.replace(/\D/g, '');
+    if (telefonoLocal.length < 7 || telefonoLocal.length > this.maximoTelefonoCuenta()) {
+      this.alertService.mostrarAlerta('Teléfono inválido', 'Captura un número válido para la lada seleccionada.', 'warning');
+      return;
+    }
     this.cargandoCambioPassword = true;
-    this.api.cambiarPasswordUsuario(this.usuarioSesion.idUsuario, { password: this.nuevaPassword }).pipe(
+    const telefonoCompleto = formatPhoneForApi(this.ladaCuenta, telefonoLocal);
+    this.api.activarCuenta(this.usuarioSesion.idUsuario, { password: this.nuevaPassword, correo: this.correoCuenta.trim(), telefono: telefonoCompleto }).pipe(
       finalize(() => {
         this.cargandoCambioPassword = false;
         this.cdr.detectChanges();
@@ -87,6 +109,8 @@ export class LoginComponent {
         this.mostrarForzarPassword = false;
         this.alertService.mostrarAlerta('Éxito', 'Contraseña personal actualizada correctamente.', 'success');
         this.usuarioSesion.requiereCambioPassword = false;
+        this.usuarioSesion.correo = this.correoCuenta.trim();
+        this.usuarioSesion.telefono = telefonoCompleto;
         this.procesarAccesoCorrecto();
       },
       error: (err: any) => {
@@ -102,14 +126,12 @@ export class LoginComponent {
   }
   mostrarModalRecuperacion: boolean = false;
   usernameRecuperacion: string = '';
-  correoRecuperacion: string = '';
   enviandoRecuperacion: boolean = false;
   siteKeyRecaptcha: string = environment.recaptchaSiteKey;
   widgetIdRecuperacion: any = null;
 
   abrirModalRecuperacion() {
     this.usernameRecuperacion = '';
-    this.correoRecuperacion = '';
     this.enviandoRecuperacion = false;
     this.mostrarModalRecuperacion = true;
     setTimeout(() => {
@@ -146,11 +168,6 @@ export class LoginComponent {
       this.alertService.mostrarAlerta('Atención', 'Ingrese su nombre de usuario.', 'warning');
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correoRecuperacion.trim())) {
-      this.alertService.mostrarAlerta('Atención', 'Ingrese un correo electrónico válido para recibir la contraseña temporal.', 'warning');
-      return;
-    }
-
     const token = typeof grecaptcha !== 'undefined' ? grecaptcha.getResponse(this.widgetIdRecuperacion) : null;
     if (!token) {
       this.alertService.mostrarAlerta('Atención', 'Por favor, marque la casilla de seguridad reCAPTCHA.', 'warning');
@@ -159,7 +176,6 @@ export class LoginComponent {
 
     const peticion = {
       username: this.usernameRecuperacion.trim(),
-      correo: this.correoRecuperacion.trim(),
       tipo: 'RECUPERAR CONTRASEÑA',
       descripcion: 'El empleado ha solicitado restablecer su contraseña desde la pantalla de login.'
     };

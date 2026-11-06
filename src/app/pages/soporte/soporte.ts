@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../api.service';
+import { ordenarSedesParaMostrar } from '../../sede-utils';
 import { AlertService } from '../../alert.service'; // <--- NUESTRO MENSAJERO
 
 @Component({
@@ -50,7 +51,7 @@ export class SoporteComponent implements OnInit {
          this.router.navigate(['/admin/dashboard']);
          return;
       }
-      this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = sedes || []; this.cdr.detectChanges(); } });
+      this.api.getSedes().subscribe({ next: (sedes: any) => { this.sedes = ordenarSedesParaMostrar(sedes); this.cdr.detectChanges(); } });
       this.cargarPeticionesAdmin();
     } else {
       this.router.navigate(['/login']);
@@ -72,7 +73,7 @@ export class SoporteComponent implements OnInit {
     if (tipo === 'RECUPERAR CONTRASEÑA') {
       this.alertService.mostrarInput(
         'Restablecer Contraseña',
-        `Se enviará al correo indicado en la solicitud (${correo || 'sin correo'}). Escriba la contraseña temporal:`,
+        `Se enviará al correo registrado en la cuenta (${correo || 'sin correo registrado'}). Escriba la contraseña temporal:`,
         (nuevaPassword?: string) => {
           if (!nuevaPassword) return;
 
