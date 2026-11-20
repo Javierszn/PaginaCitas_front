@@ -32,7 +32,7 @@ export class AgendarComponent implements OnInit, OnDestroy {
   diasBloqueados: string[] = [];
   diasInhabilesAdmin: any[] = [];
 
-  widgetIdAgendar: any;
+  widgetIdAgendar: number | null = null;
 
   fechaSeleccionada: string = '';
   horaSeleccionada: string = '';
@@ -126,12 +126,12 @@ export class AgendarComponent implements OnInit, OnDestroy {
 
   cargarReglasCalendario() { this.api.getReglasCalendario().subscribe({ next: (res: any) => { this.diasInhabilesAdmin = res.diasInhabiles || []; this.diasBloqueados = this.diasInhabilesAdmin.map((d: any) => d.fecha.split('T')[0]); this.generarCalendario(); this.cdr.detectChanges(); } }); }
   soloNumeros(event: any) { const charCode = (event.which) ? event.which : event.keyCode; if (charCode < 48 || charCode > 57) { event.preventDefault(); } }
-  normalizarTelefonoLocal() { this.ciudadano.telefono = (this.ciudadano.telefono || '').replace(/\D/g, '').slice(0, 15 - this.ladaSeleccionada.length); }
+  normalizarTelefonoLocal() { this.ciudadano.telefono = (this.ciudadano.telefono || '').replace(/\D/g, '').slice(0, 10); }
   obtenerTelefonoCompleto() { return `${this.ladaSeleccionada}${(this.ciudadano.telefono || '').replace(/\D/g, '')}`; }
   soloLetras(event: any) { const charCode = (event.which) ? event.which : event.keyCode; if ((charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122) || charCode === 32 || charCode === 241 || charCode === 209) { return true; } event.preventDefault(); return false; }
   validarFormatoCURP() { if (this.ciudadano.curp) { this.ciudadano.curp = this.ciudadano.curp.toUpperCase(); } if (!this.ciudadano.curp || this.ciudadano.curp.length === 0) { this.curpValida = true; return; } const regexCURP = /^[A-Z]{4}\d{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9]\d$/; this.curpValida = regexCURP.test(this.ciudadano.curp); }
   
-  validarPasoDatos() { this.mostrarMensajesAyuda = true; const tieneCurp = this.ciudadano.curp && this.ciudadano.curp.length === 18 && this.curpValida; const tieneNombre = this.ciudadano.nombre && this.ciudadano.nombre.trim().length > 0; if (!tieneCurp && !tieneNombre) { this.abrirAlerta('Faltan Datos', 'Debe ingresar al menos su CURP o su Nombre Completo para continuar.', 'warning'); return; } if (this.ciudadano.curp && this.ciudadano.curp.length > 0 && !this.curpValida) { this.abrirAlerta('CURP Inválida', 'La CURP ingresada no tiene un formato válido.', 'warning'); return; } const telefono = this.obtenerTelefonoCompleto(); if (!this.ciudadano.telefono || telefono.length < 8 || telefono.length > 15) { this.abrirAlerta('Teléfono Inválido', 'El teléfono es obligatorio y debe incluir una lada y un número válido.', 'warning'); return; } this.irAPaso4(); }
+  validarPasoDatos() { this.mostrarMensajesAyuda = true; const tieneCurp = this.ciudadano.curp && this.ciudadano.curp.length === 18 && this.curpValida; const tieneNombre = this.ciudadano.nombre && this.ciudadano.nombre.trim().length > 0; if (!tieneCurp && !tieneNombre) { this.abrirAlerta('Faltan Datos', 'Debe ingresar al menos su CURP o su Nombre Completo para continuar.', 'warning'); return; } if (this.ciudadano.curp && this.ciudadano.curp.length > 0 && !this.curpValida) { this.abrirAlerta('CURP Inválida', 'La CURP ingresada no tiene un formato válido.', 'warning'); return; } const telefono = this.obtenerTelefonoCompleto(); if ((this.ciudadano.telefono || '').replace(/\D/g, '').length !== 10 || telefono.length > 15) { this.abrirAlerta('Teléfono Inválido', 'Captura los 10 dígitos del teléfono.', 'warning'); return; } this.irAPaso4(); }
 
   cargarAvisoGlobal() {
     this.avisoGlobal = {
@@ -186,18 +186,24 @@ export class AgendarComponent implements OnInit, OnDestroy {
   
   seleccionarTramite(tramite: any) { this.tramiteSeleccionado = tramite; this.pasoActual = 3; history.pushState({ paso: 3 }, '', ''); this.cdr.detectChanges(); }
   
- renderCaptchaAgendar() { 
-    setTimeout(() => { 
-      if (typeof grecaptcha !== 'undefined') { 
-        const el = document.getElementById('captcha-agendar'); 
-        if (el) { 
-          el.innerHTML = ''; 
-          this.widgetIdAgendar = grecaptcha.render('captcha-agendar', { 
-            'sitekey': environment.recaptchaSiteKey 
-          }); 
-        } 
-      } 
-    }, 150); 
+  renderCaptchaAgendar() {
+    let intentos = 0;
+    const intentarRenderizar = () => {
+      const el = document.getElementById('captcha-agendar');
+      if (!el) return;
+      if (typeof grecaptcha === 'undefined' || typeof grecaptcha.render !== 'function') {
+        if (intentos++ < 40) setTimeout(intentarRenderizar, 250);
+        return;
+      }
+      grecaptcha.ready(() => {
+        const contenedor = document.getElementById('captcha-agendar');
+        if (!contenedor || contenedor.innerHTML.trim()) return;
+        this.widgetIdAgendar = grecaptcha.render(contenedor, {
+          sitekey: environment.recaptchaSiteKey
+        });
+      });
+    };
+    setTimeout(intentarRenderizar, 0);
   }
   irAPaso4() { this.pasoActual = 4; this.cargarReglasCalendario(); this.iniciarCuentaRegresiva(); history.pushState({ paso: 4 }, '', ''); this.cdr.detectChanges(); this.renderCaptchaAgendar(); }
   cambiarMes(delta: number) { this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + delta, 1); this.generarCalendario(); }

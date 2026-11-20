@@ -257,11 +257,12 @@
                     <option *ngFor="let opcion of ladasPaises" [value]="opcion.codigo">{{ opcion.pais }} (+{{ opcion.codigo }})</option>
                   </select>
                   <input type="tel" class="form-control rounded-end-3"
-                         [attr.maxlength]="15 - ladaSeleccionada.length"
+                         maxlength="10"
                          (keypress)="soloNumeros($event)"
                          (input)="normalizarTelefonoLocal()"
                          [(ngModel)]="ciudadano.telefono"
                          placeholder="Número"
+                         inputmode="numeric"
                          aria-label="Número de teléfono"
                          required
                          style="font-size: 0.9rem;">
